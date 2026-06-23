@@ -1,26 +1,134 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* Typography */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+
+  /* Centralized Wayheld Brand Colors */
+  --color-brand-bg: #F4EFE6;
+  --color-brand-sidebar: #33332F;
+  --color-brand-text-primary: #33332F;
+  --color-brand-text-secondary: #504F4A;
+  --color-brand-text-muted: #A8A69D;
+  --color-brand-btn-primary: #74876B;
+  --color-brand-btn-primary-hover: #5b6c53;
+  --color-brand-border: #D8D2C8;
+  --color-brand-card: #FFFFFF;
+  --color-brand-card-border: rgba(51, 51, 47, 0.08);
+
+  /* Deep forest — primary canvas (remapped to new light theme) */
+  --color-forest-950: var(--color-brand-bg);
+  --color-forest-900: var(--color-brand-card);
+  --color-forest-800: var(--color-brand-card);
+  --color-forest-700: var(--color-brand-border);
+  --color-forest-600: rgba(116, 135, 107, 0.12);
+  --color-forest-500: rgba(116, 135, 107, 0.22);
+
+  /* Stone — neutral structure (remapped to new brand variables) */
+  --color-stone-900: var(--color-brand-sidebar);
+  --color-stone-700: var(--color-brand-text-primary);
+  --color-stone-500: var(--color-brand-text-secondary);
+  --color-stone-300: var(--color-brand-border);
+  --color-stone-100: var(--color-brand-bg);
+
+  /* Mist — light text & surfaces (remapped to dark text / borders in light theme) */
+  --color-mist-50: var(--color-brand-text-primary);
+  --color-mist-100: var(--color-brand-text-secondary);
+  --color-mist-200: var(--color-brand-text-secondary);
+  --color-mist-300: var(--color-brand-text-muted);
+
+  /* Ocean — cool accent */
+  --color-ocean-600: rgba(116, 135, 107, 0.15);
+  --color-ocean-500: rgba(116, 135, 107, 0.25);
+  --color-ocean-400: rgba(116, 135, 107, 0.35);
+
+  /* Warm sunlight — primary accent / CTA (remapped to Moss Green) */
+  --color-sun-500: var(--color-brand-btn-primary);
+  --color-sun-400: var(--color-brand-btn-primary);
+  --color-sun-300: var(--color-brand-btn-primary-hover);
+
+  /* Motion */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Elevation — shared card/panel/stage shadows */
+  --shadow-panel: 0 30px 90px -50px rgba(51, 51, 47, 0.15);
+  --shadow-card: 0 40px 100px -50px rgba(51, 51, 47, 0.18);
+  --shadow-stage: 0 50px 120px -50px rgba(51, 51, 47, 0.2);
+  --shadow-featured: 0 50px 120px -50px rgba(116, 135, 107, 0.3);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  ::selection {
+    background-color: color-mix(in oklab, var(--color-sun-400) 35%, transparent);
+    color: var(--color-mist-50);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* --- Shared layout tokens (see DESIGN_SYSTEM.md §4, §8) --- */
+
+  /* Standard section vertical rhythm */
+  .section-y {
+    padding-block: calc(var(--spacing) * 24);
+  }
+  @media (min-width: 40rem) {
+    .section-y {
+      padding-block: calc(var(--spacing) * 28);
+    }
+  }
+  @media (min-width: 64rem) {
+    .section-y {
+      padding-block: calc(var(--spacing) * 36);
+    }
+  }
+
+  /* Consistent container horizontal padding */
+  .container-x {
+    padding-inline: calc(var(--spacing) * 5);
+  }
+  @media (min-width: 40rem) {
+    .container-x {
+      padding-inline: calc(var(--spacing) * 6);
+    }
+  }
+  @media (min-width: 64rem) {
+    .container-x {
+      padding-inline: calc(var(--spacing) * 10);
+    }
+  }
+
+  /* Fluid section headline size (H2) */
+  .text-section-title {
+    font-size: clamp(2.25rem, 5.5vw, 4rem);
+  }
+
+  /* Subtle film grain for cinematic depth */
+  .bg-grain {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
