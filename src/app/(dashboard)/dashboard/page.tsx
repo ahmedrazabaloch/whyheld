@@ -20,9 +20,7 @@ export default async function DashboardPage() {
     redirect("/signup");
   }
 
-  if (!session.user.onboardingComplete) {
-    redirect("/onboarding");
-  }
+
 
   /* ---------------------------------------------------------------- */
   /* Real data reads — no mocks                                        */

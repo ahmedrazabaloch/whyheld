@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { buttonStyles } from "@/lib/design";
 import { OrDivider, PasswordField, SocialButtons, TextField } from "./fields";
 
@@ -29,6 +29,25 @@ export function LoginForm() {
   const [remember, setRemember] = useState(true);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
+
+
+  useEffect(() => {
+    const oauthError = searchParams.get("error");
+    if (oauthError) {
+      const errorMap: Record<string, string> = {
+        OAuthSignin: "Error starting Google login. Please try again.",
+        OAuthCallback: "Google sign-in was cancelled or failed. Please try again.",
+        OAuthCreateAccount: "Could not create your account with Google.",
+        AccessDenied: "Google sign-in was cancelled.",
+        Configuration: "Google sign-in was cancelled.",
+        Verification: "The sign in link is no longer valid. It may have been used already or expired.",
+      };
+      setErrors((prev) => ({
+        ...prev,
+        form: errorMap[oauthError] || "An unexpected error occurred during login. Please try again.",
+      }));
+    }
+  }, [searchParams]);
 
   function validate(): Errors {
     const next: Errors = {};

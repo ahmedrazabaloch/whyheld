@@ -10,5 +10,5 @@ export default async function StartPage() {
     redirect("/signup");
   }
 
-  redirect(session.user.onboardingComplete ? "/dashboard" : "/onboarding");
+  redirect("/dashboard");
 }
