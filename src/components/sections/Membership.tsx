@@ -41,7 +41,7 @@ function PlanCard({ plan, index }: { plan: Plan; index: number }) {
       transition={{ duration: 0.8, ease: EASE_EXPO, delay: index * 0.08 }}
       className={`relative flex flex-col h-full rounded-[2rem] border p-8 sm:p-9 transition-all duration-300 ${
         featured
-          ? "border-[#74876B] bg-[#33332F] text-[#F4EFE6] shadow-[0_30px_60px_-15px_rgba(51,51,47,0.4)] lg:-translate-y-3"
+          ? "border-[#74876B] bg-[#33332F] text-[#F4EFE6] shadow-[0_30px_60px_-15px_rgba(51,51,47,0.4)]"
           : "border-[#D8D2C8] bg-white text-[#33332F] shadow-[0_20px_50px_-20px_rgba(51,51,47,0.06)]"
       }`}
     >
@@ -122,7 +122,7 @@ function PlanCard({ plan, index }: { plan: Plan; index: number }) {
       {/* CTA */}
       <div className="mt-auto pt-8">
         <a
-          href="/start"
+          href="/login"
           className={`inline-flex min-h-[52px] w-full items-center justify-center rounded-full px-6 text-sm font-medium transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 ${
             featured
               ? "bg-[#74876B] text-[#F4EFE6] shadow-sm hover:bg-[#68795f] focus-visible:outline-[#74876B]"

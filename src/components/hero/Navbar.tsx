@@ -62,50 +62,52 @@ export function Navbar({ user }: { user?: User }) {
           <div className="relative">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition-all duration-300 ${
+              className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm transition-all duration-200 ${
                 scrolled
-                  ? "border-[#33332F]/20 text-[#33332F] hover:bg-[#33332F]/5 hover:border-[#33332F]/45"
-                  : "border-[rgba(244,239,230,0.45)] text-[#F4EFE6] hover:bg-[#F4EFE6]/8 hover:border-[#F4EFE6]/45"
+                  ? "border-[#33332F]/20 text-[#33332F] hover:border-[#33332F]/45 hover:bg-[#33332F]/5"
+                  : "border-[rgba(244,239,230,0.45)] text-[#F4EFE6] hover:border-[#F4EFE6]/45 hover:bg-[#F4EFE6]/8"
               }`}
             >
-              {user.name || "Traveler"}
+              {user.name || user.email?.split("@")[0]}
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}>
                 <path d="M3 4.5l3 3 3-3" />
               </svg>
             </button>
             
-            {dropdownOpen && (
-              <div className="absolute right-0 mt-3 w-48 rounded-2xl border border-[rgba(51,51,47,0.1)] bg-white p-2 shadow-xl ring-1 ring-black/5 focus:outline-none">
-                <Link
-                  href="/dashboard"
-                  onClick={() => setDropdownOpen(false)}
-                  className="block rounded-xl px-4 py-2 text-sm font-medium text-[#504F4A] transition-colors hover:bg-black/5 hover:text-[#33332F]"
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  href="/settings"
-                  onClick={() => setDropdownOpen(false)}
-                  className="block rounded-xl px-4 py-2 text-sm font-medium text-[#504F4A] transition-colors hover:bg-black/5 hover:text-[#33332F]"
-                >
-                  Settings
-                </Link>
-                <button
-                  onClick={() => { setDropdownOpen(false); signOut({ callbackUrl: "/" }); }}
-                  className="block w-full text-left rounded-xl px-4 py-2 text-sm font-medium text-[#504F4A] transition-colors hover:bg-black/5 hover:text-[#33332F]"
-                >
-                  Sign out
-                </button>
-              </div>
-            )}
+            <div
+              className={`absolute right-0 mt-3 w-48 origin-top-right rounded-3xl border border-[#D8D2C8] bg-[#F4EFE6] p-2 shadow-xl ring-1 ring-black/5 transition-all duration-150 focus:outline-none ${
+                dropdownOpen ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"
+              }`}
+            >
+              <Link
+                href="/dashboard"
+                onClick={() => setDropdownOpen(false)}
+                className="block cursor-pointer rounded-2xl px-4 py-2.5 text-sm font-medium text-[#33332F] transition-colors duration-150 hover:bg-[#74876B] hover:text-[#F4EFE6]"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/settings"
+                onClick={() => setDropdownOpen(false)}
+                className="block cursor-pointer rounded-2xl px-4 py-2.5 text-sm font-medium text-[#33332F] transition-colors duration-150 hover:bg-[#74876B] hover:text-[#F4EFE6]"
+              >
+                Settings
+              </Link>
+              <button
+                onClick={() => { setDropdownOpen(false); signOut({ callbackUrl: "/" }); }}
+                className="block w-full cursor-pointer rounded-2xl px-4 py-2.5 text-left text-sm font-medium text-[#33332F] transition-colors duration-150 hover:bg-[#74876B] hover:text-[#F4EFE6]"
+              >
+                Sign out
+              </button>
+            </div>
           </div>
         ) : (
           <a
-            href="/start"
-            className={`rounded-full border px-4 py-2 text-sm transition-all duration-300 ${
+            href="/login"
+            className={`cursor-pointer rounded-full border px-4 py-2 text-sm transition-all duration-200 ${
               scrolled
-                ? "border-[#33332F]/20 text-[#33332F] hover:bg-[#33332F]/5 hover:border-[#33332F]/45"
-                : "border-[rgba(244,239,230,0.45)] text-[#F4EFE6] hover:bg-[#F4EFE6]/8 hover:border-[#F4EFE6]/45"
+                ? "border-[#33332F]/20 text-[#33332F] hover:border-[#33332F]/45 hover:bg-[#33332F]/5"
+                : "border-[rgba(244,239,230,0.45)] text-[#F4EFE6] hover:border-[#F4EFE6]/45 hover:bg-[#F4EFE6]/8"
             }`}
           >
             Begin

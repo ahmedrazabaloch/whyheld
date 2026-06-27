@@ -48,6 +48,7 @@ export function LoginForm() {
       email,
       password,
       redirect: false,
+      remember: remember.toString(),
     });
     setSubmitting(false);
 
@@ -85,23 +86,27 @@ export function LoginForm() {
       </div>
 
       <div className="flex items-center justify-between">
-        <label className="inline-flex cursor-pointer items-center gap-2.5 text-sm text-brand-text-secondary">
-          <button
-            type="button"
+        <label className="flex cursor-pointer items-center gap-2.5 text-sm text-brand-text-secondary select-none">
+          <div
             role="switch"
             aria-checked={remember}
-            onClick={() => setRemember((v) => !v)}
-            className={`relative h-5 w-9 rounded-full transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary ${
+            className={`relative flex h-5 w-9 shrink-0 items-center rounded-full px-0.5 transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary ${
               remember ? "bg-brand-btn-primary" : "bg-brand-border"
             }`}
           >
-            <span
-              className={`absolute top-0.5 h-4 w-4 rounded-full bg-brand-bg transition-transform duration-300 ${
-                remember ? "translate-x-4" : "translate-x-0.5"
+            <div
+              className={`h-4 w-4 rounded-full bg-brand-bg transition-transform duration-200 ${
+                remember ? "translate-x-4" : "translate-x-0"
               }`}
             />
-          </button>
-          Stay signed in
+          </div>
+          <span>Stay signed in</span>
+          <input
+            type="checkbox"
+            className="hidden"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+          />
         </label>
         <Link
           href="/forgot-password"

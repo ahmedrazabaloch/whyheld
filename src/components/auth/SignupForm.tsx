@@ -102,7 +102,7 @@ export function SignupForm() {
         router.push("/login");
         return;
       }
-      router.push("/onboarding");
+      router.push("/dashboard");
       router.refresh();
     } catch {
       setErrors({ form: "Network error. Please try again." });
@@ -163,13 +163,11 @@ export function SignupForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-brand-text-secondary">
-          <button
-            type="button"
+        <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-brand-text-secondary select-none">
+          <div
             role="checkbox"
             aria-checked={agreed}
-            onClick={() => setAgreed((v) => !v)}
-            className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary ${
+            className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary ${
               agreed
                 ? "border-brand-btn-primary bg-brand-btn-primary text-brand-bg"
                 : "border-brand-border bg-transparent"
@@ -180,7 +178,7 @@ export function SignupForm() {
                 <path d="M3.5 8.5l3 3 6-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             )}
-          </button>
+          </div>
           <span>
             I agree to Wayheld&rsquo;s{" "}
             <Link href="#" className="text-brand-btn-primary hover:text-brand-btn-primary-hover">
@@ -192,6 +190,12 @@ export function SignupForm() {
             </Link>
             .
           </span>
+          <input
+            type="checkbox"
+            className="hidden"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+          />
         </label>
         {errors.terms && (
           <p className="text-xs text-brand-btn-primary" role="alert">

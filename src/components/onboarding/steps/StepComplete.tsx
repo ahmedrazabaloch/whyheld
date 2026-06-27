@@ -42,7 +42,7 @@ export function StepComplete({ data, complete, saving, saveError }: UseOnboardin
   async function handleEnter() {
     const saved = await complete();
     if (!saved) return;
-    router.push("/dashboard");
+    router.push("/journeys/new");
     router.refresh();
   }
 

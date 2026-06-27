@@ -11,7 +11,7 @@ export function HeroCtas() {
       className="flex flex-col gap-3 sm:flex-row sm:items-center"
     >
       <a
-        href="/start"
+        href="/login"
         className="group inline-flex h-13 items-center justify-center gap-2 rounded-full bg-[#74876B] px-7 py-3.5 text-sm font-semibold text-[#F4EFE6] transition-all duration-300 hover:bg-[#5b6c53] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#74876B]"
       >
         Plan a slower journey

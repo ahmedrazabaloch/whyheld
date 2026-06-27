@@ -142,7 +142,7 @@ export function Hero() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.6, duration: 1 }}
-        className="relative z-10 mx-auto hidden w-full max-w-7xl items-center justify-start px-10 pb-6 lg:flex"
+        className="relative z-10 mx-auto hidden w-full max-w-7xl items-center justify-start px-10 pb-6 mt-6 lg:flex"
       >
         <span className="flex items-center gap-3 text-[0.7rem] uppercase tracking-[0.24em] text-[#F4EFE6]/70">
           <span className="relative flex h-9 w-5 justify-center rounded-full border border-[rgba(244,239,230,0.15)]">

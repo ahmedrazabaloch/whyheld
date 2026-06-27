@@ -17,7 +17,7 @@ export default async function JourneysPage() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    redirect("/signup");
+    redirect("/login");
   }
 
   const journeyCount = await prisma.journey.count({

@@ -70,7 +70,7 @@ export default async function DashboardPage() {
       {/* Quick actions */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Journey prompt */}
-        <div className="rounded-[2rem] border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
+        <div className="rounded-2xl border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
           <h2 className="font-display text-xl text-brand-text-primary">
             Start a new journey
           </h2>
@@ -100,7 +100,7 @@ export default async function DashboardPage() {
 
         {/* Notifications */}
         {/* Notifications */}
-        <div className="rounded-[2rem] border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
+        <div className="rounded-2xl border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
           <h2 className="font-display text-xl text-brand-text-primary">
             Notifications
           </h2>
@@ -127,7 +127,7 @@ export default async function DashboardPage() {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-[2rem] border border-brand-border/60 bg-brand-card px-6 py-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
+    <div className="rounded-2xl border border-brand-border/60 bg-brand-card px-6 py-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
       <p className="text-[0.65rem] font-medium uppercase tracking-[0.2em] text-brand-text-secondary/80">
         {label}
       </p>

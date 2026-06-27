@@ -94,7 +94,7 @@ export function FinalCta() {
           transition={{ duration: 0.8, ease: EASE_EXPO, delay: 0.45 }}
           className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
         >
-          <a href="/start" className={`${buttonStyles.primary} h-14 px-8 text-sm`}>
+          <a href="/login" className={`${buttonStyles.primary} h-14 px-8 text-sm`}>
             Begin Your Journey
             <svg
               aria-hidden
