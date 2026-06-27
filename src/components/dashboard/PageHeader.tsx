@@ -20,16 +20,16 @@ export function PageHeader({
     <div className="mb-8 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-end sm:justify-between">
       <div>
         {eyebrow && (
-          <p className="mb-2 inline-flex items-center gap-2.5 text-xs font-medium uppercase tracking-[0.28em] text-sun-300">
-            <span className="h-px w-5 bg-sun-400/60" aria-hidden />
+          <p className="mb-2 inline-flex items-center gap-2.5 text-xs font-medium uppercase tracking-[0.2em] text-brand-btn-primary">
+            <span className="h-px w-5 bg-brand-btn-primary/60" aria-hidden />
             {eyebrow}
           </p>
         )}
-        <h1 className="font-display text-2xl font-light tracking-tight text-mist-50 sm:text-3xl">
+        <h1 className="font-display text-2xl font-light tracking-tight text-brand-text-primary sm:text-3xl">
           {title}
         </h1>
         {description && (
-          <p className="mt-2 max-w-lg text-sm leading-relaxed text-mist-200/60">
+          <p className="mt-2 max-w-lg text-sm leading-relaxed text-brand-text-secondary">
             {description}
           </p>
         )}

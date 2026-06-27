@@ -1,3 +1,4 @@
+import { auth } from "@/lib/auth/auth";
 import { Hero, Navbar } from "@/components/hero";
 import {
   FeaturedJourneys,
@@ -9,10 +10,12 @@ import {
   ScrollToTop,
 } from "@/components/sections";
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+
   return (
     <main className="flex flex-1 flex-col">
-      <Navbar />
+      <Navbar user={session?.user} />
       <Hero />
       <WhyTravelBroken />
       <HowWayheldThinks />

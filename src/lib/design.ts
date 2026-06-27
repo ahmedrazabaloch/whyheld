@@ -80,11 +80,11 @@ export const surfaces = {
 /** Button recipes (shared focus ring + transitions baked in). */
 export const buttonStyles = {
   primary:
-    "group inline-flex items-center justify-center gap-2 rounded-full bg-brand-btn-primary font-semibold text-brand-bg transition-all duration-300 hover:bg-brand-btn-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary-hover disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-brand-btn-primary",
+    "group inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-brand-btn-primary px-6 font-medium text-brand-bg shadow-sm transition-all duration-200 hover:-translate-y-[1px] hover:bg-brand-btn-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-brand-btn-primary disabled:hover:-translate-y-0",
   secondary:
-    "group inline-flex items-center justify-center gap-2 rounded-full border border-brand-border font-medium text-brand-text-primary transition-colors duration-300 hover:border-brand-text-secondary hover:bg-brand-text-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-border disabled:cursor-not-allowed disabled:opacity-50",
+    "group inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-brand-border px-6 font-medium text-brand-text-primary shadow-sm transition-all duration-200 hover:-translate-y-[1px] hover:border-brand-text-secondary hover:bg-brand-text-primary/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-border disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:-translate-y-0",
   ghost:
-    "group inline-flex items-center gap-1.5 font-medium text-brand-text-primary transition-colors hover:text-brand-btn-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary",
+    "group inline-flex min-h-[44px] items-center gap-1.5 px-4 font-medium text-brand-text-primary transition-colors duration-200 hover:text-brand-btn-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary",
 } as const;
 
 /** Form recipes (see DESIGN_SYSTEM.md §11). */

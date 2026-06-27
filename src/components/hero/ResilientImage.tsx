@@ -59,7 +59,7 @@ export function ResilientImage({
           viewBox="0 0 48 48"
           fill="none"
           aria-hidden
-          className="h-10 w-10 text-mist-50/30"
+          className="h-10 w-10 text-[#F4EFE6]/30"
         >
           <path
             d="M6 34l9-11 7 8 6-7 8 10M6 34h32M6 34V14h32v20"

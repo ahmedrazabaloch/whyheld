@@ -51,8 +51,8 @@ export default async function SavedPage() {
           description="When you discover places that resonate with you, save them here and weave them into future journeys."
         />
       ) : (
-        <div className="rounded-3xl border border-brand-card-border bg-brand-card p-6 sm:p-8 shadow-card">
-          <p className="text-sm text-brand-text-secondary">
+        <div className="rounded-[2rem] border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
+          <p className="text-sm leading-relaxed text-brand-text-secondary">
             You have{" "}
             <span className="font-medium text-brand-text-primary">{savedCount}</span> saved
             place{savedCount !== 1 ? "s" : ""}. Full saved-place management is

@@ -33,14 +33,14 @@ export default async function BillingPage() {
       />
 
       {/* Credit balance card */}
-      <div className="mb-6 rounded-2xl border border-brand-card-border bg-brand-card px-5 py-5 sm:px-6 shadow-card">
-        <p className="text-[0.65rem] font-medium uppercase tracking-[0.22em] text-brand-text-secondary/60">
+      <div className="mb-6 rounded-[2rem] border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
+        <p className="text-[0.65rem] font-medium uppercase tracking-[0.2em] text-brand-text-secondary/80">
           Credit balance
         </p>
-        <p className="mt-1 font-display text-3xl font-light text-brand-text-primary">
+        <p className="mt-2 font-display text-4xl tracking-tight text-brand-text-primary">
           {wallet?.balance ?? 0}
         </p>
-        <div className="mt-3 flex gap-6 text-xs text-brand-text-secondary/60">
+        <div className="mt-4 flex gap-6 text-xs text-brand-text-secondary">
           <span>Granted: {wallet?.lifetimeGranted ?? 0}</span>
           <span>Used: {wallet?.lifetimeConsumed ?? 0}</span>
         </div>

@@ -120,16 +120,18 @@ function PlanCard({ plan, index }: { plan: Plan; index: number }) {
       </ul>
 
       {/* CTA */}
-      <a
-        href="/start"
-        className={`mt-auto inline-flex min-h-[52px] w-full items-center justify-center rounded-full px-6 text-sm font-medium transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 ${
-          featured
-            ? "bg-[#74876B] text-[#F4EFE6] shadow-sm hover:bg-[#68795f] focus-visible:outline-[#74876B]"
-            : "border border-[#D8D2C8] bg-white text-[#33332F] hover:-translate-y-[1px] hover:shadow-sm focus-visible:outline-[#D8D2C8]"
-        }`}
-      >
-        {plan.cta}
-      </a>
+      <div className="mt-auto pt-8">
+        <a
+          href="/start"
+          className={`inline-flex min-h-[52px] w-full items-center justify-center rounded-full px-6 text-sm font-medium transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 ${
+            featured
+              ? "bg-[#74876B] text-[#F4EFE6] shadow-sm hover:bg-[#68795f] focus-visible:outline-[#74876B]"
+              : "border border-[#D8D2C8] bg-white text-[#33332F] hover:-translate-y-[1px] hover:shadow-sm focus-visible:outline-[#D8D2C8]"
+          }`}
+        >
+          {plan.cta}
+        </a>
+      </div>
     </motion.div>
   );
 }

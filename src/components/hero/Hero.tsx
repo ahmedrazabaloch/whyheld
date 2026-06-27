@@ -56,7 +56,7 @@ export function Hero() {
     <section
       ref={sectionRef}
       aria-labelledby="hero-heading"
-      className="relative isolate flex w-full flex-col overflow-hidden bg-[#2A2926]"
+      className="relative isolate flex w-full flex-col overflow-hidden bg-[#74876B]"
     >
 
 
@@ -74,7 +74,7 @@ export function Hero() {
         >
           <motion.p
             variants={riseVariants}
-            className="inline-flex items-center gap-2.5 text-xs font-medium uppercase tracking-[0.28em] text-[#A8A69D]"
+            className="inline-flex items-center gap-2.5 text-xs font-medium uppercase tracking-[0.3em] text-[rgba(244,239,230,0.75)]"
           >
             <span className="h-px w-8 bg-sun-400/60" aria-hidden />
             {HERO_KICKER}
@@ -86,7 +86,7 @@ export function Hero() {
 
           <motion.p
             variants={riseVariants}
-            className="max-w-xl text-base leading-relaxed text-[#A8A69D] sm:text-lg"
+            className="max-w-xl text-base leading-relaxed text-[rgba(244,239,230,0.92)] sm:text-lg"
           >
             {HERO_SUBHEAD}
           </motion.p>
@@ -96,20 +96,20 @@ export function Hero() {
           {/* Trust Signal */}
           <motion.div
             variants={riseVariants}
-            className="mt-1 flex flex-wrap gap-x-8 gap-y-4 border-t border-[#F4EFE6]/10 pt-4 pb-2 sm:gap-x-10"
+            className="mt-1 flex flex-wrap gap-x-8 gap-y-4 border-t border-[rgba(244,239,230,0.10)] pt-4 pb-2 sm:gap-x-10"
           >
             <div className="flex flex-col">
-              <span className="text-xs uppercase tracking-[0.16em] text-[#A8A69D]/80">
+              <span className="text-xs uppercase tracking-[0.16em] text-[rgba(244,239,230,0.80)]">
                 120+ Heritage Regions Curated
               </span>
             </div>
             <div className="flex flex-col">
-              <span className="text-xs uppercase tracking-[0.16em] text-[#A8A69D]/80">
+              <span className="text-xs uppercase tracking-[0.16em] text-[rgba(244,239,230,0.80)]">
                 Built for Intentional Travellers
               </span>
             </div>
             <div className="flex flex-col">
-              <span className="text-xs uppercase tracking-[0.16em] text-[#A8A69D]/80">
+              <span className="text-xs uppercase tracking-[0.16em] text-[rgba(244,239,230,0.80)]">
                 Designed Around Slower Journeys
               </span>
             </div>
@@ -144,8 +144,8 @@ export function Hero() {
         transition={{ delay: 1.6, duration: 1 }}
         className="relative z-10 mx-auto hidden w-full max-w-7xl items-center justify-start px-10 pb-6 lg:flex"
       >
-        <span className="flex items-center gap-3 text-[0.7rem] uppercase tracking-[0.24em] text-[#A8A69D]/60">
-          <span className="relative flex h-9 w-5 justify-center rounded-full border border-[#F4EFE6]/20">
+        <span className="flex items-center gap-3 text-[0.7rem] uppercase tracking-[0.24em] text-[#F4EFE6]/70">
+          <span className="relative flex h-9 w-5 justify-center rounded-full border border-[rgba(244,239,230,0.15)]">
             <motion.span
               aria-hidden
               animate={{ y: [3, 12, 3] }}

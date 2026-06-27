@@ -70,8 +70,8 @@ export default async function DashboardPage() {
       {/* Quick actions */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Journey prompt */}
-        <div className="rounded-3xl border border-brand-card-border bg-brand-card p-6 sm:p-8 shadow-card">
-          <h2 className="font-display text-lg font-light text-brand-text-primary">
+        <div className="rounded-[2rem] border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
+          <h2 className="font-display text-xl text-brand-text-primary">
             Start a new journey
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-brand-text-secondary">
@@ -80,7 +80,7 @@ export default async function DashboardPage() {
           </p>
           <Link
             href="/journeys/new"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-brand-btn-primary px-5 py-2.5 text-sm font-semibold text-brand-bg transition-colors duration-300 hover:bg-brand-btn-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary-hover"
+            className="mt-6 inline-flex min-h-[48px] items-center gap-2 rounded-full bg-brand-btn-primary px-6 py-2.5 text-sm font-medium text-brand-bg shadow-sm transition-all duration-200 hover:-translate-y-[1px] hover:bg-brand-btn-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary"
           >
             Plan a journey
             <svg
@@ -99,18 +99,19 @@ export default async function DashboardPage() {
         </div>
 
         {/* Notifications */}
-        <div className="rounded-3xl border border-brand-card-border bg-brand-card p-6 sm:p-8 shadow-card">
-          <h2 className="font-display text-lg font-light text-brand-text-primary">
+        {/* Notifications */}
+        <div className="rounded-[2rem] border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
+          <h2 className="font-display text-xl text-brand-text-primary">
             Notifications
           </h2>
           {unreadCount > 0 ? (
-            <p className="mt-2 text-sm text-brand-text-secondary">
+            <p className="mt-2 text-sm leading-relaxed text-brand-text-secondary">
               You have{" "}
               <span className="font-medium text-brand-btn-primary">{unreadCount}</span>{" "}
               unread notification{unreadCount !== 1 ? "s" : ""}.
             </p>
           ) : (
-            <p className="mt-2 text-sm text-brand-text-secondary/60">
+            <p className="mt-2 text-sm leading-relaxed text-brand-text-secondary">
               You&apos;re all caught up — no new notifications.
             </p>
           )}
@@ -126,11 +127,11 @@ export default async function DashboardPage() {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-brand-card-border bg-brand-card px-5 py-4 shadow-card">
-      <p className="text-[0.65rem] font-medium uppercase tracking-[0.22em] text-brand-text-secondary/60">
+    <div className="rounded-[2rem] border border-brand-border/60 bg-brand-card px-6 py-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
+      <p className="text-[0.65rem] font-medium uppercase tracking-[0.2em] text-brand-text-secondary/80">
         {label}
       </p>
-      <p className="mt-1 font-display text-2xl font-light text-brand-text-primary">
+      <p className="mt-2 font-display text-3xl tracking-tight text-brand-text-primary">
         {value}
       </p>
     </div>

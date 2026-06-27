@@ -69,7 +69,7 @@ const SOCIALS: { label: string; href: string; path: string }[] = [
  */
 export function SiteFooter() {
   return (
-    <footer className="relative isolate w-full overflow-hidden border-t border-white/10 bg-[#33332F] text-[#F4EFE6]">
+    <footer className="relative isolate w-full overflow-hidden border-t border-[rgba(244,239,230,0.15)] bg-[#74876B] text-[#F4EFE6]">
 
       <GrainOverlay opacity={0.05} />
 
@@ -90,7 +90,7 @@ export function SiteFooter() {
             >
               Wayheld
             </a>
-            <p className="mt-5 max-w-md text-base leading-relaxed text-[#D8D2C8]/80">
+            <p className="mt-5 max-w-md text-base leading-relaxed text-[rgba(244,239,230,0.70)]">
               Wayheld is a slow travel companion, built on a simple belief: the
               world is not a checklist. We pair AI with local knowledge to help
               you travel with intention, honour heritage, and leave the places
@@ -118,7 +118,7 @@ export function SiteFooter() {
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-7">
             {COLUMNS.map((column) => (
               <nav key={column.title} aria-label={column.title}>
-                <p className="text-[0.75rem] font-bold uppercase tracking-[0.2em] text-[#A8A69D]">
+                <p className="text-[0.75rem] font-bold uppercase tracking-[0.2em] text-[rgba(244,239,230,0.70)]">
                   {column.title}
                 </p>
                 <ul className="mt-4 flex flex-col gap-3">
@@ -126,7 +126,7 @@ export function SiteFooter() {
                     <li key={link.label}>
                       <a
                         href={link.href}
-                        className="text-sm text-[#A8A69D] transition-colors hover:text-white"
+                        className="text-sm text-[#F4EFE6] transition-colors hover:text-[#FFFFFF]"
                       >
                         {link.label}
                       </a>
@@ -139,28 +139,28 @@ export function SiteFooter() {
         </motion.div>
 
         {/* Legal bar */}
-        <div className="mt-14 flex flex-col gap-4 border-t border-white/10 pt-7 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-white/40">
+        <div className="mt-14 flex flex-col gap-4 border-t border-[rgba(244,239,230,0.15)] pt-7 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-[rgba(244,239,230,0.70)]">
             © {new Date().getFullYear()} Wayheld. Travel deeper, not faster.
           </p>
-          <ul className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white/40">
+          <ul className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-[rgba(244,239,230,0.70)]">
             <li>
-              <a href="#" className="transition-colors hover:text-white">
+              <a href="#" className="transition-colors hover:text-[#FFFFFF]">
                 Privacy
               </a>
             </li>
             <li>
-              <a href="#" className="transition-colors hover:text-white">
+              <a href="#" className="transition-colors hover:text-[#FFFFFF]">
                 Terms
               </a>
             </li>
             <li>
-              <a href="#" className="transition-colors hover:text-white">
+              <a href="#" className="transition-colors hover:text-[#FFFFFF]">
                 Cookies
               </a>
             </li>
             <li>
-              <a href="#" className="transition-colors hover:text-white">
+              <a href="#" className="transition-colors hover:text-[#FFFFFF]">
                 Responsible travel
               </a>
             </li>

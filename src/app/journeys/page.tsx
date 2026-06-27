@@ -33,7 +33,7 @@ export default async function JourneysPage() {
         actions={
           <Link
             href="/journeys/new"
-            className="inline-flex items-center gap-2 rounded-full bg-brand-btn-primary px-5 py-2.5 text-sm font-semibold text-brand-bg transition-colors duration-300 hover:bg-brand-btn-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary-hover"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-brand-btn-primary px-6 py-2.5 text-sm font-medium text-brand-bg shadow-sm transition-all duration-200 hover:-translate-y-[1px] hover:bg-brand-btn-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary"
           >
             New journey
             <svg
@@ -77,15 +77,15 @@ export default async function JourneysPage() {
           action={
             <Link
               href="/journeys/new"
-              className="inline-flex items-center gap-2 rounded-full bg-brand-btn-primary px-5 py-2.5 text-sm font-semibold text-brand-bg transition-colors duration-300 hover:bg-brand-btn-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary-hover"
+              className="inline-flex min-h-[48px] items-center gap-2 rounded-full bg-brand-btn-primary px-6 py-2.5 text-sm font-medium text-brand-bg shadow-sm transition-all duration-200 hover:-translate-y-[1px] hover:bg-brand-btn-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary"
             >
               Plan your first journey
             </Link>
           }
         />
       ) : (
-        <div className="rounded-3xl border border-brand-card-border bg-brand-card p-6 sm:p-8 shadow-card">
-          <p className="text-sm text-brand-text-secondary">
+        <div className="rounded-[2rem] border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
+          <p className="text-sm leading-relaxed text-brand-text-secondary">
             You have{" "}
             <span className="font-medium text-brand-text-primary">{journeyCount}</span>{" "}
             journey{journeyCount !== 1 ? "s" : ""}. Full journey management is

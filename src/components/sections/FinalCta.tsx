@@ -30,7 +30,7 @@ export function FinalCta() {
     <section
       id="start"
       aria-labelledby="cta-heading"
-      className="relative isolate w-full overflow-hidden bg-[#2A2926] pt-16 pb-28 sm:pt-20 sm:pb-32 lg:pt-24 lg:pb-44"
+      className="relative isolate w-full overflow-hidden bg-[#74876B] pt-16 pb-28 sm:pt-20 sm:pb-32 lg:pt-24 lg:pb-44"
     >
 
       <GrainOverlay opacity={0.07} />
@@ -42,11 +42,11 @@ export function FinalCta() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.6 }}
           transition={{ duration: 0.7, ease: EASE_EXPO }}
-          className="inline-flex items-center gap-2.5 text-xs font-medium uppercase tracking-[0.3em] text-[#74876B]"
+          className="inline-flex items-center gap-2.5 text-xs font-medium uppercase tracking-[0.3em] text-[rgba(244,239,230,0.70)]"
         >
-          <span className="h-px w-8 bg-[#74876B]/60" aria-hidden />
+          <span className="h-px w-8 bg-[rgba(244,239,230,0.15)]" aria-hidden />
           Your journey begins here
-          <span className="h-px w-8 bg-[#74876B]/60" aria-hidden />
+          <span className="h-px w-8 bg-[rgba(244,239,230,0.15)]" aria-hidden />
         </motion.p>
 
         <h2
@@ -67,7 +67,7 @@ export function FinalCta() {
                     hidden: { y: "110%" },
                     show: { y: "0%", transition: { duration: 0.9, ease: EASE_EXPO } },
                   }}
-                  className={`inline-block ${word === "__ACCENT__" ? "italic text-[#74876B]" : ""}`}
+                  className={`inline-block ${word === "__ACCENT__" ? "italic text-[#D8D2C8]" : ""}`}
                 >
                   {word === "__ACCENT__" ? CTA_HEADLINE.accent : word}
                   {word === "__ACCENT__" ? CTA_HEADLINE.tail : "\u00A0"}
@@ -82,7 +82,7 @@ export function FinalCta() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.6 }}
           transition={{ duration: 0.8, ease: EASE_EXPO, delay: 0.3 }}
-          className="mx-auto mt-7 max-w-xl text-base leading-relaxed text-[#A8A69D] sm:text-lg"
+          className="mx-auto mt-7 max-w-xl text-base leading-relaxed text-[rgba(244,239,230,0.88)] sm:text-lg"
         >
           {CTA_SUB}
         </motion.p>
@@ -113,7 +113,7 @@ export function FinalCta() {
           </a>
           <a
             href="#journeys"
-            className="inline-flex h-14 items-center justify-center rounded-full px-7 text-sm font-medium text-[#D8D2C8] transition-colors duration-300 hover:text-[#F4EFE6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F4EFE6]/40"
+            className="inline-flex h-14 items-center justify-center rounded-full px-7 text-sm font-medium text-[rgba(244,239,230,0.88)] transition-colors duration-300 hover:text-[#F4EFE6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F4EFE6]/40"
           >
             Explore journeys first
           </a>

@@ -44,10 +44,10 @@ export function DestinationSelector({
               onClick={() => onSelect(index)}
               aria-pressed={isActive}
               aria-label={`Feature ${destination.name}`}
-              className={`group relative block aspect-[3/2] w-full overflow-hidden rounded-2xl border transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sun-300 bg-[#33332F] ${
+              className={`group relative block aspect-[3/2] w-full overflow-hidden rounded-2xl border transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sun-300 bg-[rgba(51,51,47,0.78)] ${
                 isActive
                   ? "border-sun-400 ring-1 ring-sun-400/50 shadow-[0_4px_20px_rgba(212,163,89,0.2)] scale-[1.02]"
-                  : "border-white/10 hover:border-white/30 hover:scale-[1.01]"
+                  : "border-[rgba(244,239,230,0.15)] hover:border-[rgba(244,239,230,0.30)] hover:scale-[1.01]"
               }`}
             >
               <ResilientImage
@@ -66,7 +66,7 @@ export function DestinationSelector({
                 <span className="text-[0.5rem] sm:text-[0.55rem] font-bold uppercase tracking-[0.14em] text-sun-300/90 leading-none">
                   {country}
                 </span>
-                <span className="mt-0.5 sm:mt-1 text-[0.68rem] sm:text-xs font-semibold text-white tracking-wide leading-tight line-clamp-1">
+                <span className="mt-0.5 sm:mt-1 text-[0.68rem] sm:text-xs font-semibold text-[#F4EFE6] tracking-wide leading-tight line-clamp-1">
                   {shortName}
                 </span>
               </div>
@@ -74,7 +74,7 @@ export function DestinationSelector({
               {/* Progress bar — active only */}
               <span
                 aria-hidden
-                className="absolute inset-x-0 bottom-0 h-[3px] bg-white/10"
+                className="absolute inset-x-0 bottom-0 h-[3px] bg-[rgba(244,239,230,0.15)]"
               >
                 {isActive && (
                   <motion.span

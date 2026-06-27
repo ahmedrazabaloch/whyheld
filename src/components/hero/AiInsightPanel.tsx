@@ -74,7 +74,7 @@ export function AiInsightPanel({ insight, insightId }: AiInsightPanelProps) {
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.5 }}
-      className="relative overflow-hidden rounded-3xl border border-[#F4EFE6]/10 bg-[#F4EFE6]/5 p-5 shadow-[0_30px_90px_-50px_rgba(0,0,0,0.95)] backdrop-blur-xl sm:p-6"
+      className="relative overflow-hidden rounded-3xl border border-[rgba(244,239,230,0.18)] bg-[rgba(51,51,47,0.35)] p-5 shadow-[0_30px_90px_-50px_rgba(0,0,0,0.95)] backdrop-blur-[12px] sm:p-6"
     >
       {/* Soft inner glow that breathes */}
       <motion.div
@@ -98,18 +98,18 @@ export function AiInsightPanel({ insight, insightId }: AiInsightPanelProps) {
             />
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#74876B]/40" />
           </span>
-          <span className="text-[0.7rem] font-medium uppercase tracking-[0.22em] text-[#A8A69D]/80">
+          <span className="text-[0.7rem] font-medium uppercase tracking-[0.22em] text-[rgba(244,239,230,0.82)]">
             Wayheld is listening
           </span>
         </div>
-        <span className="font-display text-sm italic text-[#A8A69D]/60">
+        <span className="font-display text-sm italic text-[rgba(244,239,230,0.82)]">
           intelligence
         </span>
       </div>
 
       {/* The traveller's intent */}
       <div className="relative mt-5">
-        <p className="text-[0.65rem] font-medium uppercase tracking-[0.2em] text-[#A8A69D]/55">
+        <p className="text-[0.65rem] font-medium uppercase tracking-[0.2em] text-[#F4EFE6]">
           You
         </p>
         <p className="mt-1.5 font-display text-lg leading-snug text-[#F4EFE6]">
@@ -127,7 +127,7 @@ export function AiInsightPanel({ insight, insightId }: AiInsightPanelProps) {
 
       {/* Wayheld's response */}
       <div className="relative mt-4 min-h-30" aria-live="polite">
-        <p className="text-[0.65rem] font-medium uppercase tracking-[0.2em] text-[#74876B]/90">
+        <p className="text-[0.65rem] font-medium uppercase tracking-[0.2em] text-[#F4EFE6]">
           Wayheld
         </p>
 
@@ -163,7 +163,7 @@ export function AiInsightPanel({ insight, insightId }: AiInsightPanelProps) {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             >
-              <p className="mt-2 text-[0.95rem] leading-relaxed text-[#A8A69D]/90">
+              <p className="mt-2 text-[0.95rem] leading-relaxed text-[rgba(244,239,230,0.82)]">
                 {insight.response}
               </p>
 
@@ -174,7 +174,7 @@ export function AiInsightPanel({ insight, insightId }: AiInsightPanelProps) {
                     initial={motionless ? false : { opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.25 + i * 0.1, duration: 0.5 }}
-                    className="rounded-full border border-[#F4EFE6]/12 bg-[#F4EFE6]/5 px-2.5 py-1 text-[0.68rem] font-medium tracking-wide text-[#A8A69D]/80"
+                    className="rounded-full border border-[#F4EFE6]/12 bg-[rgba(244,239,230,0.12)] px-2.5 py-1 text-[0.68rem] font-medium tracking-wide text-[#F4EFE6]"
                   >
                     {signal}
                   </motion.li>

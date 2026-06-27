@@ -33,7 +33,7 @@ export function HeroCtas() {
 
       <a
         href="#how"
-        className="group inline-flex h-13 items-center justify-center gap-2 rounded-full border border-[#F4EFE6]/25 px-7 py-3.5 text-sm font-medium text-[#A8A69D] transition-colors duration-300 hover:border-[#F4EFE6]/40 hover:bg-[#F4EFE6]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F4EFE6]/40"
+        className="group inline-flex h-13 items-center justify-center gap-2 rounded-full border border-[rgba(244,239,230,0.45)] px-7 py-3.5 text-sm font-medium text-[#F4EFE6] transition-colors duration-300 hover:border-[#F4EFE6]/40 hover:bg-[rgba(244,239,230,0.08)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F4EFE6]/40"
       >
         <span
           aria-hidden

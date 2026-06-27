@@ -123,22 +123,22 @@ export default async function SettingsPage() {
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-brand-card-border bg-brand-card px-5 py-4 shadow-card">
-      <p className="text-[0.65rem] font-medium uppercase tracking-[0.22em] text-brand-text-secondary/60">
+    <div className="rounded-[2rem] border border-brand-border/60 bg-brand-card px-6 py-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
+      <p className="text-[0.65rem] font-medium uppercase tracking-[0.2em] text-brand-text-secondary/80">
         {label}
       </p>
-      <p className="mt-1 text-sm text-brand-text-primary">{value}</p>
+      <p className="mt-2 text-sm text-brand-text-primary">{value}</p>
     </div>
   );
 }
 
 function PrefChip({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-brand-border bg-brand-text-primary/5 px-3 py-2.5">
-      <p className="text-[0.6rem] font-medium uppercase tracking-[0.18em] text-brand-text-secondary/60">
+    <div className="rounded-2xl border border-brand-border/60 bg-brand-card px-4 py-3 shadow-sm">
+      <p className="text-[0.6rem] font-medium uppercase tracking-[0.18em] text-brand-text-secondary/80">
         {label}
       </p>
-      <p className="mt-0.5 text-xs font-medium text-brand-text-primary">{value}</p>
+      <p className="mt-1 text-xs font-medium text-brand-text-primary">{value}</p>
     </div>
   );
 }

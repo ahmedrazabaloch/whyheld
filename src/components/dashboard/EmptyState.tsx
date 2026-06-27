@@ -22,16 +22,16 @@ interface EmptyStateProps {
  */
 export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-3xl border border-mist-50/10 bg-forest-900/30 px-6 py-16 text-center sm:px-10 sm:py-20">
+    <div className="flex flex-col items-center justify-center rounded-[2rem] border border-brand-border/60 bg-brand-card/30 px-6 py-16 text-center sm:px-10 sm:py-20 shadow-sm">
       {/* Icon circle */}
-      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-sun-400/20 bg-sun-400/[0.06] text-sun-400/70">
+      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-brand-btn-primary/20 bg-brand-btn-primary/10 text-brand-btn-primary">
         {icon}
       </div>
 
-      <h2 className="font-display text-xl font-light tracking-tight text-mist-50 sm:text-2xl">
+      <h2 className="font-display text-2xl font-light tracking-tight text-brand-text-primary">
         {title}
       </h2>
-      <p className="mt-3 max-w-sm text-sm leading-relaxed text-mist-200/60">
+      <p className="mt-3 max-w-sm text-sm leading-relaxed text-brand-text-secondary">
         {description}
       </p>
 

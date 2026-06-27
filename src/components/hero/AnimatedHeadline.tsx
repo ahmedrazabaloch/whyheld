@@ -19,7 +19,7 @@ function MaskedWords({ text, accent = false }: { text: string; accent?: boolean 
         >
           <motion.span
             variants={wordVariants}
-            className={`inline-block ${accent ? "italic text-[#74876B]" : ""}`}
+            className={`inline-block ${accent ? "italic text-[#EAE4D8]" : ""}`}
           >
             {word}
             {/* keep natural spacing between words */}
@@ -41,7 +41,7 @@ export function AnimatedHeadline({ headline }: AnimatedHeadlineProps) {
       <MaskedWords text={headline.lead} />
       <MaskedWords text={headline.accent} accent />
       <span className="sr-only">{headline.tail}</span>
-      <span aria-hidden className="text-[#74876B]">
+      <span aria-hidden className="text-[#F4EFE6]">
         {headline.tail.trim()}
       </span>
     </h1>

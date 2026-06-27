@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import type { User } from "next-auth";
 import { Sidebar, MobileHeader } from "@/components/dashboard";
 
 /**
@@ -8,11 +9,11 @@ import { Sidebar, MobileHeader } from "@/components/dashboard";
  * mobile header to every authenticated app route. Each route's layout.tsx
  * renders its children inside this component.
  */
-export function DashboardShell({ children }: { children: ReactNode }) {
+export function DashboardShell({ children, user }: { children: ReactNode; user?: User }) {
   return (
     <div className="min-h-svh bg-brand-bg">
-      <Sidebar />
-      <MobileHeader />
+      <Sidebar user={user} />
+      <MobileHeader user={user} />
 
       {/* Main content area — offset by sidebar width on large screens. */}
       <main className="lg:pl-60">

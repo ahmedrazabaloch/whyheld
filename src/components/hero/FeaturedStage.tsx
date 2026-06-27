@@ -17,7 +17,7 @@ const EASE = [0.16, 1, 0.3, 1] as const;
  */
 export function FeaturedStage({ destination }: FeaturedStageProps) {
   return (
-    <div className="relative aspect-4/5 w-full overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#2A2926] shadow-[0_50px_120px_-50px_rgba(0,0,0,0.95)] sm:aspect-3/4 lg:h-[70vh] lg:min-h-[600px] lg:max-h-[850px] lg:w-full">
+    <div className="relative aspect-4/5 w-full overflow-hidden rounded-[2.5rem] border border-[rgba(244,239,230,0.15)] bg-[#74876B] shadow-[0_50px_120px_-50px_rgba(0,0,0,0.95)] sm:aspect-3/4 lg:h-[70vh] lg:min-h-[600px] lg:max-h-[850px] lg:w-full">
       <AnimatePresence>
         <motion.div
           key={destination.id}
@@ -41,7 +41,7 @@ export function FeaturedStage({ destination }: FeaturedStageProps) {
       {/* Subtle readability gradient at bottom only */}
       <div
         aria-hidden
-        className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#2A2926]/80 to-transparent pointer-events-none"
+        className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#74876B]/80 to-transparent pointer-events-none"
       />
 
       {/* Theme tag */}
@@ -53,7 +53,7 @@ export function FeaturedStage({ destination }: FeaturedStageProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#2A2926] px-3.5 py-1.5 text-[0.65rem] font-medium uppercase tracking-[0.18em] text-mist-50"
+            className="inline-flex items-center gap-2 rounded-full border border-[rgba(244,239,230,0.15)] bg-[#74876B] px-3.5 py-1.5 text-[0.65rem] font-medium uppercase tracking-[0.18em] text-[#F4EFE6]"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-sun-400" aria-hidden />
             {destination.theme}
@@ -70,7 +70,7 @@ export function FeaturedStage({ destination }: FeaturedStageProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.7, ease: EASE }}
-            className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#2A2926]/95 p-6 shadow-xl"
+            className="relative overflow-hidden rounded-2xl border border-[rgba(244,239,230,0.15)] bg-[rgba(51,51,47,0.78)] p-6 shadow-xl"
           >
 
             <div className="relative flex flex-col gap-2">
@@ -78,17 +78,17 @@ export function FeaturedStage({ destination }: FeaturedStageProps) {
                 <span className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-sun-300">
                   {destination.region}
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-[0.62rem] font-medium uppercase tracking-[0.16em] text-mist-100 backdrop-blur-sm border border-white/5">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-[0.62rem] font-medium uppercase tracking-[0.16em] text-[#FFFFFF] backdrop-blur-sm border border-white/5">
                   <span className="h-1 w-1 rounded-full bg-sun-400" aria-hidden />
                   {destination.pace}
                 </span>
               </div>
 
-              <h3 className="font-display text-2xl sm:text-3xl leading-tight text-white tracking-tight">
+              <h3 className="font-display text-2xl sm:text-3xl leading-tight text-[#FFFFFF] tracking-tight">
                 {destination.name}
               </h3>
 
-              <p className="text-sm leading-relaxed text-[#F4EFE6]/90 font-light mt-1.5">
+              <p className="text-sm leading-relaxed text-[rgba(255,255,255,0.82)] font-light mt-1.5">
                 {destination.caption}
               </p>
 
@@ -97,7 +97,7 @@ export function FeaturedStage({ destination }: FeaturedStageProps) {
                   {destination.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center rounded-full border border-white/10 bg-[#33332F] px-2.5 py-1 text-[0.65rem] font-medium tracking-wide text-white transition-colors hover:bg-white/10"
+                      className="inline-flex items-center rounded-full border border-white/10 bg-[rgba(255,255,255,0.12)] px-2.5 py-1 text-[0.65rem] font-medium tracking-wide text-[#FFFFFF] transition-colors hover:bg-white/10"
                     >
                       {tag}
                     </span>
