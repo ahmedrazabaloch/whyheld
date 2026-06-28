@@ -186,7 +186,7 @@ export function HowWayheldThinks() {
               {/* Main large image */}
               <div className="absolute top-0 right-0 h-[460px] w-[85%] overflow-hidden rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(51,51,47,0.3)]">
                 <Image
-                  src="/images/how-main.jpg"
+                  src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=1200"
                   alt="Misty cliffs and castle ruins in St Andrews, Scotland"
                   fill
                   sizes="55vw"
@@ -202,9 +202,9 @@ export function HowWayheldThinks() {
               </div>
 
               {/* Overlapping secondary image */}
-              <div className="absolute top-[300px] left-0 z-10 h-[360px] w-[50%] overflow-hidden rounded-3xl border-8 border-[#F4EFE6] shadow-[0_20px_40px_-10px_rgba(51,51,47,0.2)]">
+              <div className="absolute top-[300px] left-0 z-10 h-[360px] w-[50%] overflow-hidden rounded-3xl shadow-[0_20px_40px_-10px_rgba(51,51,47,0.2)]">
                 <Image
-                  src="/images/how-small.jpg"
+                  src="https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&q=80&w=800"
                   alt="Historic quiet harbour in Fife, Scotland"
                   fill
                   sizes="30vw"

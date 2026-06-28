@@ -147,10 +147,10 @@ export function Hero() {
         <span className="flex items-center gap-3 text-[0.7rem] uppercase tracking-[0.24em] text-[#F4EFE6]/70">
           <span className="relative flex h-9 w-5 justify-center rounded-full border border-[rgba(244,239,230,0.15)]">
             <motion.span
-              aria-hidden
-              animate={{ y: [3, 12, 3] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-              className="mt-1 h-1.5 w-1 rounded-full bg-mist-50/60"
+               aria-hidden
+               animate={{ y: [3, 12, 3] }}
+               transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+               className="mt-1 h-1.5 w-1 rounded-full bg-mist-50/60"
             />
           </span>
           Scroll to explore

@@ -13,27 +13,27 @@ const COLUMNS: FooterColumn[] = [
   {
     title: "Explore",
     links: [
-      { label: "Why Wayheld", href: "#why" },
-      { label: "How it works", href: "#how" },
-      { label: "Featured journeys", href: "#journeys" },
-      { label: "Membership", href: "#membership" },
+      { label: "Why Wayheld", href: "/about" },
+      { label: "How it works", href: "/experiences" },
+      { label: "Featured journeys", href: "/#journeys" },
+      { label: "Membership", href: "/#membership" },
     ],
   },
   {
     title: "Company",
     links: [
-      { label: "Our philosophy", href: "#why" },
-      { label: "Regenerative travel", href: "#how" },
-      { label: "Heritage partners", href: "#journeys" },
+      { label: "Our philosophy", href: "/about" },
+      { label: "Regenerative travel", href: "/commitment" },
+      { label: "Heritage partners", href: "/commitment" },
       { label: "Careers", href: "#" },
     ],
   },
   {
     title: "Support",
     links: [
-      { label: "Help centre", href: "#" },
-      { label: "Contact us", href: "#" },
-      { label: "Travel responsibly", href: "#why" },
+      { label: "Help centre", href: "/contact" },
+      { label: "Contact us", href: "/contact" },
+      { label: "Travel responsibly", href: "/commitment" },
       { label: "Status", href: "#" },
     ],
   },
@@ -84,7 +84,7 @@ export function SiteFooter() {
           {/* Brand story */}
           <div className="lg:col-span-5">
             <a
-              href="#"
+              href="/"
               className="font-display text-2xl tracking-tight text-white"
               aria-label="Wayheld home"
             >

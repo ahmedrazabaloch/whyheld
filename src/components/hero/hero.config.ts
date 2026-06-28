@@ -44,7 +44,7 @@ export const SHOWCASE: ShowcaseDestination[] = [
     tags: ["9 Days", "Slow Travel", "Local Hosts", "Heritage Route"],
     caption:
       "Tea houses, moss gardens and the discipline of stillness — walked, not rushed.",
-    image: "/images/kyoto.jpg",
+    image: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=1200",
     alt: "Cinematic golden hour shot of Yasaka Pagoda in Kyoto",
     atmosphere: {
       primary: "rgba(116, 135, 107, 0.20)",
@@ -68,7 +68,7 @@ export const SHOWCASE: ShowcaseDestination[] = [
     tags: ["6 Days", "Luxury Lakeside", "Private Boat", "Curated Journey"],
     caption:
       "Lakeside villas, quiet shores, and passenger ferries set to the speed of the water.",
-    image: "/images/journey-fife.jpg",
+    image: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&q=80&w=1200",
     alt: "Luxury lakeside villa on Lake Como at sunset",
     atmosphere: {
       primary: "rgba(116, 135, 107, 0.18)",
@@ -92,7 +92,7 @@ export const SHOWCASE: ShowcaseDestination[] = [
     tags: ["7 Days", "Cinematic Skies", "Cave Suites", "Sunrise Trails"],
     caption:
       "Wind-sculpted stone canyons, cave dwellings, and quiet hot air balloon trails at dawn.",
-    image: "/images/journey-crail.jpg",
+    image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=1200",
     alt: "Close-up cinematic shot of hot air balloons at sunrise in Cappadocia",
     atmosphere: {
       primary: "rgba(116, 135, 107, 0.15)",
@@ -116,7 +116,7 @@ export const SHOWCASE: ShowcaseDestination[] = [
     tags: ["5 Days", "Slow Food", "Vineyard Stay", "Private Chef"],
     caption:
       "Rolling hills, centuries-old olive groves, and long dinners set under the vineyard stars.",
-    image: "/images/journey-scotland.jpg",
+    image: "https://images.unsplash.com/photo-1490682143684-14369e18dce8?auto=format&fit=crop&q=80&w=1200",
     alt: "Tuscany vineyard dinner scene at dusk",
     atmosphere: {
       primary: "rgba(116, 135, 107, 0.18)",
@@ -140,7 +140,7 @@ export const SHOWCASE: ShowcaseDestination[] = [
     tags: ["8 Days", "Rail Journey", "Eco-Travel", "Mountain Chalets"],
     caption:
       "Deep valleys, seventy-two waterfalls, and the quiet creak of mountain railways.",
-    image: "/images/swiss-alps.jpg",
+    image: "https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&q=80&w=1200",
     alt: "Swiss alpine rail journey through snow-capped mountains",
     atmosphere: {
       primary: "rgba(116, 135, 107, 0.22)",

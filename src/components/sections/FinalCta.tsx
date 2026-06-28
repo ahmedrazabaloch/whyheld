@@ -14,18 +14,31 @@ import { buttonStyles, EASE_EXPO } from "@/lib/design";
  *  - "Go slower. See further."
  *  - "The places remember how you arrive."
  */
-const CTA_HEADLINE = {
+const DEFAULT_HEADLINE = {
   lead: "Travel deeper.",
   accent: "Leave lighter",
   tail: ".",
 };
 
-const CTA_SUB =
+const DEFAULT_SUB =
   "Begin a journey built around meaning, not mileage — and let the world reveal itself at the pace it was meant to.";
 
-const WORDS = [...CTA_HEADLINE.lead.split(" "), "__ACCENT__"];
+export interface FinalCtaProps {
+  headlineLead?: string;
+  headlineAccent?: string;
+  headlineTail?: string;
+  subtitle?: string;
+  buttonText?: string;
+}
 
-export function FinalCta() {
+export function FinalCta({
+  headlineLead = DEFAULT_HEADLINE.lead,
+  headlineAccent = DEFAULT_HEADLINE.accent,
+  headlineTail = DEFAULT_HEADLINE.tail,
+  subtitle = DEFAULT_SUB,
+  buttonText = "Begin Your Journey",
+}: FinalCtaProps) {
+  const words = [...headlineLead.split(" "), "__ACCENT__"];
   return (
     <section
       id="start"
@@ -60,7 +73,7 @@ export function FinalCta() {
             transition={{ staggerChildren: 0.12 }}
             className="inline"
           >
-            {WORDS.map((word, i) => (
+            {words.map((word, i) => (
               <span key={i} className="inline-block overflow-hidden pb-[0.1em] align-bottom">
                 <motion.span
                   variants={{
@@ -69,8 +82,8 @@ export function FinalCta() {
                   }}
                   className={`inline-block ${word === "__ACCENT__" ? "italic text-[#D8D2C8]" : ""}`}
                 >
-                  {word === "__ACCENT__" ? CTA_HEADLINE.accent : word}
-                  {word === "__ACCENT__" ? CTA_HEADLINE.tail : "\u00A0"}
+                  {word === "__ACCENT__" ? headlineAccent : word}
+                  {word === "__ACCENT__" ? headlineTail : "\u00A0"}
                 </motion.span>
               </span>
             ))}
@@ -84,7 +97,7 @@ export function FinalCta() {
           transition={{ duration: 0.8, ease: EASE_EXPO, delay: 0.3 }}
           className="mx-auto mt-7 max-w-xl text-base leading-relaxed text-[rgba(244,239,230,0.88)] sm:text-lg"
         >
-          {CTA_SUB}
+          {subtitle}
         </motion.p>
 
         <motion.div
@@ -95,7 +108,7 @@ export function FinalCta() {
           className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
         >
           <a href="/login" className={`${buttonStyles.primary} h-14 px-8 text-sm`}>
-            Begin Your Journey
+            {buttonText}
             <svg
               aria-hidden
               viewBox="0 0 20 20"
