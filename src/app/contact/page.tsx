@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     siteName: "Wayheld",
     images: [
       {
-        url: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=1200",
+        url: "/images/contact/contact-og.webp",
         width: 1200,
         height: 630,
         alt: "Wayheld Contact",
@@ -30,7 +30,7 @@ export default function ContactPage() {
         <PageHero
           title="Contact Us"
           subtitle="Whether you have a question about our journeys, want to partner with us, or just want to say hello, we are here."
-          image="https://images.unsplash.com/photo-1490682143684-14369e18dce8?auto=format&fit=crop&q=80&w=2000"
+          image="/images/contact/contact-hero.webp"
           alt="Vintage writing desk overlooking a garden"
           kicker="Reach Out"
         />

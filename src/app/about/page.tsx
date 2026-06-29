@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     siteName: "Wayheld",
     images: [
       {
-        url: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=1200",
+        url: "/images/about/about-og.webp",
         width: 1200,
         height: 630,
         alt: "Wayheld About Cover",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "About Wayheld — Our Philosophy",
     description: "Wayheld is a slow travel companion designed for intentional, regenerative journeys.",
-    images: ["https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=1200"],
+    images: ["/images/about/about-og.webp"],
   },
 };
 
@@ -33,20 +33,20 @@ const GUIDING_PRINCIPLES = [
   {
     title: "Travel Slowly",
     description: "Take time to truly experience each destination, allowing for spontaneous discoveries and meaningful connections. We believe the rush of checking boxes is the enemy of travel.",
-    image: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&q=80&w=800",
+    image: "/images/about/about-feature-1.webp",
     alt: "Quiet misty forest trail",
   },
   {
     title: "Honor Heritage",
     description: "Appreciate the history and culture of every place, understanding the stories that shaped each destination. We center the voices of the people who live there.",
-    image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=800",
+    image: "/images/about/about-feature-2.webp",
     alt: "Artisan working on traditional pottery",
     reverse: true,
   },
   {
     title: "Discover Beyond",
     description: "Venture beyond common tourist routes to find authentic experiences and hidden cultural gems. It’s the quiet cafes and narrow alleys that leave the longest impression.",
-    image: "https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&q=80&w=800",
+    image: "/images/about/about-feature-3.webp",
     alt: "Small cobblestone village street",
   },
 ];
@@ -58,7 +58,7 @@ export default function AboutPage() {
         <PageHero
           title="About Wayheld"
           subtitle="Wayheld means to be held by a place, to slow down enough that somewhere can actually change you. That’s what we’ve always believed travel could be."
-          image="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2000"
+          image="/images/about/about-hero.webp"
           alt="Majestic quiet mountain valley"
           kicker="Our Story"
         />

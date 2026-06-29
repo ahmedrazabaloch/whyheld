@@ -39,7 +39,7 @@ export const JOURNEYS: Journey[] = [
     summary:
       "Harbour mornings and empty cliffs, where the North Sea light belongs only to you.",
     highlights: ["Coastal heritage", "Low footfall", "Rail-reachable"],
-    image: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=1200",
+    image: "/images/journeys/journey-1.webp",
     alt: "Rugged cliffs meeting the North Sea on the east coast of Scotland",
   },
   {
@@ -51,7 +51,7 @@ export const JOURNEYS: Journey[] = [
     summary:
       "Cedar forests, tea houses and temple paths walked at the pace of breath.",
     highlights: ["Heritage-rich", "Walkable", "Crowd-free corners"],
-    image: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&q=80&w=1200",
+    image: "/images/journeys/journey-2.webp",
     alt: "Misty temple pathway lined with maple trees in Kyoto",
   },
   {
@@ -63,7 +63,7 @@ export const JOURNEYS: Journey[] = [
     summary:
       "Hanging glaciers, marble caves and the deep quiet that only long stays reveal.",
     highlights: ["Long stays", "Regenerative lodges", "Local guides"],
-    image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=1200",
+    image: "/images/journeys/journey-3.webp",
     alt: "Granite peaks reflected in a still lake in Patagonia",
   },
   {
@@ -75,7 +75,7 @@ export const JOURNEYS: Journey[] = [
     summary:
       "Dawn paddles through narrow canals and kitchens that open their doors to you.",
     highlights: ["Community homestays", "Slow mornings", "Plastic-free"],
-    image: "https://images.unsplash.com/photo-1494548162494-384bba4ab999?auto=format&fit=crop&q=80&w=1200",
+    image: "/images/journeys/journey-4.webp",
     alt: "Traditional houseboat gliding through the Kerala backwaters at dusk",
   },
 ];

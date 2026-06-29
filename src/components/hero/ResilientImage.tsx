@@ -78,11 +78,11 @@ export function ResilientImage({
   }
 
   return (
-    <div className={`relative overflow-hidden bg-brand-border/30 ${rest.fill ? "absolute inset-0 w-full h-full" : ""} ${className ?? ""}`}>
+    <div className={`relative overflow-hidden bg-[#74876B] ${rest.fill ? "absolute inset-0 w-full h-full" : ""} ${className ?? ""}`}>
       <Image
         src={sources[sourceIndex]}
         alt={alt}
-        className={`transition-opacity duration-700 ease-in-out ${isLoaded ? "opacity-100" : "opacity-0"} ${rest.fill ? "object-cover" : ""}`}
+        className={`transition-opacity duration-300 ease-in-out ${isLoaded ? "opacity-100" : "opacity-0"} ${rest.fill ? "object-cover" : ""}`}
         onError={handleError}
         onLoad={handleLoad}
         {...rest}

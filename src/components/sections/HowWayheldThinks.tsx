@@ -1,6 +1,11 @@
 "use client";
 
-import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "motion/react";
 import { useRef } from "react";
 import Image from "next/image";
 import { Section } from "@/components/ui";
@@ -49,7 +54,124 @@ function VoiceMark({ voice }: { voice: ThinkingStage["voice"] }) {
   }
 }
 
-function Stage({ stage, index }: { stage: ThinkingStage; index: number }) {
+/** 
+ * Exact copy of the original premium collage layout, extracted into a reusable component.
+ * It strictly maintains the same overlapping images, quote cards, shadows, and spacing.
+ */
+function EditorialCollage({
+  mainImg,
+  mainTag,
+  mainTitle,
+  subImg,
+  subTag,
+  subTitle,
+  quote,
+  author,
+  detail
+}: {
+  mainImg: string;
+  mainTag: string;
+  mainTitle: string;
+  subImg: string;
+  subTag: string;
+  subTitle: string;
+  quote: string;
+  author: string;
+  detail: string;
+}) {
+  return (
+    <div className="relative h-[550px] w-full lg:h-[680px]">
+      {/* Main large image */}
+      <div className="absolute right-0 top-0 h-[360px] w-[90%] overflow-hidden rounded-[2rem] shadow-[0_30px_60px_-15px_rgba(51,51,47,0.3)] lg:h-[460px] lg:w-[85%] lg:rounded-[2.5rem]">
+        <Image
+          src={mainImg}
+          alt={mainTitle}
+          fill
+          sizes="(max-width: 1024px) 90vw, 55vw"
+          className="object-cover transition-transform duration-[2s] hover:scale-105"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+        <div className="absolute bottom-6 left-6 text-[#F4EFE6] lg:bottom-8 lg:left-8">
+          <span className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#A8A69D] lg:text-[0.65rem]">
+            {mainTag}
+          </span>
+          <h4 className="mt-1 font-display text-xl lg:mt-2 lg:text-2xl">{mainTitle}</h4>
+        </div>
+      </div>
+
+      {/* Overlapping secondary image */}
+      <div className="absolute left-0 top-[220px] z-10 h-[280px] w-[55%] overflow-hidden rounded-3xl shadow-[0_20px_40px_-10px_rgba(51,51,47,0.2)] lg:top-[300px] lg:h-[360px] lg:w-[50%]">
+        <Image
+          src={subImg}
+          alt={subTitle}
+          fill
+          sizes="(max-width: 1024px) 50vw, 30vw"
+          className="object-cover transition-transform duration-[2s] hover:scale-105"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+        <div className="absolute bottom-5 left-5 text-[#F4EFE6] lg:bottom-6 lg:left-6">
+          <span className="text-[0.5rem] font-bold uppercase tracking-[0.16em] text-[#A8A69D] lg:text-[0.55rem]">
+            {subTag}
+          </span>
+          <p className="mt-1 text-xs font-medium lg:text-sm">{subTitle}</p>
+        </div>
+      </div>
+
+      {/* Floating Quote Box */}
+      <div className="absolute bottom-0 right-0 z-20 w-[85%] rounded-3xl border border-[#D8D2C8] bg-white/95 p-6 shadow-2xl backdrop-blur-xl lg:bottom-8 lg:right-6 lg:w-[48%] lg:bg-white/90 lg:p-8">
+        <blockquote className="font-display text-base italic leading-relaxed text-[#33332F] lg:text-lg">
+          “{quote}”
+        </blockquote>
+        <div className="mt-4 flex items-center gap-3 lg:mt-6 lg:gap-4">
+          <span className="h-px w-6 bg-[#74876B] lg:w-8" />
+          <p className="text-[0.6rem] font-bold uppercase tracking-widest text-[#74876B] lg:text-[0.65rem]">
+            {author}
+          </p>
+        </div>
+        <p className="mt-4 text-xs leading-relaxed text-[#504F4A] lg:mt-5">
+          {detail}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+const COLLAGES = [
+  <EditorialCollage 
+    key="0"
+    mainImg="/images/how-wayheld-thinks/how-main.webp"
+    mainTag="Cairngorms"
+    mainTitle="Hidden valleys"
+    subImg="/images/how-wayheld-thinks/how-wayheld-1.webp"
+    subTag="Ancient pine"
+    subTitle="Deep forests"
+    quote="The eastern valleys are entirely overlooked by standard routing algorithms."
+    author="Wayheld AI"
+    detail="Millions of data points cross-referenced to find the exact atmospheric match for your pace."
+  />,
+  <EditorialCollage 
+    key="1"
+    mainImg="/images/how-wayheld-thinks/how-wayheld-2.webp"
+    mainTag="Fife Coastline"
+    mainTitle="Harbour cafés"
+    subImg="/images/how-wayheld-thinks/how-sub.webp"
+    subTag="Local craft"
+    subTitle="Quiet mornings"
+    quote="The fishing villages of Fife are quiet, and the harbour cafés keep their own hours."
+    author="Local Guide"
+    detail="Wayheld designs around context, routing you past St Monans and Crail for heritage stays."
+  />
+];
+
+function Stage({ 
+  stage, 
+  index,
+  visual
+}: { 
+  stage: ThinkingStage; 
+  index: number; 
+  visual?: React.ReactNode;
+}) {
   const isWayheld = stage.voice === "wayheld";
   const accent = isWayheld || stage.voice === "route";
 
@@ -72,7 +194,7 @@ function Stage({ stage, index }: { stage: ThinkingStage; index: number }) {
         <VoiceMark voice={stage.voice} />
       </span>
 
-      <div className="pb-14 sm:pb-16">
+      <div className="pb-12 sm:pb-16 lg:pb-32">
         <p
           className={`text-[0.7rem] font-medium uppercase tracking-[0.22em] ${
             accent ? "text-brand-btn-primary" : "text-brand-text-secondary"
@@ -108,14 +230,21 @@ function Stage({ stage, index }: { stage: ThinkingStage; index: number }) {
           </ul>
         )}
       </div>
+
+      {/* Mobile Visual Flow (Interspersed) */}
+      {visual && (
+        <div className="block w-full pb-16 lg:hidden">
+          {visual}
+        </div>
+      )}
     </motion.li>
   );
 }
 
 /**
  * "How Wayheld Thinks" — a scroll-driven narrative proving Wayheld reasons
- * rather than chats. A vertical spine connects four beats of thought, with a
- * progress line that draws itself as the reader scrolls.
+ * rather than chats. Uses a natural scrolling column of repeated editorial
+ * collages to eliminate whitespace and maintain exactly the same premium design language.
  */
 export function HowWayheldThinks() {
   const reduceMotion = useReducedMotion();
@@ -128,12 +257,7 @@ export function HowWayheldThinks() {
   const lineScale = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   return (
-    <Section
-      id="how"
-      labelledBy="how-heading"
-
-    >
-      <>
+    <Section id="how" labelledBy="how-heading">
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12">
         {/* Left Column: Title + Intro + Reasoning spine */}
         <div className="lg:col-span-5">
@@ -168,77 +292,47 @@ export function HowWayheldThinks() {
             <motion.span
               aria-hidden
               style={{ scaleY: reduceMotion ? 1 : lineScale }}
-              className="absolute bottom-0 left-3 top-1.5 w-px origin-top bg-linear-to-b from-[#74876B] via-[#74876B]/60 to-transparent sm:left-4"
+              className="absolute bottom-0 left-3 top-1.5 w-px origin-top bg-gradient-to-b from-[#74876B] via-[#74876B]/60 to-transparent sm:left-4"
             />
 
             <ol className="relative">
-              {THINKING_STAGES.map((stage, index) => (
-                <Stage key={stage.label} stage={stage} index={index} />
-              ))}
+              {THINKING_STAGES.map((stage, index) => {
+                let visual = null;
+                // Intersperse visual 0 after stage 1, and visual 1 after stage 3
+                if (index === 1) visual = COLLAGES[0];
+                if (index === 3) visual = COLLAGES[1];
+
+                return (
+                  <Stage 
+                    key={stage.label} 
+                    stage={stage} 
+                    index={index} 
+                    visual={visual}
+                  />
+                );
+              })}
             </ol>
           </div>
         </div>
 
-        {/* Right Column: Premium Editorial Travel Imagery (Sticky collage) */}
-        <div className="hidden lg:col-span-7 lg:block">
-          <div className="sticky top-32 pl-8">
-            <div className="relative h-[680px] w-full">
-              {/* Main large image */}
-              <div className="absolute top-0 right-0 h-[460px] w-[85%] overflow-hidden rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(51,51,47,0.3)]">
-                <Image
-                  src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=1200"
-                  alt="Misty cliffs and castle ruins in St Andrews, Scotland"
-                  fill
-                  sizes="55vw"
-                  className="object-cover transition-transform duration-[2s] hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent pointer-events-none" />
-                <div className="absolute bottom-8 left-8 text-[#F4EFE6]">
-                  <span className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-[#A8A69D]">
-                    Aberdeenshire cliffs
-                  </span>
-                  <h4 className="mt-2 font-display text-2xl">The end of the Neuk path</h4>
-                </div>
-              </div>
-
-              {/* Overlapping secondary image */}
-              <div className="absolute top-[300px] left-0 z-10 h-[360px] w-[50%] overflow-hidden rounded-3xl shadow-[0_20px_40px_-10px_rgba(51,51,47,0.2)]">
-                <Image
-                  src="https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&q=80&w=800"
-                  alt="Historic quiet harbour in Fife, Scotland"
-                  fill
-                  sizes="30vw"
-                  className="object-cover transition-transform duration-[2s] hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
-                <div className="absolute bottom-6 left-6 text-[#F4EFE6]">
-                  <span className="text-[0.55rem] font-bold uppercase tracking-[0.16em] text-[#A8A69D]">
-                    Fife coastline
-                  </span>
-                  <p className="mt-1 text-sm font-medium">Fishing villages</p>
-                </div>
-              </div>
-
-              {/* Floating Quote Box */}
-              <div className="absolute bottom-8 right-6 z-20 w-[48%] rounded-3xl border border-[#D8D2C8] bg-white/90 p-8 shadow-2xl backdrop-blur-xl">
-                <blockquote className="font-display text-lg italic leading-relaxed text-[#33332F]">
-                  “The fishing villages of Fife are quiet, and the harbour cafés keep their own hours.”
-                </blockquote>
-                <div className="mt-6 flex items-center gap-4">
-                  <span className="h-px w-8 bg-[#74876B]" />
-                  <p className="text-[0.65rem] font-bold uppercase tracking-widest text-[#74876B]">
-                    Local Guide
-                  </p>
-                </div>
-                <p className="mt-5 text-xs leading-relaxed text-[#504F4A]">
-                  Wayheld designs around context, routing you past St Monans and Crail for heritage stays and local stories.
-                </p>
-              </div>
-            </div>
+        {/* Right Column: Long Editorial Visual Cascade (Natural Scroll) */}
+        <div className="hidden lg:block lg:col-span-7">
+          {/* Matches the top offset of the spineRef (mt-8 lg:mt-10) to perfectly align visually */}
+          <div className="flex flex-col gap-[200px] pl-8 mt-8 lg:mt-10">
+            {COLLAGES.map((collage, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.85, ease: EASE_EXPO }}
+              >
+                {collage}
+              </motion.div>
+            ))}
           </div>
         </div>
       </div>
-    </>
     </Section>
   );
 }

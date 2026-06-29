@@ -15,7 +15,7 @@ interface PageHeroProps {
 
 export function PageHero({ title, subtitle, image, alt, kicker }: PageHeroProps) {
   return (
-    <section className="relative isolate flex h-[80vh] min-h-[600px] w-full flex-col overflow-hidden bg-brand-bg">
+    <section className="relative isolate flex h-[80vh] min-h-[600px] w-full flex-col overflow-hidden bg-[#74876B]">
       <div className="absolute inset-0 z-0">
         <ResilientImage
           src={image}

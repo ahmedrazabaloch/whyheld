@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     siteName: "Wayheld",
     images: [
       {
-        url: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=1200",
+        url: "/images/commitment/commitment-og.webp",
         width: 1200,
         height: 630,
         alt: "Wayheld Commitment",
@@ -27,20 +27,20 @@ const COMMITMENTS = [
   {
     title: "The Art of Slow Travel",
     description: "Speed destroys the subtle textures of experience. When we rush through places, we miss the quiet conversations, the hidden pathways, and the gentle rhythms that define a destination's true character. Slow travel is not about taking more time, it's about being present to the time you have.",
-    image: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=800",
+    image: "/images/commitment/commitment-feature-1.webp",
     alt: "Traveler standing overlooking a vast misty mountain range",
   },
   {
     title: "Honoring Cultural Heritage",
     description: "Every destination carries the weight of history, the wisdom of traditions, and the hopes of its people. Respectful travel means approaching these places as a gracious guest, not a consumer of someone else's heritage. At Wayheld, that responsibility runs through every decision we make.",
-    image: "https://images.unsplash.com/photo-1494548162494-384bba4ab999?auto=format&fit=crop&q=80&w=800",
+    image: "/images/commitment/commitment-feature-2.webp",
     alt: "Local market in an old town",
     reverse: true,
   },
   {
     title: "Discovering Meaningful Routes",
     description: "The path between destinations can be as transformative as the destinations themselves. We believe in routes that reveal a landscape's character, connect communities, and tell stories through geography. These are not the fastest routes, they are the most honest ones.",
-    image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=800",
+    image: "/images/commitment/commitment-feature-3.webp",
     alt: "Small village nestled in green hills",
   },
 ];
@@ -52,7 +52,7 @@ export default function CommitmentPage() {
         <PageHero
           title="Commitment"
           subtitle="We encourage travelers to move through places with care, curiosity, and cultural respect. These are standards we share."
-          image="https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&q=80&w=2000"
+          image="/images/commitment/commitment-hero.webp"
           alt="Mist rolling over a dense green forest"
           kicker="Our Promise"
         />

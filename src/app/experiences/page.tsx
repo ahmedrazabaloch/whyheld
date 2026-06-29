@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     siteName: "Wayheld",
     images: [
       {
-        url: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&q=80&w=1200",
+        url: "/images/experiences/experiences-og.webp",
         width: 1200,
         height: 630,
         alt: "Wayheld Experiences",
@@ -27,20 +27,20 @@ const EXPERIENCES = [
   {
     title: "Cultural Immersion",
     description: "Step beyond tourist attractions and engage with local communities, traditions, and ways of life. Our cultural experiences connect you with artisans, storytellers, and locals who share their heritage and perspectives.",
-    image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=800",
+    image: "/images/experiences/experiences-feature-1.webp",
     alt: "Artisan working in a traditional workshop",
   },
   {
     title: "Historical Discovery",
     description: "Uncover the layers of history that shape destinations today. Our historical experiences go beyond guidebook facts to reveal the human stories, conflicts, and triumphs that have shaped places over time. Walk ancient paths with local historians.",
-    image: "https://images.unsplash.com/photo-1490682143684-14369e18dce8?auto=format&fit=crop&q=80&w=800",
+    image: "/images/experiences/experiences-feature-2.webp",
     alt: "Ancient stone pathway in a remote village",
     reverse: true,
   },
   {
     title: "Mindful Exploration",
     description: "Embrace slow travel that prioritizes depth over breadth. Our mindful exploration experiences encourage you to spend quality time in fewer places, allowing for genuine understanding and connection. Contemplative walks through landscapes and quiet reflection.",
-    image: "https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&q=80&w=800",
+    image: "/images/experiences/experiences-feature-3.webp",
     alt: "Solitary figure walking through a quiet misty valley",
   },
 ];
@@ -52,7 +52,7 @@ export default function ExperiencesPage() {
         <PageHero
           title="Experiences"
           subtitle="Discover meaningful travel experiences that foster deeper connections with places, culture, and history. Moving beyond surface-level tourism to create lasting memories."
-          image="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&q=80&w=2000"
+          image="/images/experiences/experiences-hero.webp"
           alt="Peaceful sunset over rolling hills"
           kicker="Journey Deeply"
         />

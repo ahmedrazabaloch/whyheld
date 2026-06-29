@@ -1,36 +1,515 @@
-// =============================================================================
-// Wayheld — Prisma schema (foundation / planning draft)
-// PostgreSQL · Prisma 7 · Next.js 15 · Stripe · Google Maps · Anthropic Claude
-//
-// This schema is the data foundation for the Wayheld slow-travel platform.
-// It is designed greenfield (NO Bubble migration) and optimised for:
-//   - A web app today and a native mobile app later (stable API surface)
-//   - Stripe billing (plans, subscriptions, a credit ledger)
-//   - Google Maps (geo coordinates + place references on every location)
-//   - Anthropic Claude (auditable generations + prompt logs)
-//
-// See DATA_ARCHITECTURE.md for the full narrative, ERD and rationale.
-// =============================================================================
-
 generator client {
   provider = "prisma-client-js"
 }
 
-// Prisma 6: connection URLs live in .env and are referenced here.
-// DATABASE_URL for the app; DIRECT_DATABASE_URL for migrations (optional).
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_DATABASE_URL")
 }
 
-// =============================================================================
-// ENUMS
-// =============================================================================
+model User {
+  id              String                      @id @default(cuid())
+  email           String                      @unique
+  emailVerified   DateTime?
+  passwordHash    String?
+  role            UserRole                    @default(USER)
+  status          UserStatus                  @default(ACTIVE)
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
+  deletedAt       DateTime?
+  accounts        Account[]
+  aiGenerations   AiGeneration[]
+  aiPromptLogs    AiPromptLog[]
+  creditTxns      CreditTransaction[]
+  creditWallet    CreditWallet?
+  recommendations DestinationRecommendation[]
+  journeys        Journey[]
+  notifications   Notification[]
+  profile         Profile?
+  savedJourneys   SavedJourney[]
+  savedPlaces     SavedPlace[]
+  sessions        Session[]
+  subscriptions   Subscription[]
+  activities      UserActivity[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("users")
+}
+
+/// OAuth/credentials provider links (NextAuth shape).
+model Account {
+  id                String       @id @default(cuid())
+  userId            String
+  provider          AuthProvider
+  providerAccountId String
+  type              String
+  refreshToken      String?
+  accessToken       String?
+  expiresAt         Int?
+  tokenType         String?
+  scope             String?
+  idToken           String?
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+/// Server sessions (also reused to back mobile refresh sessions later).
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  userAgent    String?
+  ipAddress    String?
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Profile {
+  id                    String               @id @default(cuid())
+  userId                String               @unique
+  firstName             String?
+  lastName              String?
+  avatarUrl             String?
+  bio                   String?
+  homeCity              String?
+  homeCountry           String?
+  locale                String               @default("en")
+  timezone              String?
+  onboardingCompletedAt DateTime?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  interests             ProfileInterest[]
+  styles                ProfileTravelStyle[]
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  preferences           TravelPreference?
+
+  @@map("profiles")
+}
+
+/// Single-row preference config per profile (1:1). Scalar + JSON mix keeps
+/// common queries indexable while allowing flexible extension.
+model TravelPreference {
+  id                   String              @id @default(cuid())
+  profileId            String              @unique
+  pace                 TravelPace          @default(SLOW_UNHURRIED)
+  transport            TransportPreference @default(RAIL_FIRST)
+  budget               BudgetTier          @default(COMFORTABLE)
+  units                MeasurementSystem   @default(METRIC)
+  avoidCrowds          Boolean             @default(true)
+  regenerativeOnly     Boolean             @default(false)
+  localGuides          Boolean             @default(true)
+  smallScale           Boolean             @default(true)
+  lowWaste             Boolean             @default(false)
+  maxTravelHoursPerDay Int?
+  preferredTripLength  Int?
+  extras               Json?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  profile              Profile             @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("travel_preferences")
+}
+
+/// Catalog of travel styles (seeded). Stable `slug` is the API contract.
+model TravelStyle {
+  id          String               @id @default(cuid())
+  slug        String               @unique
+  name        String
+  description String?
+  glyph       String?
+  sortOrder   Int                  @default(0)
+  isActive    Boolean              @default(true)
+  profiles    ProfileTravelStyle[]
+
+  @@map("travel_styles")
+}
+
+/// Catalog of interests (seeded).
+model Interest {
+  id        String            @id @default(cuid())
+  slug      String            @unique
+  name      String
+  glyph     String?
+  sortOrder Int               @default(0)
+  isActive  Boolean           @default(true)
+  profiles  ProfileInterest[]
+
+  @@map("interests")
+}
+
+/// Join: Profile <-> TravelStyle (explicit for future weighting metadata).
+model ProfileTravelStyle {
+  profileId String
+  styleId   String
+  weight    Int         @default(1)
+  createdAt DateTime    @default(now())
+  profile   Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  style     TravelStyle @relation(fields: [styleId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, styleId])
+  @@index([styleId])
+  @@map("profile_travel_styles")
+}
+
+/// Join: Profile <-> Interest.
+model ProfileInterest {
+  profileId  String
+  interestId String
+  weight     Int      @default(1)
+  createdAt  DateTime @default(now())
+  interest   Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
+  profile    Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@id([profileId, interestId])
+  @@index([interestId])
+  @@map("profile_interests")
+}
+
+/// Catalog of purchasable plans. Pricing/identifiers reference Stripe so the
+/// app never hardcodes money — Stripe remains the source of truth for price.
+model MembershipPlan {
+  id               String          @id @default(cuid())
+  tier             PlanTier
+  name             String
+  description      String?
+  interval         BillingInterval @default(MONTH)
+  stripeProductId  String?         @unique
+  stripePriceId    String?         @unique
+  priceAmount      Int?
+  priceCurrency    String          @default("usd")
+  monthlyCredits   Int             @default(0)
+  unlimitedCredits Boolean         @default(false)
+  features         Json?
+  isActive         Boolean         @default(true)
+  sortOrder        Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  subscriptions    Subscription[]
+
+  @@index([tier])
+  @@map("membership_plans")
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String
+  planId               String
+  status               SubscriptionStatus @default(INCOMPLETE)
+  stripeCustomerId     String?
+  stripeSubscriptionId String?            @unique
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  canceledAt           DateTime?
+  trialEndsAt          DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  plan                 MembershipPlan     @relation(fields: [planId], references: [id])
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([stripeCustomerId])
+  @@map("subscriptions")
+}
+
+/// One wallet per user; running `balance` is a denormalised cache validated by
+/// the immutable CreditTransaction ledger.
+model CreditWallet {
+  id               String              @id @default(cuid())
+  userId           String              @unique
+  balance          Int                 @default(0)
+  lifetimeGranted  Int                 @default(0)
+  lifetimeConsumed Int                 @default(0)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  transactions     CreditTransaction[]
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("credit_wallets")
+}
+
+/// Append-only ledger. Never mutate rows; corrections are new ADJUSTMENT rows.
+model CreditTransaction {
+  id             String                @id @default(cuid())
+  walletId       String
+  userId         String
+  type           CreditTransactionType
+  amount         Int
+  balanceAfter   Int
+  reason         String?
+  journeyId      String?
+  aiGenerationId String?
+  externalRef    String?               @unique
+  expiresAt      DateTime?
+  createdAt      DateTime              @default(now())
+  aiGeneration   AiGeneration?         @relation(fields: [aiGenerationId], references: [id])
+  journey        Journey?              @relation(fields: [journeyId], references: [id])
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet         CreditWallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, createdAt])
+  @@index([userId, createdAt])
+  @@index([type])
+  @@map("credit_transactions")
+}
+
+model Journey {
+  id             String              @id @default(cuid())
+  userId         String
+  title          String
+  summary        String?
+  status         JourneyStatus       @default(DRAFT)
+  originQuery    String?
+  primaryCountry String?
+  region         String?
+  pace           TravelPace?
+  startDate      DateTime?
+  endDate        DateTime?
+  durationDays   Int?
+  travelerCount  Int                 @default(1)
+  budget         BudgetTier?
+  heroImageUrl   String?
+  metadata       Json?
+  boundingBox    Json?
+  version        Int                 @default(1)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  deletedAt      DateTime?
+  generations    AiGeneration[]
+  creditTxns     CreditTransaction[]
+  refinements    JourneyRefinement[]
+  stops          JourneyStop[]
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  savedBy        SavedJourney[]
+
+  @@index([userId, status])
+  @@index([status])
+  @@index([createdAt])
+  @@map("journeys")
+}
+
+/// An ordered stop within a journey. Carries geo + Google Place reference.
+model JourneyStop {
+  id            String   @id @default(cuid())
+  journeyId     String
+  order         Int
+  kind          StopKind @default(CITY)
+  name          String
+  description   String?
+  nights        Int?
+  dayStart      Int?
+  dayEnd        Int?
+  googlePlaceId String?
+  latitude      Float?
+  longitude     Float?
+  address       String?
+  imageUrl      String?
+  highlights    String[]
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  journey       Journey  @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
+  @@unique([journeyId, order])
+  @@index([journeyId])
+  @@index([googlePlaceId])
+  @@map("journey_stops")
+}
+
+/// Each refinement is an immutable record of a change request + its result,
+/// preserving the journey's evolution and giving Claude conversational memory.
+model JourneyRefinement {
+  id             String         @id @default(cuid())
+  journeyId      String
+  type           RefinementType
+  instruction    String?
+  params         Json?
+  fromVersion    Int?
+  toVersion      Int?
+  aiGenerationId String?
+  createdAt      DateTime       @default(now())
+  aiGeneration   AiGeneration?  @relation(fields: [aiGenerationId], references: [id])
+  journey        Journey        @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
+  @@index([journeyId, createdAt])
+  @@map("journey_refinements")
+}
+
+/// A place a user bookmarked (destination/stay/experience). Geo-aware.
+model SavedPlace {
+  id            String         @id @default(cuid())
+  userId        String
+  kind          SavedPlaceKind @default(DESTINATION)
+  name          String
+  note          String?
+  googlePlaceId String?
+  latitude      Float?
+  longitude     Float?
+  country       String?
+  imageUrl      String?
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, googlePlaceId])
+  @@index([userId, createdAt])
+  @@map("saved_places")
+}
+
+/// A user's bookmark of a journey (their own or, later, a shared one).
+model SavedJourney {
+  id        String   @id @default(cuid())
+  userId    String
+  journeyId String
+  note      String?
+  createdAt DateTime @default(now())
+  journey   Journey  @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, journeyId])
+  @@index([userId, createdAt])
+  @@map("saved_journeys")
+}
+
+/// AI/editorial destination suggestions surfaced to a user.
+model DestinationRecommendation {
+  id             String               @id @default(cuid())
+  userId         String
+  source         RecommendationSource @default(CLAUDE)
+  status         RecommendationStatus @default(SUGGESTED)
+  title          String
+  reason         String?
+  region         String?
+  country        String?
+  googlePlaceId  String?
+  latitude       Float?
+  longitude      Float?
+  imageUrl       String?
+  score          Float?
+  aiGenerationId String?
+  metadata       Json?
+  createdAt      DateTime             @default(now())
+  expiresAt      DateTime?
+  aiGeneration   AiGeneration?        @relation(fields: [aiGenerationId], references: [id])
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([userId, score])
+  @@map("destination_recommendations")
+}
+
+/// A single Claude generation request/response. The user-facing, structured
+/// record of AI work (cost, status, tokens, output). Raw prompt text lives in
+/// AiPromptLog to keep this table lean and queryable.
+model AiGeneration {
+  id              String                      @id @default(cuid())
+  userId          String
+  kind            AiGenerationKind
+  status          AiGenerationStatus          @default(QUEUED)
+  model           String
+  temperature     Float?
+  maxTokens       Int?
+  inputTokens     Int?
+  outputTokens    Int?
+  costMicroUsd    Int?
+  latencyMs       Int?
+  output          Json?
+  errorMessage    String?
+  journeyId       String?
+  createdAt       DateTime                    @default(now())
+  completedAt     DateTime?
+  journey         Journey?                    @relation(fields: [journeyId], references: [id])
+  user            User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promptLogs      AiPromptLog[]
+  creditTxns      CreditTransaction[]
+  recommendations DestinationRecommendation[]
+  refinements     JourneyRefinement[]
+
+  @@index([userId, createdAt])
+  @@index([kind, status])
+  @@map("ai_generations")
+}
+
+/// Raw prompt/response payloads per message turn. Separated for size, privacy
+/// controls, and selective retention/redaction.
+model AiPromptLog {
+  id           String       @id @default(cuid())
+  generationId String
+  userId       String
+  role         String
+  content      Json
+  sequence     Int          @default(0)
+  toolCalls    Json?
+  redactedAt   DateTime?
+  createdAt    DateTime     @default(now())
+  generation   AiGeneration @relation(fields: [generationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([generationId, sequence])
+  @@index([userId, createdAt])
+  @@map("ai_prompt_logs")
+}
+
+/// Append-only behavioural event log (product analytics + personalisation).
+model UserActivity {
+  id         String       @id @default(cuid())
+  userId     String
+  type       ActivityType
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  platform   String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime     @default(now())
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@map("user_activities")
+}
+
+model Notification {
+  id          String              @id @default(cuid())
+  userId      String
+  type        NotificationType
+  channel     NotificationChannel @default(IN_APP)
+  title       String
+  body        String?
+  actionUrl   String?
+  metadata    Json?
+  readAt      DateTime?
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  createdAt   DateTime            @default(now())
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
 
 enum UserRole {
   USER
-  CURATOR // internal: can curate destinations / journeys
+  CURATOR
   ADMIN
 }
 
@@ -75,8 +554,8 @@ enum MeasurementSystem {
 
 /// Catalog billing interval for a plan.
 enum BillingInterval {
-  NONE // free
-  ONE_TIME // pay-per-journey
+  NONE
+  ONE_TIME
   MONTH
   YEAR
 }
@@ -101,13 +580,13 @@ enum SubscriptionStatus {
 
 /// Direction/reason for a credit ledger entry.
 enum CreditTransactionType {
-  GRANT // subscription/plan grant
-  PURCHASE // bought à la carte
-  PROMO // promotional/bonus
-  CONSUMPTION // spent on a journey/generation
+  GRANT
+  PURCHASE
+  PROMO
+  CONSUMPTION
   REFUND
-  EXPIRATION // expired unused
-  ADJUSTMENT // manual admin correction
+  EXPIRATION
+  ADJUSTMENT
 }
 
 enum JourneyStatus {
@@ -155,7 +634,7 @@ enum SavedPlaceKind {
 
 enum RecommendationSource {
   CLAUDE
-  EDITORIAL // human-curated
+  EDITORIAL
   TRENDING
   SIMILAR_TRAVELERS
 }
@@ -215,651 +694,4 @@ enum ActivityType {
   SUBSCRIPTION_CHANGED
   CREDIT_SPENT
   RECOMMENDATION_CLICKED
-}
-
-// =============================================================================
-// IDENTITY & AUTH
-// (NextAuth-compatible Account/Session/VerificationToken for web + future
-//  mobile token exchange.)
-// =============================================================================
-
-model User {
-  id            String     @id @default(cuid())
-  email         String     @unique
-  emailVerified DateTime?
-  // Null when the user only uses OAuth.
-  passwordHash  String?
-  role          UserRole   @default(USER)
-  status        UserStatus @default(ACTIVE)
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  // Soft delete (GDPR-friendly: anonymise, keep referential history).
-  deletedAt DateTime?
-
-  // 1:1
-  profile      Profile?
-  creditWallet CreditWallet?
-
-  // 1:many
-  accounts        Account[]
-  sessions        Session[]
-  subscriptions   Subscription[]
-  creditTxns      CreditTransaction[]
-  journeys        Journey[]
-  savedPlaces     SavedPlace[]
-  savedJourneys   SavedJourney[]
-  recommendations DestinationRecommendation[]
-  aiGenerations   AiGeneration[]
-  aiPromptLogs    AiPromptLog[]
-  activities      UserActivity[]
-  notifications   Notification[]
-
-  @@index([status])
-  @@index([createdAt])
-  @@map("users")
-}
-
-/// OAuth/credentials provider links (NextAuth shape).
-model Account {
-  id                String       @id @default(cuid())
-  userId            String
-  provider          AuthProvider
-  providerAccountId String
-  type              String
-  refreshToken      String?      @db.Text
-  accessToken       String?      @db.Text
-  expiresAt         Int?
-  tokenType         String?
-  scope             String?
-  idToken           String?      @db.Text
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@index([userId])
-  @@map("accounts")
-}
-
-/// Server sessions (also reused to back mobile refresh sessions later).
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  // Optional device metadata for future mobile/session management.
-  userAgent    String?
-  ipAddress    String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("sessions")
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-  @@map("verification_tokens")
-}
-
-// =============================================================================
-// PROFILE & ONBOARDING PREFERENCES
-// =============================================================================
-
-model Profile {
-  id          String  @id @default(cuid())
-  userId      String  @unique
-  firstName   String?
-  lastName    String?
-  avatarUrl   String?
-  bio         String? @db.Text
-  // Home base for distance/feasibility heuristics.
-  homeCity    String?
-  homeCountry String? // ISO-3166 alpha-2
-  locale      String  @default("en")
-  timezone    String? // IANA, e.g. "Europe/London"
-
-  onboardingCompletedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  preferences TravelPreference?
-
-  // Many-to-many to catalog tables via explicit join models.
-  styles    ProfileTravelStyle[]
-  interests ProfileInterest[]
-
-  @@map("profiles")
-}
-
-/// Single-row preference config per profile (1:1). Scalar + JSON mix keeps
-/// common queries indexable while allowing flexible extension.
-model TravelPreference {
-  id        String @id @default(cuid())
-  profileId String @unique
-
-  pace      TravelPace          @default(SLOW_UNHURRIED)
-  transport TransportPreference @default(RAIL_FIRST)
-  budget    BudgetTier          @default(COMFORTABLE)
-  units     MeasurementSystem   @default(METRIC)
-
-  // Boolean toggles surfaced in onboarding Step 5.
-  avoidCrowds      Boolean @default(true)
-  regenerativeOnly Boolean @default(false)
-  localGuides      Boolean @default(true)
-  smallScale       Boolean @default(true)
-  lowWaste         Boolean @default(false)
-
-  // Soft constraints used by the planner.
-  maxTravelHoursPerDay Int?
-  preferredTripLength  Int? // days
-  // Free-form, model-readable extras (dietary, accessibility, languages…).
-  extras               Json?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-
-  @@map("travel_preferences")
-}
-
-/// Catalog of travel styles (seeded). Stable `slug` is the API contract.
-model TravelStyle {
-  id          String  @id @default(cuid())
-  slug        String  @unique // e.g. "cultural", "nature"
-  name        String
-  description String?
-  glyph       String?
-  sortOrder   Int     @default(0)
-  isActive    Boolean @default(true)
-
-  profiles ProfileTravelStyle[]
-
-  @@map("travel_styles")
-}
-
-/// Catalog of interests (seeded).
-model Interest {
-  id        String  @id @default(cuid())
-  slug      String  @unique // e.g. "architecture", "cuisine"
-  name      String
-  glyph     String?
-  sortOrder Int     @default(0)
-  isActive  Boolean @default(true)
-
-  profiles ProfileInterest[]
-
-  @@map("interests")
-}
-
-/// Join: Profile <-> TravelStyle (explicit for future weighting metadata).
-model ProfileTravelStyle {
-  profileId String
-  styleId   String
-  // Optional ranking when a user can express strength of preference.
-  weight    Int      @default(1)
-  createdAt DateTime @default(now())
-
-  profile Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  style   TravelStyle @relation(fields: [styleId], references: [id], onDelete: Cascade)
-
-  @@id([profileId, styleId])
-  @@index([styleId])
-  @@map("profile_travel_styles")
-}
-
-/// Join: Profile <-> Interest.
-model ProfileInterest {
-  profileId  String
-  interestId String
-  weight     Int      @default(1)
-  createdAt  DateTime @default(now())
-
-  profile  Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  interest Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
-
-  @@id([profileId, interestId])
-  @@index([interestId])
-  @@map("profile_interests")
-}
-
-// =============================================================================
-// BILLING — PLANS, SUBSCRIPTIONS, CREDITS (Stripe)
-// =============================================================================
-
-/// Catalog of purchasable plans. Pricing/identifiers reference Stripe so the
-/// app never hardcodes money — Stripe remains the source of truth for price.
-model MembershipPlan {
-  id          String          @id @default(cuid())
-  tier        PlanTier
-  name        String
-  description String?
-  interval    BillingInterval @default(MONTH)
-
-  // Stripe references (nullable for the free plan).
-  stripeProductId String? @unique
-  stripePriceId   String? @unique
-
-  // Cached display price (minor units, e.g. cents). Stripe is authoritative.
-  priceAmount   Int?
-  priceCurrency String @default("usd")
-
-  // Entitlements.
-  monthlyCredits   Int     @default(0)
-  unlimitedCredits Boolean @default(false)
-  features         Json? // structured feature flags for gating
-
-  isActive  Boolean  @default(true)
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  subscriptions Subscription[]
-
-  @@index([tier])
-  @@map("membership_plans")
-}
-
-model Subscription {
-  id     String @id @default(cuid())
-  userId String
-  planId String
-
-  status SubscriptionStatus @default(INCOMPLETE)
-
-  // Stripe references.
-  stripeCustomerId     String?
-  stripeSubscriptionId String? @unique
-
-  currentPeriodStart DateTime?
-  currentPeriodEnd   DateTime?
-  cancelAtPeriodEnd  Boolean   @default(false)
-  canceledAt         DateTime?
-  trialEndsAt        DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan MembershipPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
-
-  @@index([userId])
-  @@index([status])
-  @@index([stripeCustomerId])
-  @@map("subscriptions")
-}
-
-/// One wallet per user; running `balance` is a denormalised cache validated by
-/// the immutable CreditTransaction ledger.
-model CreditWallet {
-  id               String @id @default(cuid())
-  userId           String @unique
-  balance          Int    @default(0)
-  lifetimeGranted  Int    @default(0)
-  lifetimeConsumed Int    @default(0)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions CreditTransaction[]
-
-  @@map("credit_wallets")
-}
-
-/// Append-only ledger. Never mutate rows; corrections are new ADJUSTMENT rows.
-model CreditTransaction {
-  id             String                @id @default(cuid())
-  walletId       String
-  userId         String
-  type           CreditTransactionType
-  // Positive for grants/purchases, negative for consumption/expiration.
-  amount         Int
-  balanceAfter   Int
-  reason         String?
-  // Optional link to what consumed the credits.
-  journeyId      String?
-  aiGenerationId String?
-  // Idempotency for Stripe webhooks / retries.
-  externalRef    String?               @unique
-  expiresAt      DateTime?
-
-  createdAt DateTime @default(now())
-
-  wallet       CreditWallet  @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  journey      Journey?      @relation(fields: [journeyId], references: [id], onDelete: SetNull)
-  aiGeneration AiGeneration? @relation(fields: [aiGenerationId], references: [id], onDelete: SetNull)
-
-  @@index([walletId, createdAt])
-  @@index([userId, createdAt])
-  @@index([type])
-  @@map("credit_transactions")
-}
-
-// =============================================================================
-// JOURNEYS — CORE PRODUCT
-// =============================================================================
-
-model Journey {
-  id     String @id @default(cuid())
-  userId String
-
-  title   String
-  summary String?       @db.Text
-  status  JourneyStatus @default(DRAFT)
-
-  // Region/seed intent.
-  originQuery    String? // raw traveller intent, e.g. "East Coast Scotland"
-  primaryCountry String? // ISO-3166 alpha-2
-  region         String?
-
-  // Plan parameters snapshot (so a journey is reproducible/explainable).
-  pace          TravelPace?
-  startDate     DateTime?
-  endDate       DateTime?
-  durationDays  Int?
-  travelerCount Int         @default(1)
-  budget        BudgetTier?
-
-  // Lightweight denormalised view payload for fast reads (full structure also
-  // lives in normalised JourneyStop rows).
-  heroImageUrl String?
-  metadata     Json?
-
-  // Geographic bounding box for map framing (Google Maps).
-  boundingBox Json? // { north, south, east, west }
-
-  version   Int       @default(1)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stops       JourneyStop[]
-  refinements JourneyRefinement[]
-  savedBy     SavedJourney[]
-  generations AiGeneration[]
-  creditTxns  CreditTransaction[]
-
-  @@index([userId, status])
-  @@index([status])
-  @@index([createdAt])
-  @@map("journeys")
-}
-
-/// An ordered stop within a journey. Carries geo + Google Place reference.
-model JourneyStop {
-  id        String @id @default(cuid())
-  journeyId String
-
-  order       Int
-  kind        StopKind @default(CITY)
-  name        String
-  description String?  @db.Text
-
-  // Stay duration at this stop.
-  nights   Int?
-  dayStart Int? // day index within the trip
-  dayEnd   Int?
-
-  // Google Maps fields.
-  googlePlaceId String?
-  latitude      Float?
-  longitude     Float?
-  address       String?
-
-  imageUrl   String?
-  highlights String[] // quick chips
-  metadata   Json?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  journey Journey @relation(fields: [journeyId], references: [id], onDelete: Cascade)
-
-  @@unique([journeyId, order])
-  @@index([journeyId])
-  @@index([googlePlaceId])
-  @@map("journey_stops")
-}
-
-/// Each refinement is an immutable record of a change request + its result,
-/// preserving the journey's evolution and giving Claude conversational memory.
-model JourneyRefinement {
-  id        String @id @default(cuid())
-  journeyId String
-
-  type        RefinementType
-  // The user's instruction in natural language.
-  instruction String?        @db.Text
-  // Structured params for the change (e.g. { removeStopId, newPace }).
-  params      Json?
-  // Snapshot of journey version before/after for diffing.
-  fromVersion Int?
-  toVersion   Int?
-
-  aiGenerationId String?
-
-  createdAt DateTime @default(now())
-
-  journey      Journey       @relation(fields: [journeyId], references: [id], onDelete: Cascade)
-  aiGeneration AiGeneration? @relation(fields: [aiGenerationId], references: [id], onDelete: SetNull)
-
-  @@index([journeyId, createdAt])
-  @@map("journey_refinements")
-}
-
-// =============================================================================
-// SAVES & RECOMMENDATIONS
-// =============================================================================
-
-/// A place a user bookmarked (destination/stay/experience). Geo-aware.
-model SavedPlace {
-  id     String         @id @default(cuid())
-  userId String
-  kind   SavedPlaceKind @default(DESTINATION)
-
-  name          String
-  note          String? @db.Text
-  googlePlaceId String?
-  latitude      Float?
-  longitude     Float?
-  country       String?
-  imageUrl      String?
-  metadata      Json?
-
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, googlePlaceId])
-  @@index([userId, createdAt])
-  @@map("saved_places")
-}
-
-/// A user's bookmark of a journey (their own or, later, a shared one).
-model SavedJourney {
-  id        String  @id @default(cuid())
-  userId    String
-  journeyId String
-  note      String? @db.Text
-
-  createdAt DateTime @default(now())
-
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  journey Journey @relation(fields: [journeyId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, journeyId])
-  @@index([userId, createdAt])
-  @@map("saved_journeys")
-}
-
-/// AI/editorial destination suggestions surfaced to a user.
-model DestinationRecommendation {
-  id     String               @id @default(cuid())
-  userId String
-  source RecommendationSource @default(CLAUDE)
-  status RecommendationStatus @default(SUGGESTED)
-
-  title          String
-  reason         String? @db.Text // why it fits this user
-  region         String?
-  country        String?
-  googlePlaceId  String?
-  latitude       Float?
-  longitude      Float?
-  imageUrl       String?
-  // Ranking score for ordering the feed.
-  score          Float?
-  // Provenance link to the generation that produced it.
-  aiGenerationId String?
-  metadata       Json?
-
-  createdAt DateTime  @default(now())
-  expiresAt DateTime?
-
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  aiGeneration AiGeneration? @relation(fields: [aiGenerationId], references: [id], onDelete: SetNull)
-
-  @@index([userId, status])
-  @@index([userId, score])
-  @@map("destination_recommendations")
-}
-
-// =============================================================================
-// CLAUDE AI — GENERATIONS & PROMPT LOGS
-// =============================================================================
-
-/// A single Claude generation request/response. The user-facing, structured
-/// record of AI work (cost, status, tokens, output). Raw prompt text lives in
-/// AiPromptLog to keep this table lean and queryable.
-model AiGeneration {
-  id     String @id @default(cuid())
-  userId String
-
-  kind   AiGenerationKind
-  status AiGenerationStatus @default(QUEUED)
-
-  // Model + request metadata.
-  model       String // e.g. "claude-opus-4-..."
-  temperature Float?
-  maxTokens   Int?
-
-  // Usage + cost accounting.
-  inputTokens  Int?
-  outputTokens Int?
-  costMicroUsd Int? // cost in micro-USD for precise aggregation
-  latencyMs    Int?
-
-  // Structured, validated output returned to the app (Zod-checked upstream).
-  output       Json?
-  errorMessage String? @db.Text
-
-  // Optional links to what this generation produced/affected.
-  journeyId String?
-
-  createdAt   DateTime  @default(now())
-  completedAt DateTime?
-
-  user            User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  journey         Journey?                    @relation(fields: [journeyId], references: [id], onDelete: SetNull)
-  promptLogs      AiPromptLog[]
-  refinements     JourneyRefinement[]
-  recommendations DestinationRecommendation[]
-  creditTxns      CreditTransaction[]
-
-  @@index([userId, createdAt])
-  @@index([kind, status])
-  @@map("ai_generations")
-}
-
-/// Raw prompt/response payloads per message turn. Separated for size, privacy
-/// controls, and selective retention/redaction.
-model AiPromptLog {
-  id           String @id @default(cuid())
-  generationId String
-  userId       String
-
-  // Message turns serialised as structured JSON (system/user/assistant).
-  role      String // "system" | "user" | "assistant"
-  content   Json
-  sequence  Int    @default(0)
-  // Tool/function-call metadata if used.
-  toolCalls Json?
-
-  // Privacy: allow redaction without deleting the analytics row.
-  redactedAt DateTime?
-
-  createdAt DateTime @default(now())
-
-  generation AiGeneration @relation(fields: [generationId], references: [id], onDelete: Cascade)
-  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([generationId, sequence])
-  @@index([userId, createdAt])
-  @@map("ai_prompt_logs")
-}
-
-// =============================================================================
-// ACTIVITY & NOTIFICATIONS
-// =============================================================================
-
-/// Append-only behavioural event log (product analytics + personalisation).
-model UserActivity {
-  id     String       @id @default(cuid())
-  userId String
-  type   ActivityType
-
-  // Polymorphic target reference (no FK; type tells you the table).
-  targetType String?
-  targetId   String?
-  // Arbitrary structured context.
-  metadata   Json?
-
-  // Client context for cross-platform analytics.
-  platform  String? // "web" | "ios" | "android"
-  ipAddress String?
-  userAgent String?
-
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, createdAt])
-  @@index([type, createdAt])
-  @@map("user_activities")
-}
-
-model Notification {
-  id      String              @id @default(cuid())
-  userId  String
-  type    NotificationType
-  channel NotificationChannel @default(IN_APP)
-
-  title     String
-  body      String? @db.Text
-  // Deep link target within the app.
-  actionUrl String?
-  metadata  Json?
-
-  readAt      DateTime?
-  // Delivery tracking for email/push channels.
-  sentAt      DateTime?
-  deliveredAt DateTime?
-
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, readAt])
-  @@index([userId, createdAt])
-  @@map("notifications")
 }
