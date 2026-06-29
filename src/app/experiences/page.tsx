@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Experiences — Wayheld",
     description: "Discover meaningful travel experiences that foster deeper connections with places, culture, and history.",
-    url: "https://wayheld.com/experiences",
+    url: "/experiences",
     siteName: "Wayheld",
     images: [
       {

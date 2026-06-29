@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Contact — Wayheld",
     description: "Get in touch with the Wayheld team. We're here to help you plan your next meaningful journey.",
-    url: "https://wayheld.com/contact",
+    url: "/contact",
     siteName: "Wayheld",
     images: [
       {

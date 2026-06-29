@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "About Wayheld — Our Philosophy",
     description: "Wayheld is a slow travel companion designed for intentional, regenerative journeys.",
-    url: "https://wayheld.com/about",
+    url: "/about",
     siteName: "Wayheld",
     images: [
       {
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     locale: "en_GB",
     type: "website",
   },
-  twitter: {
+    twitter: {
     card: "summary_large_image",
     title: "About Wayheld — Our Philosophy",
     description: "Wayheld is a slow travel companion designed for intentional, regenerative journeys.",

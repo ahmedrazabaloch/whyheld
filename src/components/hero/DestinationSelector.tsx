@@ -54,6 +54,7 @@ export function DestinationSelector({
                 src={destination.image}
                 alt=""
                 fill
+                priority={index === 0}
                 sizes="(max-width: 640px) 22vw, 12vw"
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
               />

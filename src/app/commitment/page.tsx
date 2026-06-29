@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Commitment — Wayheld",
     description: "We encourage travelers to move through places with care, curiosity, and cultural respect.",
-    url: "https://wayheld.com/commitment",
+    url: "/commitment",
     siteName: "Wayheld",
     images: [
       {

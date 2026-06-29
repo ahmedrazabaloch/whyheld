@@ -6,7 +6,7 @@ import {
   useScroll,
   useTransform,
 } from "motion/react";
-import { useRef } from "react";
+import { memo, useRef } from "react";
 import Image from "next/image";
 import { Section } from "@/components/ui";
 import { EASE_EXPO, kicker, leadParagraph, sectionTitle } from "@/lib/design";
@@ -58,7 +58,7 @@ function VoiceMark({ voice }: { voice: ThinkingStage["voice"] }) {
  * Exact copy of the original premium collage layout, extracted into a reusable component.
  * It strictly maintains the same overlapping images, quote cards, shadows, and spacing.
  */
-function EditorialCollage({
+const EditorialCollage = memo(function EditorialCollage({
   mainImg,
   mainTag,
   mainTitle,
@@ -82,13 +82,14 @@ function EditorialCollage({
   return (
     <div className="relative h-[550px] w-full lg:h-[680px]">
       {/* Main large image */}
-      <div className="absolute right-0 top-0 h-[360px] w-[90%] overflow-hidden rounded-[2rem] shadow-[0_30px_60px_-15px_rgba(51,51,47,0.3)] lg:h-[460px] lg:w-[85%] lg:rounded-[2.5rem]">
+      <div className="absolute right-0 top-0 h-[360px] w-[90%] overflow-hidden rounded-[2rem] shadow-[0_30px_60px_-15px_rgba(51,51,47,0.3)] lg:h-[460px] lg:w-[85%] lg:rounded-[2.5rem] transform-gpu will-change-transform">
         <Image
           src={mainImg}
           alt={mainTitle}
           fill
+          quality={85}
           sizes="(max-width: 1024px) 90vw, 55vw"
-          className="object-cover transition-transform duration-[2s] hover:scale-105"
+          className="object-cover transition-transform duration-[2s] hover:scale-105 will-change-transform"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
         <div className="absolute bottom-6 left-6 text-[#F4EFE6] lg:bottom-8 lg:left-8">
@@ -100,13 +101,14 @@ function EditorialCollage({
       </div>
 
       {/* Overlapping secondary image */}
-      <div className="absolute left-0 top-[220px] z-10 h-[280px] w-[55%] overflow-hidden rounded-3xl shadow-[0_20px_40px_-10px_rgba(51,51,47,0.2)] lg:top-[300px] lg:h-[360px] lg:w-[50%]">
+      <div className="absolute left-0 top-[220px] z-10 h-[280px] w-[55%] overflow-hidden rounded-3xl shadow-[0_20px_40px_-10px_rgba(51,51,47,0.2)] lg:top-[300px] lg:h-[360px] lg:w-[50%] transform-gpu will-change-transform">
         <Image
           src={subImg}
           alt={subTitle}
           fill
+          quality={85}
           sizes="(max-width: 1024px) 50vw, 30vw"
-          className="object-cover transition-transform duration-[2s] hover:scale-105"
+          className="object-cover transition-transform duration-[2s] hover:scale-105 will-change-transform"
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
         <div className="absolute bottom-5 left-5 text-[#F4EFE6] lg:bottom-6 lg:left-6">
@@ -118,7 +120,7 @@ function EditorialCollage({
       </div>
 
       {/* Floating Quote Box */}
-      <div className="absolute bottom-0 right-0 z-20 w-[85%] rounded-3xl border border-[#D8D2C8] bg-white/95 p-6 shadow-2xl backdrop-blur-xl lg:bottom-8 lg:right-6 lg:w-[48%] lg:bg-white/90 lg:p-8">
+      <div className="absolute bottom-0 right-0 z-20 w-[85%] rounded-3xl border border-[#D8D2C8] bg-white/95 p-6 shadow-2xl backdrop-blur-xl lg:bottom-8 lg:right-6 lg:w-[48%] lg:bg-white/90 lg:p-8 transform-gpu backface-hidden will-change-transform">
         <blockquote className="font-display text-base italic leading-relaxed text-[#33332F] lg:text-lg">
           “{quote}”
         </blockquote>
@@ -134,7 +136,7 @@ function EditorialCollage({
       </div>
     </div>
   );
-}
+});
 
 const COLLAGES = [
   <EditorialCollage 
@@ -163,7 +165,7 @@ const COLLAGES = [
   />
 ];
 
-function Stage({ 
+const Stage = memo(function Stage({ 
   stage, 
   index,
   visual
@@ -179,7 +181,7 @@ function Stage({
     <motion.li
       initial={{ opacity: 0, y: 36 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.5 }}
+      viewport={{ once: true, margin: "-10% 0px" }}
       transition={{ duration: 0.85, ease: EASE_EXPO, delay: index * 0.05 }}
       className="relative pl-12 sm:pl-16"
     >
@@ -239,14 +241,14 @@ function Stage({
       )}
     </motion.li>
   );
-}
+});
 
 /**
  * "How Wayheld Thinks" — a scroll-driven narrative proving Wayheld reasons
  * rather than chats. Uses a natural scrolling column of repeated editorial
  * collages to eliminate whitespace and maintain exactly the same premium design language.
  */
-export function HowWayheldThinks() {
+export const HowWayheldThinks = memo(function HowWayheldThinks() {
   const reduceMotion = useReducedMotion();
   const spineRef = useRef<HTMLDivElement>(null);
 
@@ -265,7 +267,7 @@ export function HowWayheldThinks() {
           <motion.div
             initial={{ opacity: 0, y: 28 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.5 }}
+            viewport={{ once: true, margin: "-10% 0px" }}
             transition={{ duration: 0.85, ease: EASE_EXPO }}
             className="max-w-xl"
           >
@@ -292,7 +294,7 @@ export function HowWayheldThinks() {
             <motion.span
               aria-hidden
               style={{ scaleY: reduceMotion ? 1 : lineScale }}
-              className="absolute bottom-0 left-3 top-1.5 w-px origin-top bg-gradient-to-b from-[#74876B] via-[#74876B]/60 to-transparent sm:left-4"
+              className="absolute bottom-0 left-3 top-1.5 w-px origin-top bg-gradient-to-b from-[#74876B] via-[#74876B]/60 to-transparent sm:left-4 transform-gpu will-change-transform"
             />
 
             <ol className="relative">
@@ -324,7 +326,7 @@ export function HowWayheldThinks() {
                 key={i}
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
+                viewport={{ once: true, margin: "-10% 0px" }}
                 transition={{ duration: 0.85, ease: EASE_EXPO }}
               >
                 {collage}
@@ -335,4 +337,4 @@ export function HowWayheldThinks() {
       </div>
     </Section>
   );
-}
+});

@@ -16,6 +16,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://wayheld.com"),
   title: "Wayheld — Travel deeper, not faster.",
   description:
     "Wayheld is an AI-powered slow travel companion for intentional, regenerative journeys rooted in culture, heritage and deeper human connection.",
