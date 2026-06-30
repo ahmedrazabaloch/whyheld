@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { PageHeader, EmptyState } from "@/components/dashboard";
-import { getCachedSession, getCachedProfile } from "@/lib/auth/session-cache";
+import { getCachedSession, getCachedProfile, getCachedPreferences } from "@/lib/auth/session-cache";
 
 
 export const metadata: Metadata = {
@@ -18,10 +18,13 @@ export default async function SettingsPage() {
     redirect("/signup");
   }
 
-  // Cache hit — layout.tsx already fetched this profile for this request.
-  // No separate prisma.profile.findUnique() needed — getCachedProfile returns
-  // a superset that includes all fields this page needs.
-  const profile = await getCachedProfile(session.user.id);
+  // getCachedProfile is a React cache() hit — DashboardLayout kicked it off early.
+  // getCachedPreferences starts here, running in parallel with the already-in-flight
+  // profile fetch so both complete at roughly the same time (~1 round-trip each).
+  const [profile, preferences] = await Promise.all([
+    getCachedProfile(session.user.id),
+    getCachedPreferences(session.user.id),
+  ]);
 
   return (
     <>
@@ -53,7 +56,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* Travel preferences summary */}
-      {profile?.preferences && (
+      {preferences && (
         <div className="mb-6">
           <h2 className="mb-3 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-brand-text-secondary">
             Travel preferences
@@ -61,19 +64,19 @@ export default async function SettingsPage() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <PrefChip
               label="Pace"
-              value={formatEnum(profile.preferences.pace)}
+              value={formatEnum(preferences.pace)}
             />
             <PrefChip
               label="Transport"
-              value={formatEnum(profile.preferences.transport)}
+              value={formatEnum(preferences.transport)}
             />
             <PrefChip
               label="Budget"
-              value={formatEnum(profile.preferences.budget)}
+              value={formatEnum(preferences.budget)}
             />
             <PrefChip
               label="Avoid crowds"
-              value={profile.preferences.avoidCrowds ? "Yes" : "No"}
+              value={preferences.avoidCrowds ? "Yes" : "No"}
             />
           </div>
         </div>

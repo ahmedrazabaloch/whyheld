@@ -16,17 +16,22 @@ import { prisma } from "@/lib/db";
 export const getCachedSession = cache(auth);
 
 /**
- * Deduplicated profile fetcher.
+ * Deduplicated profile fetcher — one SQL round-trip.
  *
- * Fetches a superset of all profile fields used across dashboard pages
- * (layout, dashboard, settings, profile). Multiple calls with the same
- * userId within a single request share one database query.
+ * Fetches the profile fields shared across all dashboard pages. Keeping this
+ * to a single SELECT (no nested relation) means it costs exactly one
+ * database round-trip through the connection pooler.
  *
- * Fields returned cover every consumer:
- *   - layout.tsx      → firstName
- *   - dashboard/page  → firstName, onboardingCompletedAt
- *   - settings/page   → firstName, lastName, homeCity, homeCountry, locale, preferences
- *   - profile/page    → firstName, lastName, avatarUrl
+ * Fields returned:
+ *   - layout.tsx        → (kicks off the promise early; result discarded)
+ *   - dashboard/page    → firstName
+ *   - settings/page     → firstName, lastName, homeCity, homeCountry, locale
+ *   - profile/page      → firstName, lastName, avatarUrl
+ *   - journeys/new page → onboardingCompletedAt
+ *   - onboarding/page   → onboardingCompletedAt
+ *
+ * Travel preferences are in getCachedPreferences() so pages that do not need
+ * them do not pay for a second SQL round-trip.
  */
 export const getCachedProfile = cache(async (userId: string) => {
   const profile = await prisma.profile.findUnique({
@@ -35,21 +40,33 @@ export const getCachedProfile = cache(async (userId: string) => {
       firstName: true,
       lastName: true,
       avatarUrl: true,
-      bio: true,
       homeCity: true,
       homeCountry: true,
       locale: true,
-      timezone: true,
       onboardingCompletedAt: true,
-      preferences: {
-        select: {
-          pace: true,
-          transport: true,
-          budget: true,
-          avoidCrowds: true,
-        },
-      },
     },
   });
   return profile;
+});
+
+/**
+ * Deduplicated travel-preferences fetcher — one SQL round-trip.
+ *
+ * Separated from getCachedProfile so that the five pages that never display
+ * preferences (/dashboard, /billing, /journeys, /saved, /profile) do not
+ * execute a second database round-trip. Only /settings awaits this function,
+ * and it does so in a Promise.all alongside the already-in-flight profile
+ * fetch so the two queries resolve in parallel.
+ */
+export const getCachedPreferences = cache(async (userId: string) => {
+  const prefs = await prisma.travelPreference.findFirst({
+    where: { profile: { userId } },
+    select: {
+      pace: true,
+      transport: true,
+      budget: true,
+      avoidCrowds: true,
+    },
+  });
+  return prefs;
 });

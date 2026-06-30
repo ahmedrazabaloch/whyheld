@@ -15,8 +15,6 @@ declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      role: string;
-      onboardingComplete: boolean;
     } & DefaultSession["user"];
   }
 }
@@ -130,38 +128,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return true;
     },
 
-    /** Enrich the JWT with role + status flags read from our DB. */
+    /**
+     * Persist the user's own DB id in the token on first sign-in.
+     * No database read is required on subsequent requests — the id is
+     * already stored in the signed/encrypted JWT cookie and does not change.
+     */
     async jwt({ token, user }) {
       if (user?.id) {
         token.uid = user.id;
       }
-      const userId = token.uid as string | undefined;
-      if (userId) {
-        const { prisma } = await import("@/lib/db");
-        const dbUser = await prisma.user.findUnique({
-          where: { id: userId },
-          select: {
-            role: true,
-            emailVerified: true,
-            profile: { select: { onboardingCompletedAt: true } },
-          },
-        });
-        if (dbUser) {
-          token.role = dbUser.role;
-          token.emailVerified = dbUser.emailVerified !== null;
-          token.onboardingComplete =
-            dbUser.profile?.onboardingCompletedAt != null;
-        }
-      }
       return token;
     },
 
-    /** Expose the enriched fields on the session for the app to consume. */
+    /** Expose the user id on the session object consumed by app code. */
     async session({ session, token }) {
       if (session.user) {
         session.user.id = (token.uid as string) ?? "";
-        session.user.role = (token.role as string) ?? "USER";
-        session.user.onboardingComplete = Boolean(token.onboardingComplete);
       }
       return session;
     },

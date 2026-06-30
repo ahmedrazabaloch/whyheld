@@ -17,9 +17,7 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
-  // Cache hit — layout.tsx already fetched this profile for this request.
-  // getCachedProfile returns firstName, lastName, avatarUrl which covers all
-  // fields this page renders.
+  // Cache hit — layout.tsx already started this profile for this request.
   const profile = await getCachedProfile(session.user.id);
 
   const user = session.user;

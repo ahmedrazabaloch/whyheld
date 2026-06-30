@@ -10,14 +10,12 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     redirect("/login");
   }
 
-  // getCachedProfile is the FIRST call — executes the DB query.
-  // Child pages calling getCachedProfile with the same userId get a free cache hit.
-  const profile = await getCachedProfile(session.user.id);
+  // Kick off the profile fetch immediately so the React cache promise is created
+  // before any child page calls getCachedProfile(). The layout does NOT await it:
+  // Sidebar and MobileHeader accept the user prop but do not render firstName,
+  // so there is nothing to block on here. Pages that need profile data (dashboard,
+  // settings, profile) will await the same already-in-flight React cache promise.
+  void getCachedProfile(session.user.id);
 
-  let userWithName = session.user;
-  if (profile?.firstName) {
-    userWithName = { ...session.user, name: profile.firstName };
-  }
-
-  return <DashboardShell user={userWithName}>{children}</DashboardShell>;
+  return <DashboardShell user={session.user}>{children}</DashboardShell>;
 }

@@ -4,10 +4,12 @@ import { PageHero, ContactSection, FinalCta } from "@/components/sections";
 
 export const metadata: Metadata = {
   title: "Contact — Wayheld",
-  description: "Get in touch with the Wayheld team. We're here to help you plan your next meaningful journey.",
+  description:
+    "Get in touch with the Wayheld team. We're here to help you plan your next meaningful journey.",
   openGraph: {
     title: "Contact — Wayheld",
-    description: "Get in touch with the Wayheld team. We're here to help you plan your next meaningful journey.",
+    description:
+      "Get in touch with the Wayheld team. We're here to help you plan your next meaningful journey.",
     url: "/contact",
     siteName: "Wayheld",
     images: [
@@ -42,7 +44,7 @@ export default function ContactPage() {
         <FinalCta
           headlineLead="Ready to"
           headlineAccent="begin"
-          headlineTail="?"
+          headlineTail={`? '`}
           subtitle="Or if you're ready to start planning, explore our platform."
           buttonText="Go to Dashboard"
         />

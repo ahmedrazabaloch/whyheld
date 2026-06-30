@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { OnboardingFlow } from "@/components/onboarding";
-import { auth } from "@/lib/auth/auth";
+import { getCachedSession, getCachedProfile } from "@/lib/auth/session-cache";
 
 
 export const metadata: Metadata = {
@@ -11,13 +11,18 @@ export const metadata: Metadata = {
 };
 
 export default async function OnboardingPage() {
-  const session = await auth();
+  const session = await getCachedSession();
 
   if (!session?.user?.id) {
     redirect("/signup");
   }
 
-  if (session.user.onboardingComplete) {
+  // Onboarding status read directly from the profile record.
+  // This is the only non-dashboard page that needs it, so we
+  // fetch it here rather than paying a DB round-trip on every
+  // jwt() callback across the entire app.
+  const profile = await getCachedProfile(session.user.id);
+  if (profile?.onboardingCompletedAt) {
     redirect("/dashboard");
   }
 

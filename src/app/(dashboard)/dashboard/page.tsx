@@ -25,7 +25,7 @@ export default async function DashboardPage() {
   /* ---------------------------------------------------------------- */
   const [profile, wallet, journeyCount, savedCount, unreadCount] =
     await Promise.all([
-      // Cache hit — layout already fetched this profile for this request.
+      // Awaits the in-flight promise started by the layout — no extra DB call.
       getCachedProfile(session.user.id),
       prisma.creditWallet.findUnique({
         where: { userId: session.user.id },
@@ -74,6 +74,7 @@ export default async function DashboardPage() {
           </p>
           <Link
             href="/journeys/new"
+            prefetch={false}
             className="mt-6 inline-flex min-h-[48px] items-center gap-2 rounded-full bg-brand-btn-primary px-6 py-2.5 text-sm font-medium text-brand-bg shadow-sm transition-all duration-200 hover:-translate-y-[1px] hover:bg-brand-btn-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary"
           >
             Plan a journey

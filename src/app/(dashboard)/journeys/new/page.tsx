@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getCachedSession } from "@/lib/auth/session-cache";
+import { getCachedSession, getCachedProfile } from "@/lib/auth/session-cache";
 import { PageHeader } from "@/components/dashboard";
 
 export default async function NewJourneyPage() {
@@ -10,8 +10,11 @@ export default async function NewJourneyPage() {
     redirect("/login");
   }
 
-  // Redirect to Onboarding if they haven't completed it
-  if (!session.user.onboardingComplete) {
+  // Onboarding status is read from the profile record, not the JWT.
+  // DashboardLayout already kicked off getCachedProfile, so this await
+  // is a React cache hit — no additional DB round-trip.
+  const profile = await getCachedProfile(session.user.id);
+  if (!profile?.onboardingCompletedAt) {
     redirect("/onboarding");
   }
 

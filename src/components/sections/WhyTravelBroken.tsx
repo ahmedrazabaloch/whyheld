@@ -32,7 +32,7 @@ export function WhyTravelBroken() {
     <Section
       id="why"
       labelledBy="why-heading"
-
+      className="pb-12 sm:pb-14 lg:pb-18"
     >
       <>
         {/* Intro */}
@@ -116,9 +116,10 @@ export function WhyTravelBroken() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.5 }}
           transition={{ duration: 0.9, ease: EASE_EXPO }}
-          className="mt-12 border-t border-[#D8D2C8] pt-10 lg:mt-16"
+          // className="mt-12 border-t border-[#D8D2C8] py-12 lg:mt-16 lg:py-18"
+          className="mt-12 flex flex-col justify-center border-t border-[#D8D2C8] py-16 lg:mt-16 lg:py-20"
         >
-          <p className="max-w-3xl font-display text-balance text-2xl font-light leading-snug text-[#33332F] sm:text-3xl">
+          <p className="max-w-3xl font-display mx-auto text-balance text-2xl font-light leading-snug text-[#33332F] sm:text-3xl text-center">
             Wayheld exists to give travel back its{" "}
             <span className="italic text-[#74876B]">meaning</span> — slower,
             deeper, and rooted in the places and people that make a journey
@@ -126,7 +127,7 @@ export function WhyTravelBroken() {
           </p>
           <a
             href="#how"
-            className="group mt-8 inline-flex items-center gap-2 text-sm font-medium text-[#33332F] transition-colors hover:text-[#74876B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#74876B]"
+            className="group mx-auto mt-8 inline-flex items-center gap-2 text-sm font-medium text-[#33332F] transition-colors hover:text-[#74876B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#74876B]"
           >
             See how Wayheld travels differently
             <svg

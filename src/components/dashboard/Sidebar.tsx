@@ -80,6 +80,7 @@ export function Sidebar({ user }: { user?: User }) {
       <div className="flex h-16 items-center px-6">
         <Link
           href="/"
+          prefetch={false}
           className="font-display text-xl tracking-tight text-[#F4EFE6] transition-colors hover:text-[#FFFFFF]"
           aria-label="Wayheld home"
         >
@@ -99,6 +100,7 @@ export function Sidebar({ user }: { user?: User }) {
               <Link
                 key={href}
                 href={href}
+                prefetch={false}
                 className={[
                   "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
                   isActive
@@ -116,6 +118,7 @@ export function Sidebar({ user }: { user?: User }) {
           
           <Link
             href="/profile"
+            prefetch={false}
             className={[
               "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
               pathname === "/profile"
@@ -165,6 +168,7 @@ export function MobileHeader({ user }: { user?: User }) {
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-brand-border/10 bg-brand-sidebar px-4 py-3 lg:hidden">
       <Link
         href="/"
+        prefetch={false}
         className="font-display text-lg tracking-tight text-[#F4EFE6] transition-colors hover:text-[#FFFFFF]"
         aria-label="Wayheld home"
       >
@@ -181,6 +185,7 @@ export function MobileHeader({ user }: { user?: User }) {
             <Link
               key={href}
               href={href}
+              prefetch={false}
               className={[
                 "flex items-center justify-center rounded-lg p-2 transition-colors duration-200",
                 isActive

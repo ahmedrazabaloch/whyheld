@@ -43,7 +43,8 @@ export function FinalCta({
     <section
       id="start"
       aria-labelledby="cta-heading"
-      className="relative isolate w-full overflow-hidden bg-[#74876B] pt-16 pb-28 sm:pt-20 sm:pb-32 lg:pt-24 lg:pb-44"
+      className="relative isolate w-full overflow-hidden pt-16 pb-28 sm:pt-20 sm:pb-32 lg:pt-24 lg:pb-44"
+      style={{ backgroundColor: "#5b6c53" }}
     >
 
       <GrainOverlay opacity={0.07} />

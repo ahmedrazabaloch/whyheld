@@ -20,12 +20,13 @@ export function ContentBlock({ id, kickerText, title, children, bgWhite = true }
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, amount: 0.3 }}
-        className="max-w-3xl"
+        className="mx-auto max-w-3xl text-center"
       >
         {kickerText && (
           <motion.p variants={riseVariants} className={kicker}>
             <span className="h-px w-8 bg-[#74876B]/60" aria-hidden />
             {kickerText}
+            <span className="h-px w-8 bg-[#74876B]/60" aria-hidden />
           </motion.p>
         )}
         <motion.h2 variants={riseVariants} className={`mt-6 ${sectionTitle}`}>
