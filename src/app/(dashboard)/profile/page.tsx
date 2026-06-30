@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth/auth";
-import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/dashboard";
 import { formStyles, buttonStyles } from "@/lib/design";
+import { getCachedSession, getCachedProfile } from "@/lib/auth/session-cache";
 
 export const metadata: Metadata = {
   title: "Profile — Wayheld",
@@ -11,19 +10,21 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
-  const session = await auth();
+  // Cache hit — layout.tsx already resolved this session for this request.
+  const session = await getCachedSession();
 
   if (!session?.user?.id) {
     redirect("/login");
   }
 
-  const profile = await prisma.profile.findUnique({
-    where: { userId: session.user.id },
-  });
+  // Cache hit — layout.tsx already fetched this profile for this request.
+  // getCachedProfile returns firstName, lastName, avatarUrl which covers all
+  // fields this page renders.
+  const profile = await getCachedProfile(session.user.id);
 
   const user = session.user;
-  const fullName = profile?.firstName && profile?.lastName 
-    ? `${profile.firstName} ${profile.lastName}` 
+  const fullName = profile?.firstName && profile?.lastName
+    ? `${profile.firstName} ${profile.lastName}`
     : profile?.firstName || user.name || "";
 
   return (

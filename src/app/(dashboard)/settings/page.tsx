@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth/auth";
-import { prisma } from "@/lib/db";
 import { PageHeader, EmptyState } from "@/components/dashboard";
+import { getCachedSession, getCachedProfile } from "@/lib/auth/session-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -13,30 +12,17 @@ export const metadata: Metadata = {
 };
 
 export default async function SettingsPage() {
-  const session = await auth();
+  // Cache hit — layout.tsx already resolved this session for this request.
+  const session = await getCachedSession();
 
   if (!session?.user?.id) {
     redirect("/signup");
   }
 
-  const profile = await prisma.profile.findUnique({
-    where: { userId: session.user.id },
-    select: {
-      firstName: true,
-      lastName: true,
-      homeCity: true,
-      homeCountry: true,
-      locale: true,
-      preferences: {
-        select: {
-          pace: true,
-          transport: true,
-          budget: true,
-          avoidCrowds: true,
-        },
-      },
-    },
-  });
+  // Cache hit — layout.tsx already fetched this profile for this request.
+  // No separate prisma.profile.findUnique() needed — getCachedProfile returns
+  // a superset that includes all fields this page needs.
+  const profile = await getCachedProfile(session.user.id);
 
   return (
     <>

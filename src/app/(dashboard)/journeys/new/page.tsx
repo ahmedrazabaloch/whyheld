@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth/auth";
+import { getCachedSession } from "@/lib/auth/session-cache";
 import { PageHeader } from "@/components/dashboard";
 
 export default async function NewJourneyPage() {
-  const session = await auth();
+  // Cache hit — layout.tsx already resolved this session for this request.
+  const session = await getCachedSession();
 
   if (!session?.user?.id) {
     redirect("/login");

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/db";
 import { PageHeader, EmptyState } from "@/components/dashboard";
+import { getCachedSession } from "@/lib/auth/session-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +14,8 @@ export const metadata: Metadata = {
 };
 
 export default async function JourneysPage() {
-  const session = await auth();
+  // Cache hit — layout.tsx already resolved this session for this request.
+  const session = await getCachedSession();
 
   if (!session?.user?.id) {
     redirect("/login");

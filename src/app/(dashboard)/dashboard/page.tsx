@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/dashboard";
+import { getCachedSession, getCachedProfile } from "@/lib/auth/session-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -14,23 +14,20 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const session = await auth();
+  // Cache hit — layout.tsx already resolved this session for this request.
+  const session = await getCachedSession();
 
   if (!session?.user?.id) {
     redirect("/signup");
   }
 
-
-
   /* ---------------------------------------------------------------- */
-  /* Real data reads — no mocks                                        */
+  /* Real data reads — parallel, profile is a React cache() hit       */
   /* ---------------------------------------------------------------- */
   const [profile, wallet, journeyCount, savedCount, unreadCount] =
     await Promise.all([
-      prisma.profile.findUnique({
-        where: { userId: session.user.id },
-        select: { firstName: true, onboardingCompletedAt: true },
-      }),
+      // Cache hit — layout already fetched this profile for this request.
+      getCachedProfile(session.user.id),
       prisma.creditWallet.findUnique({
         where: { userId: session.user.id },
         select: { balance: true },
@@ -96,7 +93,6 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
-        {/* Notifications */}
         {/* Notifications */}
         <div className="rounded-2xl border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
           <h2 className="font-display text-xl text-brand-text-primary">

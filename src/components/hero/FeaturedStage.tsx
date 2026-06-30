@@ -31,7 +31,8 @@ export function FeaturedStage({ destination }: FeaturedStageProps) {
             src={destination.image}
             alt={destination.alt}
             fill
-            priority
+            priority={destination.id === "kyoto"}
+            loading={destination.id === "kyoto" ? "eager" : "lazy"}
             sizes="(max-width: 1024px) 92vw, 46vw"
             className="object-cover"
           />
