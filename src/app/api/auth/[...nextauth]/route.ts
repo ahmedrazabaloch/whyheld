@@ -1,5 +1,3 @@
-// This route requires database/auth; skip static pre-rendering.
-export const dynamic = "force-dynamic";
 
 import { handlers } from "@/lib/auth/auth";
 

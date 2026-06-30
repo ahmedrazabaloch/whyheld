@@ -5,7 +5,6 @@ import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/dashboard";
 import { getCachedSession, getCachedProfile } from "@/lib/auth/session-cache";
 
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Dashboard — Wayheld",

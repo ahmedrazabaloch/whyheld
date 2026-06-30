@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { PageHeader, EmptyState } from "@/components/dashboard";
 import { getCachedSession, getCachedProfile } from "@/lib/auth/session-cache";
 
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Settings — Wayheld",

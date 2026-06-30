@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { OnboardingFlow } from "@/components/onboarding";
 import { auth } from "@/lib/auth/auth";
 
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Set up your profile — Wayheld",
