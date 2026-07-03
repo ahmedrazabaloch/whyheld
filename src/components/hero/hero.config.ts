@@ -21,8 +21,6 @@ export const HERO_KICKER = "AI-guided slow travel";
 export const HERO_SUBHEAD =
   "Wayheld is your companion for intentional journeys — pairing AI with local knowledge to help you travel regeneratively, honour heritage and connect with places that deserve your time.";
 
-
-
 /** How long each destination stays featured before rotating (ms). */
 export const SHOWCASE_INTERVAL = 9000;
 
@@ -36,16 +34,16 @@ export const SHOWCASE_INTERVAL = 9000;
 export const SHOWCASE: ShowcaseDestination[] = [
   {
     id: "kyoto",
-    name: "Kyoto Heritage Route",
-    shortName: "Kyoto",
+    name: "Market Morning",
+    shortName: "Market",
     region: "Kyoto, Japan",
     theme: "Ritual & craft",
     pace: "9 unhurried days",
     tags: ["9 Days", "Slow Travel", "Local Hosts", "Heritage Route"],
     caption:
-      "Tea houses, moss gardens and the discipline of stillness — walked, not rushed.",
-    image: "/images/hero/hero-1.webp",
-    alt: "Cinematic golden hour shot of Yasaka Pagoda in Kyoto",
+      "Spend quiet mornings wandering markets before the town fully wakes.",
+    image: "/images/travel-assets/10_local_market.jpg",
+    alt: "Local market morning",
     atmosphere: {
       primary: "rgba(116, 135, 107, 0.20)",
       secondary: "rgba(51, 51, 47, 0.15)",
@@ -60,16 +58,16 @@ export const SHOWCASE: ShowcaseDestination[] = [
   },
   {
     id: "lake-como",
-    name: "Lake Como Shores",
-    shortName: "Lake Como",
+    name: "Stories Between Streets",
+    shortName: "A Quiet Corner",
     region: "Lombardy, Italy",
     theme: "Classic elegance",
     pace: "6 serene days",
     tags: ["6 Days", "Luxury Lakeside", "Private Boat", "Curated Journey"],
     caption:
-      "Lakeside villas, quiet shores, and passenger ferries set to the speed of the water.",
-    image: "/images/hero/hero-2.webp",
-    alt: "Luxury lakeside villa on Lake Como at sunset",
+      "Stay long enough to discover cafés, conversations and everyday rituals.",
+    image: "/images/travel-assets/08_bookstore.jpg",
+    alt: "Quiet bookstore discovery",
     atmosphere: {
       primary: "rgba(116, 135, 107, 0.18)",
       secondary: "rgba(51, 51, 47, 0.12)",
@@ -84,16 +82,16 @@ export const SHOWCASE: ShowcaseDestination[] = [
   },
   {
     id: "cappadocia",
-    name: "Cappadocia Valleys",
-    shortName: "Cappadocia",
+    name: "Adventure Calling",
+    shortName: "Adventure",
     region: "Central Anatolia, Turkey",
     theme: "Ancient valleys",
     pace: "7 panoramic days",
     tags: ["7 Days", "Cinematic Skies", "Cave Suites", "Sunrise Trails"],
     caption:
-      "Wind-sculpted stone canyons, cave dwellings, and quiet hot air balloon trails at dawn.",
-    image: "/images/hero/hero-3.webp",
-    alt: "Close-up cinematic shot of hot air balloons at sunrise in Cappadocia",
+      "Step into the sky and experience valleys where the wind carries no schedule.",
+    image: "/images/travel-assets/01_paragliding.jpg",
+    alt: "Paragliding over valleys",
     atmosphere: {
       primary: "rgba(116, 135, 107, 0.15)",
       secondary: "rgba(51, 51, 47, 0.10)",
@@ -108,16 +106,16 @@ export const SHOWCASE: ShowcaseDestination[] = [
   },
   {
     id: "tuscany",
-    name: "Tuscan Vineyards",
+    name: "Old Stone Streets",
     shortName: "Tuscany",
     region: "Tuscany, Italy",
     theme: "Culinary heritage",
     pace: "5 leisurely days",
     tags: ["5 Days", "Slow Food", "Vineyard Stay", "Private Chef"],
     caption:
-      "Rolling hills, centuries-old olive groves, and long dinners set under the vineyard stars.",
-    image: "/images/hero/hero-4.webp",
-    alt: "Tuscany vineyard dinner scene at dusk",
+      "Take the slower route through villages where locals still know every neighbour.",
+    image: "/images/travel-assets/12_tuscan_alley.jpg",
+    alt: "Old stone streets in Tuscany",
     atmosphere: {
       primary: "rgba(116, 135, 107, 0.18)",
       secondary: "rgba(51, 51, 47, 0.10)",
@@ -132,16 +130,16 @@ export const SHOWCASE: ShowcaseDestination[] = [
   },
   {
     id: "swiss-alps",
-    name: "Alpine Railways",
+    name: "The Empty Trail",
     shortName: "Swiss Alps",
     region: "Bernese Oberland, Switzerland",
     theme: "Alpine immersion",
     pace: "8 glacial days",
     tags: ["8 Days", "Rail Journey", "Eco-Travel", "Mountain Chalets"],
     caption:
-      "Deep valleys, seventy-two waterfalls, and the quiet creak of mountain railways.",
-    image: "/images/hero/hero-5.webp",
-    alt: "Swiss alpine rail journey through snow-capped mountains",
+      "Walk desert paths that demand your full attention and reward you with absolute stillness.",
+    image: "/images/travel-assets/07_desert_hiker.jpg",
+    alt: "Desert hiking on the empty trail",
     atmosphere: {
       primary: "rgba(116, 135, 107, 0.22)",
       secondary: "rgba(51, 51, 47, 0.18)",
@@ -155,5 +153,3 @@ export const SHOWCASE: ShowcaseDestination[] = [
     },
   },
 ];
-
-

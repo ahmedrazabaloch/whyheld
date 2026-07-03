@@ -141,27 +141,27 @@ const EditorialCollage = memo(function EditorialCollage({
 const COLLAGES = [
   <EditorialCollage 
     key="0"
-    mainImg="/images/how-wayheld-thinks/how-main.webp"
-    mainTag="Cairngorms"
-    mainTitle="Hidden valleys"
-    subImg="/images/how-wayheld-thinks/how-wayheld-1.webp"
-    subTag="Ancient pine"
-    subTitle="Deep forests"
-    quote="The eastern valleys are entirely overlooked by standard routing algorithms."
+    mainImg="/images/travel-assets/05_scotland_cliffs.jpg"
+    mainTag="Wild Coastline"
+    mainTitle="Empty Cliffs"
+    subImg="/images/travel-assets/06_forest_stairs.jpg"
+    subTag="Ancient Paths"
+    subTitle="The Quiet Forest"
+    quote="The coastal cliffs and woodland paths are entirely overlooked by standard routing algorithms."
     author="Wayheld AI"
-    detail="Millions of data points cross-referenced to find the exact atmospheric match for your pace."
+    detail="Walk woodland paths where silence becomes part of the journey."
   />,
   <EditorialCollage 
     key="1"
-    mainImg="/images/how-wayheld-thinks/how-wayheld-2.webp"
-    mainTag="Fife Coastline"
-    mainTitle="Harbour cafés"
+    mainImg="/images/travel-assets/02_bicycle.jpg"
+    mainTag="Slow Travel"
+    mainTitle="Village Routes"
     subImg="/images/how-wayheld-thinks/how-sub.webp"
     subTag="Local craft"
     subTitle="Quiet mornings"
-    quote="The fishing villages of Fife are quiet, and the harbour cafés keep their own hours."
+    quote="Take the slower route through villages where locals still know every neighbour."
     author="Local Guide"
-    detail="Wayheld designs around context, routing you past St Monans and Crail for heritage stays."
+    detail="Wayheld designs around context, routing you past the crowds for authentic stays."
   />
 ];
 
