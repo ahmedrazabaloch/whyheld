@@ -2,23 +2,33 @@
 
 import { motion } from "motion/react";
 import { Section } from "@/components/ui";
-import { containerVariants, riseVariants, EASE_EXPO, kicker, sectionTitle, leadParagraph } from "@/lib/design";
+import {
+  containerVariants,
+  riseVariants,
+  EASE_EXPO,
+  kicker,
+  sectionTitle,
+  leadParagraph,
+} from "@/lib/design";
 
 const PROCESS_STEPS = [
   {
     step: "01",
-    title: "Tell us how you travel",
-    description: "Share your pace, interests, and how you prefer to connect with a place. Wayheld learns what matters to you without reducing your travel style to a checklist.",
+    title: "Leave the checklist behind",
+    description:
+      "A true sense of place emerges when you stop rushing between landmarks. Letting go of the itinerary leaves space for the quiet moments that give a journey its meaning.",
   },
   {
     step: "02",
-    title: "Wayheld crafts your journey",
-    description: "Using AI and curated local knowledge, we build a thoughtful route focused on deeper connections, fewer crowds, and regenerative practices.",
+    title: "Follow curiosity, not schedules",
+    description:
+      "Rigid plans leave little room for the world to surprise you. The most rewarding routes unfold naturally, guided by local context and an openness to the longer path.",
   },
   {
     step: "03",
-    title: "Travel deeper, not faster",
-    description: "Arrive slowly and belong completely. Navigate hidden villages, support local artisans, and experience travel that leaves places better than you found them.",
+    title: "Slow down enough to belong",
+    description:
+      "You cannot understand a community by simply passing through it. Staying longer allows you to learn the rhythm of a street, share unhurried conversations, and leave with lasting relationships.",
   },
 ];
 
@@ -37,7 +47,8 @@ export function ProcessSection() {
           How it works
         </motion.p>
         <motion.h2 variants={riseVariants} className={`mt-6 ${sectionTitle}`}>
-          The path to <span className="italic text-[#74876B]">meaningful travel.</span>
+          The path to{" "}
+          <span className="italic text-[#74876B]">meaningful travel.</span>
         </motion.h2>
       </motion.div>
 
@@ -60,7 +71,11 @@ export function ProcessSection() {
                 initial={{ x: "-100%" }}
                 whileInView={{ x: "0%" }}
                 viewport={{ once: true }}
-                transition={{ duration: 1, delay: 0.2 + index * 0.2, ease: EASE_EXPO }}
+                transition={{
+                  duration: 1,
+                  delay: 0.2 + index * 0.2,
+                  ease: EASE_EXPO,
+                }}
                 className="h-full w-full bg-[#74876B]"
               />
             </div>

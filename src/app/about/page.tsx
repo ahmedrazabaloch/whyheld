@@ -33,20 +33,20 @@ const GUIDING_PRINCIPLES = [
   {
     title: "Travel Slowly",
     description: "Take time to truly experience each destination, allowing for spontaneous discoveries and meaningful connections. We believe the rush of checking boxes is the enemy of travel.",
-    image: "/images/about/about-feature-1.webp",
+    image: "/images/travel-assets/06_forest_stairs.jpg",
     alt: "Quiet misty forest trail",
   },
   {
     title: "Honor Heritage",
     description: "Appreciate the history and culture of every place, understanding the stories that shaped each destination. We center the voices of the people who live there.",
-    image: "/images/about/about-feature-2.webp",
+    image: "/images/hero/hero-1.webp",
     alt: "Artisan working on traditional pottery",
     reverse: true,
   },
   {
     title: "Discover Beyond",
     description: "Venture beyond common tourist routes to find authentic experiences and hidden cultural gems. It’s the quiet cafes and narrow alleys that leave the longest impression.",
-    image: "/images/about/about-feature-3.webp",
+    image: "/images/travel-assets/12_tuscan_alley.jpg",
     alt: "Small cobblestone village street",
   },
 ];

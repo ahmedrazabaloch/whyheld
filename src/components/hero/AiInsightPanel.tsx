@@ -99,11 +99,11 @@ export function AiInsightPanel({ insight, insightId }: AiInsightPanelProps) {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#74876B]/40" />
           </span>
           <span className="text-[0.7rem] font-medium uppercase tracking-[0.22em] text-[rgba(244,239,230,0.82)]">
-            Wayheld is listening
+            Wayheld considers
           </span>
         </div>
         <span className="font-display text-sm italic text-[rgba(244,239,230,0.82)]">
-          intelligence
+          context
         </span>
       </div>
 

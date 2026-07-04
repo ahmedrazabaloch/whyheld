@@ -100,17 +100,17 @@ export function Hero() {
           >
             <div className="flex flex-col">
               <span className="text-xs uppercase tracking-[0.16em] text-[rgba(244,239,230,0.80)]">
-                120+ Heritage Regions Curated
+                Rooted in local knowledge
               </span>
             </div>
             <div className="flex flex-col">
               <span className="text-xs uppercase tracking-[0.16em] text-[rgba(244,239,230,0.80)]">
-                Built for Intentional Travellers
+                Routed for quiet spaces
               </span>
             </div>
             <div className="flex flex-col">
               <span className="text-xs uppercase tracking-[0.16em] text-[rgba(244,239,230,0.80)]">
-                Designed Around Slower Journeys
+                Paced for true understanding
               </span>
             </div>
           </motion.div>

@@ -35,14 +35,14 @@ const EXPERIENCES = [
     title: "Cultural Immersion",
     description:
       "There’s a potter in Puglia that has used the same wheel for forty years, a grandmother in Crail who still wraps fish suppers in yesterday's paper. We route you toward the people a place actually belongs to instead of a staged cultural event. We’d rather give you an afternoon that happens to include them.",
-    image: "/images/experiences/experiences-feature-1.webp",
+    image: "/images/hero/hero-4.webp",
     alt: "Artisan working in a traditional workshop",
   },
   {
     title: "Historical Discovery",
     description:
       "Every guidebook gives you the date. Almost none give you the argument of who built it, who paid for it, who it displaced. We pair you with people who've spent decades in the archive or the village, so the ruins stop being scenery and start being evidence.",
-    image: "/images/experiences/experiences-feature-2.webp",
+    image: "/images/hero/hero-3.webp",
     alt: "Ancient stone pathway in a remote village",
     reverse: true,
   },
@@ -50,7 +50,7 @@ const EXPERIENCES = [
     title: "Mindful Exploration",
     description:
       "Two places in nine days, not nine places in two. We'd rather you leave knowing one valley's weather, its market days, its quiet hour, than have an itinerary filled with places and no memory of any single afternoon.",
-    image: "/images/experiences/experiences-feature-3.webp",
+    image: "/images/travel-assets/07_desert_hiker.jpg",
     alt: "Solitary figure walking through a quiet misty valley",
   },
 ];

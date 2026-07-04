@@ -70,7 +70,6 @@ const SOCIALS: { label: string; href: string; path: string }[] = [
 export function SiteFooter() {
   return (
     <footer className="relative isolate w-full overflow-hidden border-t border-[rgba(244,239,230,0.15)] bg-[#74876B] text-[#F4EFE6]">
-
       <GrainOverlay opacity={0.05} />
 
       <div className="container-x mx-auto w-full max-w-7xl py-16 sm:py-20">
@@ -91,10 +90,10 @@ export function SiteFooter() {
               Wayheld
             </a>
             <p className="mt-5 max-w-md text-base leading-relaxed text-[rgba(244,239,230,0.70)]">
-              Wayheld is a slow travel companion, built on a simple belief: the
-              world is not a checklist. We pair AI with local knowledge to help
-              you travel with intention, honour heritage, and leave the places
-              you love better than you found them.
+              Wayheld exists for travellers who believe the richest journeys
+              begin when the itinerary slows down. Inspired by the philosophy of
+              Traceless Tours, it helps you discover places through the people
+              who know them best.
             </p>
 
             {/* Social placeholders */}
@@ -106,7 +105,12 @@ export function SiteFooter() {
                   aria-label={social.label}
                   className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white/60 transition-colors hover:border-white/40 hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sun-300"
                 >
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-4.5 w-4.5" aria-hidden>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    className="h-4.5 w-4.5"
+                    aria-hidden
+                  >
                     <path d={social.path} />
                   </svg>
                 </a>

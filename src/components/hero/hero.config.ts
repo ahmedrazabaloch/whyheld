@@ -19,7 +19,7 @@ export const ACTIVE_HEADLINE = HEADLINES[0];
 export const HERO_KICKER = "AI-guided slow travel";
 
 export const HERO_SUBHEAD =
-  "Wayheld is your companion for intentional journeys — pairing AI with local knowledge to help you travel regeneratively, honour heritage and connect with places that deserve your time.";
+  "We use local knowledge to route you away from heavy footfall and rigid schedules. Our itineraries are designed to give you the time to sit in quiet squares, share unhurried meals, until the place begins to feel less like somewhere you've visited and more like somewhere you've belonged.";
 
 /** How long each destination stays featured before rotating (ms). */
 export const SHOWCASE_INTERVAL = 9000;
@@ -52,14 +52,14 @@ export const SHOWCASE: ShowcaseDestination[] = [
     insight: {
       query: "Kyoto without the spring crowds",
       response:
-        "Kyoto in cherry season is a beautiful traffic jam. Trace the old Nakasendō through the Kiso Valley instead — the same temples, cedar forests and ryokan rituals, walked between post towns mostly alone.",
-      signals: ["Overtourism: avoided", "Walkable route", "Heritage-rich"],
+        "The spring season draws heavy footfall to the city centre. Consider the Kiso Valley instead—where the ancient cedar forests remain quiet, and evening rituals are shared with just a handful of other guests.",
+      signals: ["Crowds avoided", "Walking pace", "Historical context"],
     },
   },
   {
     id: "lake-como",
     name: "Stories Between Streets",
-    shortName: "A Quiet Corner",
+    shortName: "Hidden Bookshop",
     region: "Lombardy, Italy",
     theme: "Classic elegance",
     pace: "6 serene days",
@@ -76,8 +76,8 @@ export const SHOWCASE: ShowcaseDestination[] = [
     insight: {
       query: "Lake Como off-season retreat",
       response:
-        "Skip the summer tourist rush in Bellagio. Visit in late October when the lake mist rolls in, staying in Varenna to experience the authentic pace of local fishermen and quiet olive groves.",
-      signals: ["Low footfall", "Local interaction", "Relaxed travel"],
+        "The midsummer rush shifts the natural rhythm of the lake. Arrive in late October when the mist settles over the water, staying in Varenna to share morning espresso with the fishermen and walk through silent olive groves.",
+      signals: ["Slower rhythm", "Community presence", "Seasonal quiet"],
     },
   },
   {
@@ -100,8 +100,8 @@ export const SHOWCASE: ShowcaseDestination[] = [
     insight: {
       query: "Cappadocia historical routes",
       response:
-        "Avoid the main balloon launch pads. Wander through the quiet Rose and Red Valleys on foot, exploring rock-cut churches and cave systems that date back to the early Byzantine era.",
-      signals: ["Hiking immersion", "Local heritage", "Sunrise trails"],
+        "The main launch sites draw thousands each morning. Walk the lower paths of the Rose Valley on foot, finding ancient rock-cut architecture without the pressure to keep moving.",
+      signals: ["Independent pacing", "Local trails", "Morning stillness"],
     },
   },
   {
@@ -124,8 +124,8 @@ export const SHOWCASE: ShowcaseDestination[] = [
     insight: {
       query: "Authentic Tuscan dining",
       response:
-        "Trade the crowded trattorias of Florence for an agriturismo deep in the Val d'Orcia. Join the harvest, learn to press olive oil, and dine with the family who grew your meal.",
-      signals: ["Farm-to-table", "Agriturismo", "Family-run"],
+        "The city trattorias turn tables quickly. Travel south to an independent farm in the Val d'Orcia, where you can help with the olive harvest and sit down to a meal that took hours to prepare.",
+      signals: ["Slow food", "Family-run farms", "Shared tables"],
     },
   },
   {
@@ -148,8 +148,8 @@ export const SHOWCASE: ShowcaseDestination[] = [
     insight: {
       query: "Swiss Alps train tour",
       response:
-        "Ditch the cable cars and tourist coaches. Travel on foot and by cogwheel train through Lauterbrunnen, letting Swiss timetables orchestrate your descent past high pasture chalets and glacial peaks.",
-      signals: ["100% rail-reachable", "Low emission", "Unspoiled views"],
+        "The large cable cars move at an industrial pace. Take the local cogwheel trains up through the Lauterbrunnen valley, stopping at high-altitude farming chalets where the only sound is the wind.",
+      signals: ["Local rail", "Isolated cabins", "Mountain quiet"],
     },
   },
 ];

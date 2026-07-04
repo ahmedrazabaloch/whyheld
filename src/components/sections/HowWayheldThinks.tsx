@@ -25,28 +25,58 @@ function VoiceMark({ voice }: { voice: ThinkingStage["voice"] }) {
     case "you":
       return (
         <svg viewBox="0 0 16 16" fill="none" className={common} aria-hidden>
-          <circle cx="8" cy="5" r="2.6" stroke="currentColor" strokeWidth="1.3" />
-          <path d="M3 13c.6-2.4 2.6-3.6 5-3.6S12.4 10.6 13 13" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+          <circle
+            cx="8"
+            cy="5"
+            r="2.6"
+            stroke="currentColor"
+            strokeWidth="1.3"
+          />
+          <path
+            d="M3 13c.6-2.4 2.6-3.6 5-3.6S12.4 10.6 13 13"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinecap="round"
+          />
         </svg>
       );
     case "wayheld":
       return (
         <svg viewBox="0 0 16 16" fill="none" className={common} aria-hidden>
-          <path d="M8 1.5c2 1.8 2 4.2 0 6-2-1.8-2-4.2 0-6ZM8 8.5c2 1.8 2 4.2 0 6-2-1.8-2-4.2 0-6Z" stroke="currentColor" strokeWidth="1.2" />
+          <path
+            d="M8 1.5c2 1.8 2 4.2 0 6-2-1.8-2-4.2 0-6ZM8 8.5c2 1.8 2 4.2 0 6-2-1.8-2-4.2 0-6Z"
+            stroke="currentColor"
+            strokeWidth="1.2"
+          />
           <circle cx="8" cy="8" r="1.1" fill="currentColor" />
         </svg>
       );
     case "local":
       return (
         <svg viewBox="0 0 16 16" fill="none" className={common} aria-hidden>
-          <path d="M8 14s4.5-3.6 4.5-7A4.5 4.5 0 0 0 3.5 7c0 3.4 4.5 7 4.5 7Z" stroke="currentColor" strokeWidth="1.3" />
-          <circle cx="8" cy="6.8" r="1.6" stroke="currentColor" strokeWidth="1.3" />
+          <path
+            d="M8 14s4.5-3.6 4.5-7A4.5 4.5 0 0 0 3.5 7c0 3.4 4.5 7 4.5 7Z"
+            stroke="currentColor"
+            strokeWidth="1.3"
+          />
+          <circle
+            cx="8"
+            cy="6.8"
+            r="1.6"
+            stroke="currentColor"
+            strokeWidth="1.3"
+          />
         </svg>
       );
     case "route":
       return (
         <svg viewBox="0 0 16 16" fill="none" className={common} aria-hidden>
-          <path d="M4 13c0-3 8-4 8-7a3 3 0 0 0-6 0c0 1.6 2 2.2 2 3.4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+          <path
+            d="M4 13c0-3 8-4 8-7a3 3 0 0 0-6 0c0 1.6 2 2.2 2 3.4"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinecap="round"
+          />
           <circle cx="4" cy="13" r="1.2" fill="currentColor" />
           <circle cx="12" cy="3" r="1.2" fill="currentColor" />
         </svg>
@@ -54,7 +84,7 @@ function VoiceMark({ voice }: { voice: ThinkingStage["voice"] }) {
   }
 }
 
-/** 
+/**
  * Exact copy of the original premium collage layout, extracted into a reusable component.
  * It strictly maintains the same overlapping images, quote cards, shadows, and spacing.
  */
@@ -67,7 +97,7 @@ const EditorialCollage = memo(function EditorialCollage({
   subTitle,
   quote,
   author,
-  detail
+  detail,
 }: {
   mainImg: string;
   mainTag: string;
@@ -96,7 +126,9 @@ const EditorialCollage = memo(function EditorialCollage({
           <span className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#A8A69D] lg:text-[0.65rem]">
             {mainTag}
           </span>
-          <h4 className="mt-1 font-display text-xl lg:mt-2 lg:text-2xl">{mainTitle}</h4>
+          <h4 className="mt-1 font-display text-xl lg:mt-2 lg:text-2xl">
+            {mainTitle}
+          </h4>
         </div>
       </div>
 
@@ -139,7 +171,7 @@ const EditorialCollage = memo(function EditorialCollage({
 });
 
 const COLLAGES = [
-  <EditorialCollage 
+  <EditorialCollage
     key="0"
     mainImg="/images/travel-assets/05_scotland_cliffs.jpg"
     mainTag="Wild Coastline"
@@ -147,11 +179,11 @@ const COLLAGES = [
     subImg="/images/travel-assets/06_forest_stairs.jpg"
     subTag="Ancient Paths"
     subTitle="The Quiet Forest"
-    quote="The coastal cliffs and woodland paths are entirely overlooked by standard routing algorithms."
+    quote="The coastal cliffs and woodland paths are often overlooked by visitors following the usual routes."
     author="Wayheld AI"
     detail="Walk woodland paths where silence becomes part of the journey."
   />,
-  <EditorialCollage 
+  <EditorialCollage
     key="1"
     mainImg="/images/travel-assets/02_bicycle.jpg"
     mainTag="Slow Travel"
@@ -161,17 +193,17 @@ const COLLAGES = [
     subTitle="Quiet mornings"
     quote="Take the slower route through villages where locals still know every neighbour."
     author="Local Guide"
-    detail="Wayheld designs around context, routing you past the crowds for authentic stays."
-  />
+    detail="Wayheld draws on local knowledge to help you linger where everyday life quietly unfolds."
+  />,
 ];
 
-const Stage = memo(function Stage({ 
-  stage, 
+const Stage = memo(function Stage({
+  stage,
   index,
-  visual
-}: { 
-  stage: ThinkingStage; 
-  index: number; 
+  visual,
+}: {
+  stage: ThinkingStage;
+  index: number;
   visual?: React.ReactNode;
 }) {
   const isWayheld = stage.voice === "wayheld";
@@ -234,11 +266,7 @@ const Stage = memo(function Stage({
       </div>
 
       {/* Mobile Visual Flow (Interspersed) */}
-      {visual && (
-        <div className="block w-full pb-16 lg:hidden">
-          {visual}
-        </div>
-      )}
+      {visual && <div className="block w-full pb-16 lg:hidden">{visual}</div>}
     </motion.li>
   );
 });
@@ -277,7 +305,9 @@ export const HowWayheldThinks = memo(function HowWayheldThinks() {
             </p>
             <h2 id="how-heading" className={`mt-6 ${sectionTitle}`}>
               {HOW_HEADLINE.lead}{" "}
-              <span className="italic text-[#74876B]">{HOW_HEADLINE.accent}</span>
+              <span className="italic text-[#74876B]">
+                {HOW_HEADLINE.accent}
+              </span>
               {HOW_HEADLINE.tail}
             </h2>
             <p className={`mt-6 max-w-xl ${leadParagraph}`}>{HOW_INTRO}</p>
@@ -305,10 +335,10 @@ export const HowWayheldThinks = memo(function HowWayheldThinks() {
                 if (index === 3) visual = COLLAGES[1];
 
                 return (
-                  <Stage 
-                    key={stage.label} 
-                    stage={stage} 
-                    index={index} 
+                  <Stage
+                    key={stage.label}
+                    stage={stage}
+                    index={index}
                     visual={visual}
                   />
                 );
@@ -322,7 +352,7 @@ export const HowWayheldThinks = memo(function HowWayheldThinks() {
           {/* Matches the top offset of the spineRef (mt-8 lg:mt-10) to perfectly align visually */}
           <div className="flex flex-col gap-[200px] pl-8 mt-8 lg:mt-10">
             {COLLAGES.map((collage, i) => (
-              <motion.div 
+              <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}

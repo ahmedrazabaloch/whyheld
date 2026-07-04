@@ -18,7 +18,7 @@ export const WHY_HEADLINE = {
 };
 
 export const WHY_INTRO =
-  "Somewhere along the way, travel became a race — more places, more photos, more pressure. You come home exhausted, with a camera roll full of crowds and a faint sense you missed the actual place.";
+  "Most journeys are measured by how many places they include. We believe they're remembered for the conversations, routines, and relationships that quietly stay with you long after you've returned home. The moments people remember years later are rarely the famous ones. They're the conversations that weren't planned, the meals that lasted too long, and the streets that slowly began to feel familiar.";
 
 /**
  * The central contrast: modern travel vs. the Wayheld way. Rendered as paired
@@ -26,35 +26,35 @@ export const WHY_INTRO =
  */
 export const CONTRASTS: ContrastPoint[] = [
   {
-    problem: "Crowded",
+    problem: "Collecting places",
     problemDetail:
-      "The same twelve viewpoints, shoulder to shoulder, queuing for a photo of the queue.",
-    answer: "Intentional",
+      "Treating geography as a list of boxes to check, leaving no margin for the unplanned.",
+    answer: "Following curiosity",
     answerDetail:
-      "We route you to places that can hold you — chosen for meaning, not for trending.",
+      "The most rewarding routes reveal themselves when you leave the itinerary behind and let the day unfold naturally.",
   },
   {
-    problem: "Rushed",
+    problem: "Relentless pace",
     problemDetail:
-      "Five cities in seven days. A blur of stations, lobbies and half-seen wonders.",
-    answer: "Slower",
+      "Moving constantly across multiple cities, reducing complex cultures to a blur of transit hubs.",
+    answer: "Deep presence",
     answerDetail:
-      "Fewer stops, longer stays. Time enough for a place to stop performing and start being real.",
+      "Remaining in one place until familiar faces become part of your day and the destination begins to feel less like somewhere you're visiting.",
   },
   {
-    problem: "Checklist-driven",
+    problem: "Chasing monuments",
     problemDetail:
-      "Ticking landmarks off a list someone else wrote, optimised for everyone but you.",
-    answer: "Deeper",
+      "Standing shoulder to shoulder with thousands to capture the identical photograph of a famous façade.",
+    answer: "Human connection",
     answerDetail:
-      "Itineraries that follow your curiosity — heritage, craft, food, the quiet corners.",
+      "Sitting down to share a meal with the people who live there, sharing a table long enough that strangers stop feeling like strangers.",
   },
   {
-    problem: "Extractive",
+    problem: "Passive observation",
     problemDetail:
-      "Money flows out, prices rise, locals get priced out of their own streets.",
-    answer: "Community-focused",
+      "Walking through a neighbourhood as an outsider, inadvertently straining the local resources and housing.",
+    answer: "Rooted community",
     answerDetail:
-      "Stays and guides that are locally owned, so your visit helps a place keep its soul.",
+      "Choosing independent lodgings and local voices, leaving behind friendships instead of footprints.",
   },
 ];
