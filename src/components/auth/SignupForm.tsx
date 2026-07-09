@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react";
 import { useMemo, useState, type FormEvent } from "react";
 import { buttonStyles } from "@/lib/design";
 import { OrDivider, PasswordField, SocialButtons, TextField } from "./fields";
+import { LocationAutocomplete } from "@/components/location/LocationAutocomplete";
 
 interface Errors {
   name?: string;
@@ -37,6 +38,7 @@ export function SignupForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [placeId, setPlaceId] = useState<string | undefined>();
   const [agreed, setAgreed] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -69,6 +71,7 @@ export function SignupForm() {
           email,
           password,
           acceptedTerms: agreed,
+          ...(placeId ? { placeId } : {}),
         }),
       });
 
@@ -160,6 +163,12 @@ export function SignupForm() {
             </div>
           )}
         </div>
+        
+        <LocationAutocomplete 
+          label="Home Location (Optional)" 
+          placeholder="Where are you based?"
+          onChange={(id) => setPlaceId(id)}
+        />
       </div>
 
       <div className="flex flex-col gap-1.5">

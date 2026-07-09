@@ -20,6 +20,7 @@ export const signupSchema = z.object({
   acceptedTerms: z.literal(true, {
     message: "Please accept the terms to continue.",
   }),
+  placeId: z.string().optional(),
 });
 
 export const loginSchema = z.object({

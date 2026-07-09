@@ -5,6 +5,7 @@ import { hashPassword } from "@/lib/auth/password";
 import { signupSchema } from "@/lib/auth/validation";
 import { createToken } from "@/lib/auth/tokens";
 import { sendVerificationEmail } from "@/lib/auth/email";
+import { resolvePlaceDetails } from "@/lib/location/service";
 
 /**
  * POST /api/v1/auth/signup
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { name, email, password } = parsed.data;
+  const { name, email, password, placeId } = parsed.data;
   const normalizedEmail = email.toLowerCase();
 
   const existing = await prisma.user.findUnique({
@@ -61,12 +62,34 @@ export async function POST(request: Request) {
   const lastName = rest.join(" ") || null;
   const passwordHash = await hashPassword(password);
 
+  let locationData = undefined;
+  if (placeId) {
+    const resolved = await resolvePlaceDetails(placeId);
+    if (resolved) {
+      locationData = {
+        city: resolved.city,
+        state: resolved.state,
+        country: resolved.country,
+        countryCode: resolved.countryCode,
+        formattedAddress: resolved.formattedAddress,
+        latitude: resolved.latitude,
+        longitude: resolved.longitude,
+        locationPlaceId: resolved.placeId,
+        locationUpdatedAt: new Date(),
+      };
+    }
+  }
+
   const user = await prisma.user.create({
     data: {
       email: normalizedEmail,
       passwordHash,
       profile: {
-        create: { firstName, lastName },
+        create: { 
+          firstName, 
+          lastName,
+          ...locationData 
+        },
       },
       creditWallet: {
         create: { balance: 0 },

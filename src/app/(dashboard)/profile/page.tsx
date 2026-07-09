@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/dashboard";
-import { formStyles, buttonStyles } from "@/lib/design";
 import { getCachedSession, getCachedProfile } from "@/lib/auth/session-cache";
+import { ProfileForm } from "@/components/profile/ProfileForm";
+import { formStyles, buttonStyles } from "@/lib/design";
 
 export const metadata: Metadata = {
   title: "Profile — Wayheld",
@@ -48,33 +49,11 @@ export default async function ProfilePage() {
             </div>
 
             {/* Fields */}
-            <form className="flex-1 space-y-8">
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className={formStyles.label}>Full Name</label>
-                  <input type="text" className={formStyles.input} defaultValue={fullName} placeholder="Your name" />
-                </div>
-                <div className="space-y-2">
-                  <label className={formStyles.label}>Email</label>
-                  <input type="email" className={formStyles.input} defaultValue={user.email || ""} disabled />
-                </div>
-              </div>
-              
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label className={formStyles.label}>Phone</label>
-                  <input type="tel" className={formStyles.input} placeholder="+1 (555) 000-0000" />
-                </div>
-                <div className="space-y-2">
-                  <label className={formStyles.label}>Location</label>
-                  <input type="text" className={formStyles.input} placeholder="City, Country" />
-                </div>
-              </div>
-
-              <div className="pt-4 text-right">
-                <button type="button" className={`${buttonStyles.primary}`}>Update Profile</button>
-              </div>
-            </form>
+            <ProfileForm
+              fullName={fullName}
+              email={user.email || ""}
+              initialLocation={[profile?.homeCity, profile?.homeCountry].filter(Boolean).join(", ")}
+            />
           </div>
         </section>
 

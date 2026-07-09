@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/Toaster";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -22,6 +23,8 @@ export const metadata: Metadata = {
     "Wayheld is an AI-powered slow travel companion for intentional, regenerative journeys rooted in culture, heritage and deeper human connection.",
 };
 
+
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -34,6 +37,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-brand-bg text-brand-text-primary">
         {children}
+        <Toaster />
       </body>
     </html>
   );

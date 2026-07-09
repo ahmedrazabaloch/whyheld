@@ -9,7 +9,7 @@ export default function DashboardLoading() {
       </div>
       {/* Stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {["Credits", "Journeys", "Saved places"].map((label) => (
+        {["AI Credits", "Journeys", "Saved places"].map((label) => (
           <div
             key={label}
             className="rounded-2xl border border-brand-border/20 bg-brand-card px-6 py-5"

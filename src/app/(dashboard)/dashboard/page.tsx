@@ -23,13 +23,13 @@ export default async function DashboardPage() {
   /* ---------------------------------------------------------------- */
   /* Real data reads — parallel, profile is a React cache() hit       */
   /* ---------------------------------------------------------------- */
-  const [profile, wallet, journeyCount, savedCount, unreadCount] =
+  const [profile, userDb, journeyCount, savedCount, unreadCount] =
     await Promise.all([
       // Awaits the in-flight promise started by the layout — no extra DB call.
       getCachedProfile(session.user.id),
-      prisma.creditWallet.findUnique({
-        where: { userId: session.user.id },
-        select: { balance: true },
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { credits: true, plan: true },
       }),
       prisma.journey.count({
         where: { userId: session.user.id, deletedAt: null },
@@ -56,7 +56,7 @@ export default async function DashboardPage() {
 
       {/* Stats row */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Credits" value={wallet?.balance ?? 0} />
+        <CreditsCard credits={userDb?.credits ?? 0} plan={userDb?.plan ?? "FREE"} />
         <StatCard label="Journeys" value={journeyCount} />
         <StatCard label="Saved places" value={savedCount} />
       </div>
@@ -128,6 +128,27 @@ function StatCard({ label, value }: { label: string; value: number }) {
       <p className="mt-2 font-display text-3xl tracking-tight text-brand-text-primary">
         {value}
       </p>
+    </div>
+  );
+}
+
+function CreditsCard({ credits, plan }: { credits: number; plan: string }) {
+  const isPremium = plan === "PREMIUM";
+  const isExhausted = !isPremium && credits <= 0;
+
+  return (
+    <div className="rounded-2xl border border-brand-border/60 bg-brand-card px-6 py-5 shadow-sm transition-shadow duration-200 hover:shadow-md flex flex-col justify-between">
+      <p className="text-[0.65rem] font-medium uppercase tracking-[0.2em] text-brand-text-secondary/80">
+        AI Credits
+      </p>
+      <div className="mt-2">
+        <p className={`font-display text-3xl tracking-tight ${isExhausted ? 'text-red-500' : 'text-brand-text-primary'}`}>
+          {isPremium ? "Unlimited" : isExhausted ? "No Credits Remaining" : `${credits} Remaining`}
+        </p>
+        <p className="mt-1 text-sm text-brand-text-secondary">
+          {isPremium ? "Premium Plan" : isExhausted ? "Upgrade Required" : "Free Plan"}
+        </p>
+      </div>
     </div>
   );
 }

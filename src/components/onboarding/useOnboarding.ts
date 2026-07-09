@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { STEPS } from "./onboarding.config";
 
 export interface OnboardingData {
@@ -146,14 +147,16 @@ export function useOnboarding(): UseOnboarding {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        setSaveError(
-          body?.error?.message || "We couldn't save your profile. Try again.",
-        );
+        const friendlyMessage = body?.error || "We couldn't save your profile. Try again.";
+        setSaveError(friendlyMessage);
+        toast.error(friendlyMessage);
         return false;
       }
       return true;
     } catch {
-      setSaveError("Network error. Please try again.");
+      const friendlyMessage = "Network error. Please try again.";
+      setSaveError(friendlyMessage);
+      toast.error(friendlyMessage);
       return false;
     } finally {
       setSaving(false);
