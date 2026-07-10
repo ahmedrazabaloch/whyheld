@@ -44,6 +44,11 @@ export const getCachedProfile = cache(async (userId: string) => {
       homeCountry: true,
       locale: true,
       onboardingCompletedAt: true,
+      city: true,
+      state: true,
+      country: true,
+      latitude: true,
+      longitude: true,
     },
   });
   return profile;

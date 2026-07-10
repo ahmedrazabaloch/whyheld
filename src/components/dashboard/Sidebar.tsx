@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -73,6 +74,7 @@ const NAV_ITEMS = [
 
 export function Sidebar({ user }: { user?: User }) {
   const pathname = usePathname();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   return (
     <aside className="hidden lg:flex lg:w-60 lg:flex-col lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:border-r lg:border-brand-border/10 lg:bg-brand-sidebar">
@@ -139,17 +141,36 @@ export function Sidebar({ user }: { user?: User }) {
         <div className="mt-auto space-y-1">
           <div className="my-3 mx-3 h-px bg-[rgba(244,239,230,0.08)]" aria-hidden />
           <button
-            onClick={() => signOut({ callbackUrl: "/" })}
-            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[rgba(244,239,230,0.82)] transition-all duration-200 hover:bg-[rgba(244,239,230,0.08)] hover:text-[#F4EFE6] cursor-pointer"
+            disabled={isSigningOut}
+            onClick={async () => {
+              if (isSigningOut) return;
+              setIsSigningOut(true);
+              await signOut({ callbackUrl: "/" });
+            }}
+            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[rgba(244,239,230,0.82)] transition-all duration-200 hover:bg-[rgba(244,239,230,0.08)] hover:text-[#F4EFE6] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span className="flex-shrink-0 transition-colors duration-200 text-inherit">
-              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M6 14H3.5A1.5 1.5 0 0 1 2 12.5v-9A1.5 1.5 0 0 1 3.5 2H6" />
-                <path d="M11 11.5 14.5 8 11 4.5" />
-                <path d="M14.5 8H6" />
-              </svg>
-            </span>
-            Sign Out
+            {isSigningOut ? (
+              <>
+                <span className="flex-shrink-0 transition-colors duration-200 text-inherit animate-spin">
+                  <svg className="h-4.5 w-4.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </span>
+                Signing Out...
+              </>
+            ) : (
+              <>
+                <span className="flex-shrink-0 transition-colors duration-200 text-inherit">
+                  <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 14H3.5A1.5 1.5 0 0 1 2 12.5v-9A1.5 1.5 0 0 1 3.5 2H6" />
+                    <path d="M11 11.5 14.5 8 11 4.5" />
+                    <path d="M14.5 8H6" />
+                  </svg>
+                </span>
+                Sign Out
+              </>
+            )}
           </button>
         </div>
       </nav>

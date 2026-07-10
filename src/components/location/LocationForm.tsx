@@ -31,7 +31,7 @@ export function LocationForm({ initialLocation = "" }: { initialLocation?: strin
     setIsSaving(false);
     if (res.success) {
       // The backend resolved an address — reflect in the input label
-      setSavedLabel(res.data?.label || "Location detected");
+      setSavedLabel(res.data?.label ?? `${lat.toFixed(4)}, ${lng.toFixed(4)}`);
       toast.success("Location detected and saved.");
     } else {
       toast.error(res.error || "Failed to resolve your location.");

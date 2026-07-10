@@ -10,7 +10,16 @@ import {
   ProcessSection,
 } from "@/components/sections";
 
-export default function Home() {
+import { auth } from "@/lib/auth/auth";
+import { getMembershipPlans } from "@/lib/membership/getMembershipPlans";
+
+export default async function Home() {
+  const [plans, session] = await Promise.all([
+    getMembershipPlans(),
+    auth(),
+  ]);
+  const isAuthenticated = !!session?.user?.id;
+
   return (
     <MarketingLayout>
       <main className="flex flex-1 flex-col">
@@ -20,7 +29,7 @@ export default function Home() {
         <WhyTravelBroken />
         <HowWayheldThinks />
         <FeaturedJourneys />
-        <Membership />
+        <Membership plans={plans} isAuthenticated={isAuthenticated} />
         <FinalCta />
       </main>
     </MarketingLayout>

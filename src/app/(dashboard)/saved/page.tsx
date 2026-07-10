@@ -15,12 +15,13 @@ export default async function SavedPage() {
   // Cache hit — layout.tsx already resolved this session for this request.
   const session = await getCachedSession();
 
-  if (!session?.user?.id) {
-    redirect("/signup");
+  const userId = session?.user?.id;
+  if (!userId) {
+    redirect("/login");
   }
 
   const savedCount = await prisma.savedPlace.count({
-    where: { userId: session.user.id },
+    where: { userId },
   });
 
   return (

@@ -1,22 +1,29 @@
 "use client";
 
 import { Toaster as SonnerToaster } from "sonner";
+import { Check, AlertCircle, Info, AlertTriangle } from "lucide-react";
 
 export function Toaster() {
   return (
     <SonnerToaster 
       position="bottom-center"
-      duration={4000}
+      duration={5000}
+      icons={{
+        success: <Check className="h-5 w-5 text-[#74876B]" strokeWidth={2} />,
+        error: <AlertCircle className="h-5 w-5 text-[#8b3a3a]" strokeWidth={2} />,
+        info: <Info className="h-5 w-5 text-[#74876B]" strokeWidth={2} />,
+        warning: <AlertTriangle className="h-5 w-5 text-[#b08d42]" strokeWidth={2} />,
+      }}
       toastOptions={{
         classNames: {
-          toast: "group font-sans flex items-center gap-3 w-full bg-brand-card border border-brand-border/60 shadow-panel p-4 rounded-2xl",
-          title: "text-sm font-medium text-brand-text-primary",
-          description: "text-sm text-brand-text-secondary",
-          success: "border-green-500/20 bg-green-500/5",
-          error: "border-red-500/20 bg-red-500/5",
-          warning: "border-yellow-500/20 bg-yellow-500/5",
-          info: "border-brand-btn-primary/20 bg-brand-btn-primary/5",
-          icon: "group-data-[type=success]:text-green-500 group-data-[type=error]:text-red-500 group-data-[type=warning]:text-yellow-500 group-data-[type=info]:text-brand-btn-primary",
+          toast: "group font-sans flex items-start gap-4 w-full bg-[#F4EFE6] border border-[#D8D2C8] shadow-[0_20px_50px_-20px_rgba(51,51,47,0.15)] p-5 rounded-[1.25rem] transition-all duration-400 ease-out",
+          title: "text-[0.95rem] font-display font-medium text-[#33332F] leading-tight",
+          description: "text-sm text-[#504F4A] leading-relaxed mt-1",
+          success: "border-[#74876B]/20",
+          error: "border-[#8b3a3a]/20",
+          warning: "border-[#b08d42]/20",
+          info: "border-[#74876B]/20",
+          icon: "mt-0.5",
         }
       }}
     />

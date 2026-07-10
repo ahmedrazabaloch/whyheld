@@ -16,8 +16,11 @@ export default async function DashboardPage() {
   // Cache hit — layout.tsx already resolved this session for this request.
   const session = await getCachedSession();
 
-  if (!session?.user?.id) {
-    redirect("/signup");
+  // Layout guarantees an authenticated session, but we narrow the type
+  // to satisfy TypeScript without using non-null assertions.
+  const userId = session?.user?.id;
+  if (!userId) {
+    redirect("/login");
   }
 
   /* ---------------------------------------------------------------- */
@@ -26,19 +29,19 @@ export default async function DashboardPage() {
   const [profile, userDb, journeyCount, savedCount, unreadCount] =
     await Promise.all([
       // Awaits the in-flight promise started by the layout — no extra DB call.
-      getCachedProfile(session.user.id),
+      getCachedProfile(userId),
       prisma.user.findUnique({
-        where: { id: session.user.id },
+        where: { id: userId },
         select: { credits: true, plan: true },
       }),
       prisma.journey.count({
-        where: { userId: session.user.id, deletedAt: null },
+        where: { userId, deletedAt: null },
       }),
       prisma.savedPlace.count({
-        where: { userId: session.user.id },
+        where: { userId },
       }),
       prisma.notification.count({
-        where: { userId: session.user.id, readAt: null },
+        where: { userId, readAt: null },
       }),
     ]);
 

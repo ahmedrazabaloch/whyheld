@@ -14,7 +14,7 @@ export default async function OnboardingPage() {
   const session = await getCachedSession();
 
   if (!session?.user?.id) {
-    redirect("/signup");
+    redirect("/login");
   }
 
   // Onboarding status read directly from the profile record.

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { PageHeader, EmptyState } from "@/components/dashboard";
+import { PageHeader } from "@/components/dashboard";
 import { getCachedSession } from "@/lib/auth/session-cache";
-
+import { getMembershipPlans } from "@/lib/membership/getMembershipPlans";
 
 export const metadata: Metadata = {
   title: "Billing — Wayheld",
@@ -15,14 +15,20 @@ export default async function BillingPage() {
   // Cache hit — layout.tsx already resolved this session for this request.
   const session = await getCachedSession();
 
-  if (!session?.user?.id) {
-    redirect("/signup");
+  // Narrow the type to satisfy TypeScript without using non-null assertions.
+  // layout.tsx already guarantees an authenticated session.
+  const userId = session?.user?.id;
+  if (!userId) {
+    redirect("/login");
   }
 
-  const wallet = await prisma.creditWallet.findUnique({
-    where: { userId: session.user.id },
-    select: { balance: true, lifetimeGranted: true, lifetimeConsumed: true },
-  });
+  const [wallet, plans] = await Promise.all([
+    prisma.creditWallet.findUnique({
+      where: { userId },
+      select: { balance: true, lifetimeGranted: true, lifetimeConsumed: true },
+    }),
+    getMembershipPlans(),
+  ]);
 
   return (
     <>
@@ -47,26 +53,44 @@ export default async function BillingPage() {
       </div>
 
       {/* Subscription section */}
-      <EmptyState
-        icon={
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 28 28"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="4" y="7" width="20" height="14" rx="3" />
-            <path d="M4 12h20" />
-            <path d="M8 18h4" />
-          </svg>
-        }
-        title="Subscription management coming soon"
-        description="You'll be able to upgrade your plan, manage payment methods, and review past invoices here."
-      />
+      <div className="mt-12">
+        <h3 className="font-display text-2xl tracking-tight text-brand-text-primary mb-6">Available Plans</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {plans.map((plan) => (
+            <div
+              key={plan.id}
+              className={`flex flex-col h-full rounded-[2rem] border p-6 sm:p-8 shadow-sm ${
+                plan.featured 
+                  ? "border-[#74876B] bg-[#33332F] text-[#F4EFE6]" 
+                  : "border-brand-border/60 bg-brand-card text-brand-text-primary"
+              }`}
+            >
+              <h4 className={`font-display text-xl ${plan.featured ? "text-white" : ""}`}>{plan.name}</h4>
+              <div className="mt-4 mb-6">
+                <span className="font-display text-3xl font-bold">{plan.price}</span>
+                {plan.cadence && <span className={`ml-2 text-sm ${plan.featured ? "text-[#A8A69D]" : "text-brand-text-secondary"}`}>{plan.cadence}</span>}
+              </div>
+              <ul className="flex-1 space-y-3 mb-8">
+                {plan.features.map((feature, i) => (
+                  <li key={i} className="text-sm flex items-start gap-2">
+                    <span className={plan.featured ? "text-[#74876B]" : "text-brand-text-secondary"}>•</span>
+                    <span className={plan.featured ? "text-[#F4EFE6]" : "text-brand-text-primary"}>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                className={`mt-auto w-full rounded-full px-4 py-3 text-sm font-medium transition-colors ${
+                  plan.featured
+                    ? "bg-[#74876B] text-[#F4EFE6] hover:bg-[#68795f]"
+                    : "border border-brand-border bg-transparent hover:bg-brand-border/30"
+                }`}
+              >
+                {plan.cta}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
     </>
   );
 }

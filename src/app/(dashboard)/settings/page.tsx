@@ -14,16 +14,17 @@ export default async function SettingsPage() {
   // Cache hit — layout.tsx already resolved this session for this request.
   const session = await getCachedSession();
 
-  if (!session?.user?.id) {
-    redirect("/signup");
+  const userId = session?.user?.id;
+  if (!userId) {
+    redirect("/login");
   }
 
   // getCachedProfile is a React cache() hit — DashboardLayout kicked it off early.
   // getCachedPreferences starts here, running in parallel with the already-in-flight
   // profile fetch so both complete at roughly the same time (~1 round-trip each).
   const [profile, preferences] = await Promise.all([
-    getCachedProfile(session.user.id),
-    getCachedPreferences(session.user.id),
+    getCachedProfile(userId),
+    getCachedPreferences(userId),
   ]);
 
   return (

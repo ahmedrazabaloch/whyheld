@@ -200,7 +200,7 @@ model ProfileInterest {
 /// app never hardcodes money — Stripe remains the source of truth for price.
 model MembershipPlan {
   id               String          @id @default(cuid())
-  tier             PlanTier
+  tier             PlanTier        @unique
   name             String
   description      String?
   interval         BillingInterval @default(MONTH)
@@ -217,7 +217,6 @@ model MembershipPlan {
   updatedAt        DateTime        @updatedAt
   subscriptions    Subscription[]
 
-  @@index([tier])
   @@map("membership_plans")
 }
 

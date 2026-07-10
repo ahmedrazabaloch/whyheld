@@ -6,7 +6,7 @@ export default async function StartPage() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    redirect("/signup");
+    redirect("/login");
   }
 
   redirect("/dashboard");

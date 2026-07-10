@@ -59,3 +59,33 @@ export async function resolveReverseGeocode(lat: number, lng: number): Promise<W
 
   return fetchAndCache(lat, lng);
 }
+
+/**
+ * Formats a location object into a human-readable label based on priority:
+ * City, State > City, Country > State > Country > Latitude, Longitude > empty string
+ */
+export function formatLocation(loc: {
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}): string {
+  if (loc.city && loc.state) {
+    return `${loc.city}, ${loc.state}`;
+  }
+  if (loc.city && loc.country) {
+    return `${loc.city}, ${loc.country}`;
+  }
+  if (loc.state) {
+    return loc.state;
+  }
+  if (loc.country) {
+    return loc.country;
+  }
+  if (loc.latitude != null && loc.longitude != null) {
+    return `${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}`;
+  }
+  return "";
+}
+

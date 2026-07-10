@@ -11,13 +11,52 @@ interface ProfileFormProps {
   initialLocation: string;
 }
 
+/** Strips all non-digit characters to get the raw digit count. */
+function extractDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+function validatePhone(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed === "") return null; // Phone is optional — empty is valid.
+  const digits = extractDigits(trimmed);
+  if (digits.length === 0) return "Phone number must contain digits only.";
+  if (/[a-zA-Z]/.test(trimmed)) return "Phone number must not contain letters.";
+  if (digits.length < 7) return "Phone number must be at least 7 digits.";
+  if (digits.length > 15) return "Phone number must be no more than 15 digits.";
+  return null;
+}
+
 export function ProfileForm({ fullName, email, initialLocation }: ProfileFormProps) {
   const [name, setName] = useState(fullName);
   const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setPhone(value);
+    // Clear error on change to give live feedback
+    if (phoneError) {
+      setPhoneError(validatePhone(value));
+    }
+  };
+
+  const handlePhoneBlur = () => {
+    setPhoneError(validatePhone(phone));
+  };
 
   const handleUpdateProfile = async () => {
     if (isSaving) return;
+
+    // Run phone validation before submission
+    const phoneValidationError = validatePhone(phone);
+    if (phoneValidationError) {
+      setPhoneError(phoneValidationError);
+      toast.error(phoneValidationError);
+      return;
+    }
+
     setIsSaving(true);
     // Profile name/phone update is a future action — stub with toast feedback
     await new Promise((r) => setTimeout(r, 800));
@@ -57,11 +96,18 @@ export function ProfileForm({ fullName, email, initialLocation }: ProfileFormPro
           <label className={formStyles.label}>Phone</label>
           <input
             type="tel"
-            className={formStyles.input}
-            placeholder="+1 (555) 000-0000"
+            className={`${formStyles.input} ${phoneError ? "border-red-400 focus:border-red-400 focus-visible:outline-red-400" : ""}`}
+            placeholder="+1 555 000 0000"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={handlePhoneChange}
+            onBlur={handlePhoneBlur}
+            inputMode="tel"
           />
+          {phoneError && (
+            <p className="text-xs text-red-500" role="alert">
+              {phoneError}
+            </p>
+          )}
         </div>
         <div className="space-y-2">
           <LocationForm initialLocation={initialLocation} />
@@ -80,4 +126,3 @@ export function ProfileForm({ fullName, email, initialLocation }: ProfileFormPro
     </form>
   );
 }
-

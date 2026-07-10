@@ -30,8 +30,9 @@ function CheckMark({ accent }: { accent: boolean }) {
   );
 }
 
-function PlanCard({ plan, index }: { plan: Plan; index: number }) {
+function PlanCard({ plan, index, isAuthenticated }: { plan: Plan; index: number; isAuthenticated: boolean }) {
   const featured = plan.featured ?? false;
+  const ctaHref = isAuthenticated ? "/billing" : "/login?callbackUrl=/billing";
 
   return (
     <motion.div
@@ -122,7 +123,7 @@ function PlanCard({ plan, index }: { plan: Plan; index: number }) {
       {/* CTA */}
       <div className="mt-auto pt-8">
         <a
-          href="/login"
+          href={ctaHref}
           className={`inline-flex min-h-[52px] w-full items-center justify-center rounded-full px-6 text-sm font-medium transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 ${
             featured
               ? "bg-[#74876B] text-[#F4EFE6] shadow-sm hover:bg-[#68795f] focus-visible:outline-[#74876B]"
@@ -140,7 +141,10 @@ function PlanCard({ plan, index }: { plan: Plan; index: number }) {
  * "Membership" — three premium membership cards (not a SaaS comparison
  * table). The monthly membership is elevated and warmly highlighted.
  */
-export function Membership() {
+export function Membership({ plans, isAuthenticated }: { plans?: Plan[]; isAuthenticated?: boolean }) {
+  // Use passed plans or fallback to config if not provided
+  const displayPlans = plans && plans.length > 0 ? plans : PLANS;
+
   return (
     <Section
       id="membership"
@@ -175,8 +179,8 @@ export function Membership() {
 
         {/* Plans */}
         <div className="mt-10 grid grid-cols-1 items-stretch gap-6 md:grid-cols-3 lg:mt-12 lg:gap-7">
-          {PLANS.map((plan, index) => (
-            <PlanCard key={plan.id} plan={plan} index={index} />
+          {displayPlans.map((plan, index) => (
+            <PlanCard key={plan.id} plan={plan} index={index} isAuthenticated={isAuthenticated ?? false} />
           ))}
         </div>
 

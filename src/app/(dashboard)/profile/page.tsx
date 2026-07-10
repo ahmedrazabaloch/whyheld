@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/dashboard";
 import { getCachedSession, getCachedProfile } from "@/lib/auth/session-cache";
 import { ProfileForm } from "@/components/profile/ProfileForm";
 import { formStyles, buttonStyles } from "@/lib/design";
+import { formatLocation } from "@/lib/location/service";
 
 export const metadata: Metadata = {
   title: "Profile — Wayheld",
@@ -14,17 +15,21 @@ export default async function ProfilePage() {
   // Cache hit — layout.tsx already resolved this session for this request.
   const session = await getCachedSession();
 
-  if (!session?.user?.id) {
+  const userId = session?.user?.id;
+  if (!userId) {
     redirect("/login");
   }
 
   // Cache hit — layout.tsx already started this profile for this request.
-  const profile = await getCachedProfile(session.user.id);
+  const profile = await getCachedProfile(userId);
 
   const user = session.user;
   const fullName = profile?.firstName && profile?.lastName
     ? `${profile.firstName} ${profile.lastName}`
     : profile?.firstName || user.name || "";
+
+  const formattedLocation = formatLocation(profile || {});
+  const initialLocation = formattedLocation || [profile?.homeCity, profile?.homeCountry].filter(Boolean).join(", ") || "";
 
   return (
     <>
@@ -52,7 +57,7 @@ export default async function ProfilePage() {
             <ProfileForm
               fullName={fullName}
               email={user.email || ""}
-              initialLocation={[profile?.homeCity, profile?.homeCountry].filter(Boolean).join(", ")}
+              initialLocation={initialLocation}
             />
           </div>
         </section>
