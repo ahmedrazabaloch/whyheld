@@ -61,7 +61,7 @@ export default function ExperiencesPage() {
       <main className="flex flex-1 flex-col">
         <PageHero
           title="Experiences"
-          subtitle="Discover meaningful travel experiences that foster deeper connections with places, culture, and history. Moving beyond surface-level tourism to create lasting memories."
+          subtitle="Discover meaningful travel experiences that foster deeper connections with places, culture, and history. Go fewer places. Stay longer. Leave changed."
           image="/images/experiences/experiences-hero.webp"
           alt="Peaceful sunset over rolling hills"
           kicker="Journey Deeply"

@@ -39,7 +39,7 @@ export const JOURNEYS: Journey[] = [
     summary:
       "Harbour mornings move at the pace of fishing boats instead of tour groups.",
     highlights: ["Coastal heritage", "Low footfall", "Rail-reachable"],
-    image: "/images/travel-assets/09_italian_village.jpg",
+    image: "/images/travel-assets/05_scotland_cliffs.jpg",
     alt: "Hidden coastal village with quiet harbour mornings",
   },
   {
@@ -48,10 +48,9 @@ export const JOURNEYS: Journey[] = [
     region: "Kansai, Japan",
     duration: "9 Days",
     style: "Ritual & Craft",
-    summary:
-      "Walk woodland paths where silence becomes part of the journey.",
+    summary: "Walk woodland paths where silence becomes part of the journey.",
     highlights: ["Heritage-rich", "Walkable", "Crowd-free corners"],
-    image: "/images/travel-assets/11_forest_trail.jpg",
+    image: "/images/travel-assets/06_forest_stairs.jpg",
     alt: "Forest path walked in absolute quiet",
   },
   {
@@ -60,8 +59,7 @@ export const JOURNEYS: Journey[] = [
     region: "Aysén, Chile & Argentina",
     duration: "12 Days",
     style: "Lakes & Mountains",
-    summary:
-      "Spend quiet mornings by the water before the valley fully wakes.",
+    summary: "Spend quiet mornings by the water before the valley fully wakes.",
     highlights: ["Long stays", "Regenerative lodges", "Local guides"],
     image: "/images/travel-assets/04_mountain_lake.jpg",
     alt: "Quiet mountain lake far from the crowds",
@@ -79,5 +77,3 @@ export const JOURNEYS: Journey[] = [
     alt: "Road trip journey on slow roads",
   },
 ];
-
-
