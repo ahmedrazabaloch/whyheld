@@ -173,10 +173,10 @@ const EditorialCollage = memo(function EditorialCollage({
 const COLLAGES = [
   <EditorialCollage
     key="0"
-    mainImg="/images/travel-assets/05_scotland_cliffs.jpg"
+    mainImg="/images/travel-assets/13_foggy_harbour.jpg"
     mainTag="Wild Coastline"
     mainTitle="Empty Cliffs"
-    subImg="/images/travel-assets/06_forest_stairs.jpg"
+    subImg="/images/travel-assets/14_misty_forest.jpg"
     subTag="Ancient Paths"
     subTitle="The Quiet Forest"
     quote="The coastal cliffs and woodland paths are often overlooked by visitors following the usual routes."
