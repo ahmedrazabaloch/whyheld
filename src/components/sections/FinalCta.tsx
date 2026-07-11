@@ -43,7 +43,7 @@ export function FinalCta({
     <section
       id="start"
       aria-labelledby="cta-heading"
-      className="relative isolate w-full overflow-hidden pt-16 pb-28 sm:pt-20 sm:pb-32 lg:pt-24 lg:pb-44"
+      className="relative isolate w-full overflow-hidden pt-12 pb-16 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-28"
       style={{ backgroundColor: "#5b6c53" }}
     >
 

@@ -84,16 +84,16 @@
 
   /* Standard section vertical rhythm */
   .section-y {
-    padding-block: calc(var(--spacing) * 24);
+    padding-block: calc(var(--spacing) * 12);
   }
   @media (min-width: 40rem) {
     .section-y {
-      padding-block: calc(var(--spacing) * 28);
+      padding-block: calc(var(--spacing) * 16);
     }
   }
   @media (min-width: 64rem) {
     .section-y {
-      padding-block: calc(var(--spacing) * 36);
+      padding-block: calc(var(--spacing) * 20);
     }
   }
 
