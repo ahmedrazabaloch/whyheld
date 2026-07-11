@@ -1,13 +1,13 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, PlanTier } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("Seeding membership plans...");
 
-  const plans: any[] = [
+  const plans = [
     {
-      tier: "FREE",
+      tier: PlanTier.FREE,
       name: "Free",
       priceAmount: 0,
       priceCurrency: "usd",
@@ -21,7 +21,7 @@ async function main() {
       ],
     },
     {
-      tier: "PER_JOURNEY",
+      tier: PlanTier.PER_JOURNEY,
       name: "Per Journey",
       priceAmount: 2999, // $29.99
       priceCurrency: "usd",
@@ -36,7 +36,7 @@ async function main() {
       ],
     },
     {
-      tier: "PREMIUM",
+      tier: PlanTier.PREMIUM,
       name: "Premium",
       priceAmount: 999, // $9.99
       priceCurrency: "usd",
