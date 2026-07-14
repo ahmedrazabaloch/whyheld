@@ -143,8 +143,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     /** Expose the user id on the session object consumed by app code. */
     async session({ session, token }) {
       if (session.user) {
-        // NextAuth defaults to token.sub for user ID, but we also check our custom uid
-        const resolvedId = (token.sub as string) || (token.uid as string);
+        // NextAuth defaults to token.sub for OAuth users, but we stash the database cuid in token.uid
+        const resolvedId = (token.uid as string) || (token.sub as string);
         if (resolvedId) {
           session.user.id = resolvedId;
         } else {

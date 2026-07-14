@@ -39,6 +39,7 @@ export const getCachedProfile = cache(async (userId: string) => {
     select: {
       firstName: true,
       lastName: true,
+      phone: true,
       avatarUrl: true,
       homeCity: true,
       homeCountry: true,

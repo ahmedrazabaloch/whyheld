@@ -28,14 +28,16 @@ export async function POST(
   // 3. Credit Validation
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { plan: true, credits: true }
+    select: { plan: true, creditWallet: { select: { balance: true } } }
   });
 
   if (!user) {
     return new Response(JSON.stringify({ error: "User not found" }), { status: 404 });
   }
 
-  if (user.plan !== "PREMIUM" && user.credits <= 0) {
+  const balance = user.creditWallet?.balance ?? 0;
+
+  if (user.plan !== "PREMIUM" && balance <= 0) {
     return new Response(
       JSON.stringify({ 
         error: "Insufficient AI credits", 

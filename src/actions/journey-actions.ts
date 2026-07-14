@@ -174,7 +174,7 @@ export async function appendGenerationEvent(journeyId: string, events: AiStreamE
             latitude: stop.latitude || null,
             longitude: stop.longitude || null,
             googlePlaceId: stop.googlePlaceId || null,
-            kind: stop.kind || "City",
+            kind: stop.kind || "CITY",
             nights: stop.nights || 1,
             highlights: stop.highlights || []
           };
@@ -225,6 +225,16 @@ export async function completeJourneyGeneration(
       return { success: false, error: "Journey not found", code: "NOT_FOUND" };
     }
 
+    // Pre-transaction Domain Validation
+    if (!finalStops || finalStops.length === 0) {
+      throw new Error("Validation failed: Generation resulted in 0 stops.");
+    }
+
+    const summary = metadata?.summary;
+    if (summary === null || summary === undefined || summary === "" || (typeof summary === "string" && summary.trim() === "")) {
+      throw new Error("Validation failed: Generation summary is missing or empty.");
+    }
+
     // Final DB transaction
     const updatedJourney = await prisma.$transaction(async (tx) => {
       // 1. Delete any existing stops (in case of a retry that partially wrote)
@@ -244,7 +254,7 @@ export async function completeJourneyGeneration(
               latitude: stop.latitude || null,
               longitude: stop.longitude || null,
               googlePlaceId: stop.googlePlaceId || null,
-              kind: stop.kind || "City",
+              kind: stop.kind || "CITY",
               nights: stop.nights || 1,
               highlights: stop.highlights || []
             }
@@ -253,16 +263,31 @@ export async function completeJourneyGeneration(
       );
 
       // 3. Concurrency-safe atomic credit deduction
-      // We read the user's plan. If not PREMIUM, we atomically decrement 1 credit where > 0.
-      // The updateMany ensures a concurrent transaction cannot bypass the > 0 check.
       const currentUser = await tx.user.findUnique({ where: { id: session.user.id } });
       if (currentUser?.plan !== "PREMIUM") {
-        const deductionResult = await tx.user.updateMany({
-          where: { id: session.user.id, credits: { gt: 0 } },
-          data: { credits: { decrement: 1 } }
+        const deductionResult = await tx.creditWallet.updateMany({
+          where: { userId: session.user.id, balance: { gt: 0 } },
+          data: { balance: { decrement: 1 }, lifetimeConsumed: { increment: 1 } }
         });
+        
         if (deductionResult.count === 0) {
           throw new Error("Insufficient AI credits");
+        }
+
+        // Fetch the wallet to attach its ID and new balance to the transaction ledger
+        const updatedWallet = await tx.creditWallet.findUnique({ where: { userId: session.user.id } });
+        if (updatedWallet) {
+          await tx.creditTransaction.create({
+            data: {
+              walletId: updatedWallet.id,
+              userId: session.user.id,
+              type: "CONSUMPTION",
+              amount: -1,
+              balanceAfter: updatedWallet.balance,
+              reason: "JOURNEY_GENERATION",
+              journeyId: journeyId
+            }
+          });
         }
       }
 
@@ -297,3 +322,107 @@ export async function completeJourneyGeneration(
   }
 }
 
+export async function loadJourney(id: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return null;
+
+    const parsedId = IdSchema.safeParse(id);
+    if (!parsedId.success) return null;
+
+    const journey = await prisma.journey.findUnique({
+      where: { id: parsedId.data, userId: session.user.id },
+      include: {
+        stops: {
+          orderBy: { order: "asc" }
+        }
+      }
+    });
+
+    return journey;
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function renameJourney(id: string, newTitle: string): Promise<ActionResponse> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Unauthorized", code: "UNAUTHORIZED" };
+    }
+
+    const parsedId = IdSchema.safeParse(id);
+    if (!parsedId.success) {
+      return { success: false, error: "Invalid journey ID", code: "INVALID_INPUT" };
+    }
+
+    const parsedTitle = z.string().trim().min(1, "Title cannot be empty").max(100, "Title is too long").safeParse(newTitle);
+    if (!parsedTitle.success) {
+      return { success: false, error: parsedTitle.error.issues[0]?.message ?? "Validation error", code: "VALIDATION_ERROR" };
+    }
+
+    await prisma.journey.update({
+      where: { id: parsedId.data, userId: session.user.id },
+      data: { title: parsedTitle.data },
+    });
+
+    revalidatePath("/journeys");
+    revalidatePath(`/journeys/${parsedId.data}`);
+    return { success: true, data: undefined };
+  } catch (error) {
+    const err = handleServerError(error, "renameJourney");
+    return { success: false, error: getUserFriendlyMessage(err.code), code: err.code, referenceId: err.referenceId };
+  }
+}
+
+export async function archiveJourney(id: string): Promise<ActionResponse> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Unauthorized", code: "UNAUTHORIZED" };
+    }
+
+    const parsedId = IdSchema.safeParse(id);
+    if (!parsedId.success) {
+      return { success: false, error: "Invalid journey ID", code: "INVALID_INPUT" };
+    }
+
+    await prisma.journey.update({
+      where: { id: parsedId.data, userId: session.user.id },
+      data: { status: "ARCHIVED" },
+    });
+
+    revalidatePath("/journeys");
+    revalidatePath(`/journeys/${parsedId.data}`);
+    return { success: true, data: undefined };
+  } catch (error) {
+    const err = handleServerError(error, "archiveJourney");
+    return { success: false, error: getUserFriendlyMessage(err.code), code: err.code, referenceId: err.referenceId };
+  }
+}
+
+export async function deleteJourney(id: string): Promise<ActionResponse> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Unauthorized", code: "UNAUTHORIZED" };
+    }
+
+    const parsedId = IdSchema.safeParse(id);
+    if (!parsedId.success) {
+      return { success: false, error: "Invalid journey ID", code: "INVALID_INPUT" };
+    }
+
+    await prisma.journey.update({
+      where: { id: parsedId.data, userId: session.user.id },
+      data: { deletedAt: new Date() },
+    });
+
+    revalidatePath("/journeys");
+    return { success: true, data: undefined };
+  } catch (error) {
+    const err = handleServerError(error, "deleteJourney");
+    return { success: false, error: getUserFriendlyMessage(err.code), code: err.code, referenceId: err.referenceId };
+  }
+}

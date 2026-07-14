@@ -92,6 +92,7 @@ model Profile {
   lastName              String?
   avatarUrl             String?
   bio                   String?
+  phone                 String?
   homeCity              String?
   homeCountry           String?
   locale                String               @default("en")

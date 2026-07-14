@@ -1,7 +1,13 @@
 import { requireGoogleApiKey } from "./env";
 import { AppError } from "@/lib/utils/errors";
+import type { 
+  LocationProvider, 
+  GoogleAutocompleteResponse, 
+  GooglePlaceDetailsResponse, 
+  GoogleGeocodeResponse 
+} from "./types";
 
-export async function fetchPlacesAutocomplete(query: string, sessionToken?: string) {
+export async function fetchPlacesAutocomplete(query: string, sessionToken?: string): Promise<GoogleAutocompleteResponse> {
   const apiKey = requireGoogleApiKey();
   const url = "https://places.googleapis.com/v1/places:autocomplete";
   
@@ -32,10 +38,10 @@ export async function fetchPlacesAutocomplete(query: string, sessionToken?: stri
       cause: new Error(`Google Autocomplete API error: ${response.statusText} - ${bodyText}`),
     });
   }
-  return response.json();
+  return response.json() as Promise<GoogleAutocompleteResponse>;
 }
 
-export async function fetchPlaceDetails(placeId: string, sessionToken?: string) {
+export async function fetchPlaceDetails(placeId: string, sessionToken?: string): Promise<GooglePlaceDetailsResponse> {
   const apiKey = requireGoogleApiKey();
   const url = `https://places.googleapis.com/v1/places/${placeId}?fields=id,formattedAddress,location,addressComponents`;
   
@@ -61,10 +67,10 @@ export async function fetchPlaceDetails(placeId: string, sessionToken?: string) 
       cause: new Error(`Google Place Details API error: ${response.statusText} - ${bodyText}`),
     });
   }
-  return response.json();
+  return response.json() as Promise<GooglePlaceDetailsResponse>;
 }
 
-export async function fetchReverseGeocode(lat: number, lng: number) {
+export async function fetchReverseGeocode(lat: number, lng: number): Promise<GoogleGeocodeResponse> {
   const apiKey = requireGoogleApiKey();
   const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
   const response = await fetch(url);
@@ -75,5 +81,11 @@ export async function fetchReverseGeocode(lat: number, lng: number) {
       cause: new Error(`Google Reverse Geocode API error: ${response.statusText}`),
     });
   }
-  return response.json();
+  return response.json() as Promise<GoogleGeocodeResponse>;
 }
+
+export const googleLocationProvider: LocationProvider = {
+  fetchPlacesAutocomplete,
+  fetchPlaceDetails,
+  fetchReverseGeocode,
+};

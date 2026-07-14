@@ -1,5 +1,5 @@
 import { unstable_cache } from "next/cache";
-import { fetchPlaceDetails, fetchPlacesAutocomplete, fetchReverseGeocode } from "./google";
+import { fetchPlaceDetails, fetchPlacesAutocomplete, fetchReverseGeocode } from "./provider";
 import { parseAutocompletePredictions, parseGeocode, parsePlaceDetails } from "./parser";
 import { wayheldLocationSchema } from "./validation";
 import type { AutocompletePrediction, WayheldLocation } from "./types";

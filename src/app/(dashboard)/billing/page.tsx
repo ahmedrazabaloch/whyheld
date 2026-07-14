@@ -22,13 +22,17 @@ export default async function BillingPage() {
     redirect("/login");
   }
 
-  const [wallet, plans] = await Promise.all([
-    prisma.creditWallet.findUnique({
-      where: { userId },
-      select: { balance: true, lifetimeGranted: true, lifetimeConsumed: true },
+  const [user, plans] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { 
+        plan: true, 
+        creditWallet: { select: { balance: true, lifetimeGranted: true, lifetimeConsumed: true } } 
+      },
     }),
     getMembershipPlans(),
   ]);
+  const wallet = user?.creditWallet;
 
   return (
     <>
@@ -56,16 +60,31 @@ export default async function BillingPage() {
       <div className="mt-12">
         <h3 className="font-display text-2xl tracking-tight text-brand-text-primary mb-6">Available Plans</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {plans.map((plan) => (
+          {plans.map((plan) => {
+            const planMap: Record<string, string> = { "free": "FREE", "journey": "PER_JOURNEY", "premium": "PREMIUM" };
+            const isActivePlan = user?.plan === planMap[plan.id];
+            
+            return (
             <div
               key={plan.id}
               className={`flex flex-col h-full rounded-[2rem] border p-6 sm:p-8 shadow-sm ${
-                plan.featured 
-                  ? "border-[#74876B] bg-[#33332F] text-[#F4EFE6]" 
-                  : "border-brand-border/60 bg-brand-card text-brand-text-primary"
+                isActivePlan
+                  ? plan.featured
+                    ? "border-green-500 bg-[#33332F] text-[#F4EFE6]" 
+                    : "border-green-500 bg-green-50/20 text-brand-text-primary"
+                  : plan.featured 
+                    ? "border-[#74876B] bg-[#33332F] text-[#F4EFE6]" 
+                    : "border-brand-border/60 bg-brand-card text-brand-text-primary"
               }`}
             >
-              <h4 className={`font-display text-xl ${plan.featured ? "text-white" : ""}`}>{plan.name}</h4>
+              <div className="flex items-center justify-between gap-2">
+                <h4 className={`font-display text-xl truncate ${plan.featured ? "text-white" : ""}`}>{plan.name}</h4>
+                {isActivePlan && (
+                  <span className="shrink-0 whitespace-nowrap inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-green-800">
+                    CURRENT PLAN
+                  </span>
+                )}
+              </div>
               <div className="mt-4 mb-6">
                 <span className="font-display text-3xl font-bold">{plan.price}</span>
                 {plan.cadence && <span className={`ml-2 text-sm ${plan.featured ? "text-[#A8A69D]" : "text-brand-text-secondary"}`}>{plan.cadence}</span>}
@@ -88,7 +107,7 @@ export default async function BillingPage() {
                 {plan.cta}
               </button>
             </div>
-          ))}
+          )})}
         </div>
       </div>
     </>

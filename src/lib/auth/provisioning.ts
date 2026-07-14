@@ -6,9 +6,27 @@ import { prisma } from "@/lib/db";
  * balance 0; see BUSINESS_FLOW.md §1.)
  */
 export async function ensureUserWallet(userId: string): Promise<void> {
-  await prisma.creditWallet.upsert({
-    where: { userId },
-    update: {},
-    create: { userId, balance: 0 },
+  await prisma.$transaction(async (tx) => {
+    const existing = await tx.creditWallet.findUnique({ where: { userId } });
+    if (existing) return;
+
+    const wallet = await tx.creditWallet.create({
+      data: { 
+        userId, 
+        balance: 5,
+        lifetimeGranted: 5,
+      },
+    });
+
+    await tx.creditTransaction.create({
+      data: {
+        walletId: wallet.id,
+        userId,
+        type: "GRANT", // Using GRANT as SIGNUP_BONUS is not in the schema enum
+        amount: 5,
+        balanceAfter: 5,
+        reason: "SIGNUP_BONUS"
+      }
+    });
   });
 }

@@ -25,6 +25,7 @@ const PROTECTED_PREFIXES = [
   "/billing",
   "/settings",
   "/recommendations",
+  "/profile",
 ];
 
 /** NextAuth v5 session cookie names (secure variant in production). */

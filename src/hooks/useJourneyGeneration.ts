@@ -107,6 +107,7 @@ export function useJourneyGeneration(journeyId: string, initialStatus?: string) 
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let buffer = "";
+        let hasErrorEvent = false;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -144,6 +145,7 @@ export function useJourneyGeneration(journeyId: string, initialStatus?: string) 
                 case "error":
                   toast.error(event.message || "An error occurred during generation.");
                   console.error("Stream error event:", event.message);
+                  hasErrorEvent = true;
                   break;
                 case "warning":
                   console.warn("Stream warning:", event.message);
@@ -158,10 +160,21 @@ export function useJourneyGeneration(journeyId: string, initialStatus?: string) 
               console.error("Failed to parse JSON line:", line, e);
             }
           }
+
+          if (hasErrorEvent) {
+            reader.cancel().catch(console.error);
+            break;
+          }
         }
         
         flushBuffer(); // Ensure remaining events are flushed
-        setState("PERSISTING");
+        
+        if (hasErrorEvent) {
+          setState("FAILED");
+          isGeneratingRef.current = false;
+        } else {
+          setState("PERSISTING");
+        }
         break; 
 
       } catch (e: any) {

@@ -16,7 +16,7 @@ export default async function JourneyBuilderPage({ params }: { params: Promise<{
     loadDraft(id),
     prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { credits: true, plan: true }
+      select: { creditWallet: { select: { balance: true } }, plan: true }
     })
   ]);
 
@@ -31,7 +31,7 @@ export default async function JourneyBuilderPage({ params }: { params: Promise<{
     <div className="mx-auto w-full max-w-3xl">
       <JourneyBuilder 
         draft={draft} 
-        userCredits={user?.credits ?? 0}
+        userCredits={user?.creditWallet?.balance ?? 0}
         userPlan={user?.plan ?? "FREE"}
       />
     </div>

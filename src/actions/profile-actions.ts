@@ -64,3 +64,63 @@ export async function updateProfileLocation(
     return { success: false, error: getUserFriendlyMessage(err.code), code: err.code, referenceId: err.referenceId };
   }
 }
+
+import { z } from "zod";
+
+const ProfileDetailsSchema = z.object({
+  firstName: z.string().trim().min(1, "First name is required").max(50, "First name is too long"),
+  lastName: z.string().trim().max(50, "Last name is too long").nullable().optional().transform(v => v === "" ? null : v),
+  phone: z.string().trim().max(50, "Phone number is too long").nullable().optional().transform(v => v === "" ? null : v),
+});
+
+export type UpdateProfilePayload = z.input<typeof ProfileDetailsSchema>;
+
+export async function updateProfileDetails(
+  payload: UpdateProfilePayload
+): Promise<ActionResponse<null>> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Unauthorized", code: "UNAUTHORIZED" };
+    }
+
+    const userId = session.user.id;
+
+    // 1. Validate Input
+    const validation = ProfileDetailsSchema.safeParse(payload);
+    if (!validation.success) {
+      return { success: false, error: validation.error.issues[0].message, code: "VALIDATION_ERROR" };
+    }
+
+    const { firstName, lastName, phone } = validation.data;
+
+    // 2. Ensure profile exists (Ownership Strategy)
+    const profile = await prisma.profile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (!profile) {
+      return { success: false, error: "Profile not found", code: "NOT_FOUND" };
+    }
+
+    // 3. Mutate strictly constrained to the authenticated userId
+    await prisma.profile.update({
+      where: { userId },
+      data: {
+        firstName,
+        lastName,
+        phone,
+      },
+    });
+
+    // 4. Revalidate cache
+    revalidatePath("/profile");
+    revalidatePath("/settings");
+
+    return { success: true, data: null };
+  } catch (error) {
+    const err = handleServerError(error, "updateProfileDetails");
+    return { success: false, error: getUserFriendlyMessage(err.code), code: err.code, referenceId: err.referenceId };
+  }
+}

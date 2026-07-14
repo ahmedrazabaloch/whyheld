@@ -80,22 +80,42 @@ export async function POST(request: Request) {
     }
   }
 
-  const user = await prisma.user.create({
-    data: {
-      email: normalizedEmail,
-      passwordHash,
-      profile: {
-        create: { 
-          firstName, 
-          lastName,
-          ...locationData 
+  const user = await prisma.$transaction(async (tx) => {
+    const createdUser = await tx.user.create({
+      data: {
+        email: normalizedEmail,
+        passwordHash,
+        profile: {
+          create: { 
+            firstName, 
+            lastName,
+            ...locationData 
+          },
         },
       },
-      creditWallet: {
-        create: { balance: 0 },
-      },
-    },
-    select: { id: true, email: true },
+      select: { id: true, email: true },
+    });
+
+    const wallet = await tx.creditWallet.create({
+      data: {
+        userId: createdUser.id,
+        balance: 5,
+        lifetimeGranted: 5,
+      }
+    });
+
+    await tx.creditTransaction.create({
+      data: {
+        walletId: wallet.id,
+        userId: createdUser.id,
+        type: "GRANT",
+        amount: 5,
+        balanceAfter: 5,
+        reason: "SIGNUP_BONUS"
+      }
+    });
+
+    return createdUser;
   });
 
   // Fire verification email (non-fatal if it fails in dev).

@@ -105,7 +105,7 @@ export function SignupForm() {
         router.push("/login");
         return;
       }
-      router.push("/dashboard");
+      router.push("/onboarding");
       router.refresh();
     } catch {
       setErrors({ form: "Network error. Please try again." });

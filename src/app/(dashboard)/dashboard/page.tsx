@@ -4,6 +4,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/dashboard";
 import { getCachedSession, getCachedProfile } from "@/lib/auth/session-cache";
+import { getPlanCreditLimit } from "@/lib/membership/utils";
 
 
 export const metadata: Metadata = {
@@ -32,7 +33,7 @@ export default async function DashboardPage() {
       getCachedProfile(userId),
       prisma.user.findUnique({
         where: { id: userId },
-        select: { credits: true, plan: true },
+        select: { creditWallet: { select: { balance: true } }, plan: true },
       }),
       prisma.journey.count({
         where: { userId, deletedAt: null },
@@ -59,7 +60,7 @@ export default async function DashboardPage() {
 
       {/* Stats row */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <CreditsCard credits={userDb?.credits ?? 0} plan={userDb?.plan ?? "FREE"} />
+        <CreditsCard credits={userDb?.creditWallet?.balance ?? 0} plan={userDb?.plan ?? "FREE"} />
         <StatCard label="Journeys" value={journeyCount} />
         <StatCard label="Saved places" value={savedCount} />
       </div>
@@ -124,13 +125,15 @@ export default async function DashboardPage() {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-brand-border/60 bg-brand-card px-6 py-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
+    <div className="h-full flex flex-col justify-between rounded-2xl border border-brand-border/60 bg-brand-card px-6 py-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
       <p className="text-[0.65rem] font-medium uppercase tracking-[0.2em] text-brand-text-secondary/80">
         {label}
       </p>
-      <p className="mt-2 font-display text-3xl tracking-tight text-brand-text-primary">
-        {value}
-      </p>
+      <div className="mt-2">
+        <p className="font-display text-3xl tracking-tight text-brand-text-primary">
+          {value}
+        </p>
+      </div>
     </div>
   );
 }
@@ -138,15 +141,16 @@ function StatCard({ label, value }: { label: string; value: number }) {
 function CreditsCard({ credits, plan }: { credits: number; plan: string }) {
   const isPremium = plan === "PREMIUM";
   const isExhausted = !isPremium && credits <= 0;
+  const limit = getPlanCreditLimit(plan);
 
   return (
-    <div className="rounded-2xl border border-brand-border/60 bg-brand-card px-6 py-5 shadow-sm transition-shadow duration-200 hover:shadow-md flex flex-col justify-between">
+    <div className="h-full rounded-2xl border border-brand-border/60 bg-brand-card px-6 py-5 shadow-sm transition-shadow duration-200 hover:shadow-md flex flex-col justify-between">
       <p className="text-[0.65rem] font-medium uppercase tracking-[0.2em] text-brand-text-secondary/80">
         AI Credits
       </p>
       <div className="mt-2">
         <p className={`font-display text-3xl tracking-tight ${isExhausted ? 'text-red-500' : 'text-brand-text-primary'}`}>
-          {isPremium ? "Unlimited" : isExhausted ? "No Credits Remaining" : `${credits} Remaining`}
+          {isPremium ? "∞ Credits" : isExhausted ? "No Credits Remaining" : `${credits} / ${limit} Credits`}
         </p>
         <p className="mt-1 text-sm text-brand-text-secondary">
           {isPremium ? "Premium Plan" : isExhausted ? "Upgrade Required" : "Free Plan"}

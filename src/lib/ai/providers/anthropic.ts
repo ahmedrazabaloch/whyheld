@@ -17,20 +17,34 @@ export class AnthropicProvider implements AiProvider {
   // -------------------------------------------------------------------------
 
   private translateError(error: unknown): never {
+    console.error("[AnthropicProvider] Raw provider error:", error);
+
     if (error instanceof Anthropic.APIError) {
       if (error.status === 429) {
-        throw new RateLimitError(error.message);
+        throw new RateLimitError("The AI is currently busy. Please try again in a few minutes.");
       }
-      if (error.status >= 500 || error.status === 408) {
-        throw new ProviderUnavailableError(`Anthropic API error: ${error.message}`);
+      if (error.status === 401) {
+        throw new ProviderUnavailableError("Authentication with the AI provider failed.");
       }
-      throw new ProviderUnavailableError(`Anthropic error (${error.status}): ${error.message}`);
+      if (error.status === 403) {
+        throw new ProviderUnavailableError("The AI provider is currently unavailable.");
+      }
+      if (error.status && error.status >= 500) {
+        throw new ProviderUnavailableError("The AI service is temporarily unavailable.");
+      }
+      
+      throw new ProviderUnavailableError("Something went wrong while generating your journey.");
     }
-    // P0 fix: distinguish timeout-aborts from external cancellation in the message.
+    
     if (error instanceof Error && error.name === "AbortError") {
-      throw new ProviderUnavailableError("Request aborted (timeout or client cancellation).");
+      throw new ProviderUnavailableError("The AI took too long to respond. Please try again.");
     }
-    throw error;
+
+    if (error instanceof ParsingError) {
+      throw error;
+    }
+
+    throw new ProviderUnavailableError("Something went wrong while generating your journey.");
   }
 
   /**
@@ -48,7 +62,7 @@ export class AnthropicProvider implements AiProvider {
     if (externalSignal?.aborted) return false;
 
     if (error instanceof Anthropic.APIError) {
-      return error.status === 429 || error.status >= 500;
+      return [500, 502, 503, 504].includes(error.status || 0);
     }
     // AbortError from our own timeout controller → transient, worth retrying.
     if (

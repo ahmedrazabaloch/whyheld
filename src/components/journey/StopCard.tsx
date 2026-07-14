@@ -9,7 +9,7 @@ interface StopCardProps {
 export function StopCard({ stop, order }: StopCardProps) {
   return (
     <div className={`${surfaces.card} overflow-hidden mb-4 relative`}>
-      <div className="absolute top-0 left-0 w-1 h-full bg-brand-primary" />
+      <div className="absolute top-0 left-0 w-1 h-full bg-brand-btn-primary" />
       <div className="flex justify-between items-start mb-3">
         <div>
           <span className={`${surfaces.chip} mb-2 inline-block`}>

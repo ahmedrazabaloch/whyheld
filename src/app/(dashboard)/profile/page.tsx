@@ -55,7 +55,9 @@ export default async function ProfilePage() {
 
             {/* Fields */}
             <ProfileForm
-              fullName={fullName}
+              firstName={profile?.firstName || ""}
+              lastName={profile?.lastName || ""}
+              phone={profile?.phone || ""}
               email={user.email || ""}
               initialLocation={initialLocation}
             />
