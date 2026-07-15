@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useMemo, useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import { buttonStyles } from "@/lib/design";
 import { OrDivider, PasswordField, SocialButtons, TextField } from "./fields";
 import { LocationAutocomplete } from "@/components/location/LocationAutocomplete";
@@ -59,7 +60,23 @@ export function SignupForm() {
     event.preventDefault();
     const next = validate();
     setErrors(next);
-    if (Object.keys(next).length > 0) return;
+    
+    if (Object.keys(next).length > 0) {
+      if (next.name) {
+        toast.error("Please enter your full name.");
+      } else if (!email.trim()) {
+        toast.error("Please enter your email address.");
+      } else if (next.email) {
+        toast.error("Please enter a valid email address.");
+      } else if (!password) {
+        toast.error("Please enter a password.");
+      } else if (next.password) {
+        toast.error("Password must be at least 8 characters long.");
+      } else if (next.terms) {
+        toast.error("Please accept the Terms & Privacy Policy.");
+      }
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -105,7 +122,7 @@ export function SignupForm() {
         router.push("/login");
         return;
       }
-      router.push("/onboarding");
+      router.push("/start");
       router.refresh();
     } catch {
       setErrors({ form: "Network error. Please try again." });

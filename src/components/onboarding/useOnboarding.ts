@@ -1,12 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { toast } from "sonner";
 import { STEPS } from "./onboarding.config";
 
 export interface OnboardingData {
-  name: string;
-  email: string;
   /** single travel style id */
   style: string | null;
   /** multiple interest ids */
@@ -18,8 +16,6 @@ export interface OnboardingData {
 }
 
 const INITIAL: OnboardingData = {
-  name: "",
-  email: "",
   style: null,
   interests: [],
   pace: null,
@@ -53,6 +49,7 @@ export function useOnboarding(): UseOnboarding {
   const [data, setData] = useState<OnboardingData>(INITIAL);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string>();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const totalSteps = STEPS.length;
 
@@ -110,13 +107,20 @@ export function useOnboarding(): UseOnboarding {
 
   const persist = useCallback(
     async (nextStep: number) => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       try {
         await fetch("/api/v1/onboarding", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ step: nextStep, data }),
+          signal: controller.signal,
         });
-      } catch {
+      } catch (error) {
         // Partial-save failure should not block the local step flow.
       }
     },
@@ -166,14 +170,12 @@ export function useOnboarding(): UseOnboarding {
   const canAdvance = useMemo(() => {
     switch (step) {
       case 0:
-        return data.name.trim().length >= 2 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email);
-      case 1:
         return data.style !== null;
-      case 2:
+      case 1:
         return data.interests.length >= 1;
-      case 3:
+      case 2:
         return data.pace !== null;
-      case 4:
+      case 3:
         return data.preferences.length >= 1;
       default:
         return true;

@@ -12,7 +12,7 @@ import {
 } from "../onboarding.config";
 import type { UseOnboarding } from "../useOnboarding";
 
-const meta = STEPS[5];
+const meta = STEPS[STEPS.length - 1];
 
 function labelFor(list: { id: string; label: string }[], id: string | null) {
   return list.find((o) => o.id === id)?.label;
@@ -70,7 +70,7 @@ export function StepComplete({ data, complete, saving, saveError }: UseOnboardin
         {meta.eyebrow}
       </p>
       <h2 className="mt-3 font-display text-3xl font-light leading-tight tracking-[-0.02em] text-brand-text-primary sm:text-4xl">
-        {data.name ? `You're ready, ${data.name.split(" ")[0]}.` : meta.title}
+        {meta.title}
       </h2>
       <p className="mt-3 max-w-md text-base leading-relaxed text-brand-text-secondary">
         {meta.subtitle}

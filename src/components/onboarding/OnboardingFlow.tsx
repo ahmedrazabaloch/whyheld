@@ -5,7 +5,6 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { buttonStyles, EASE_EXPO } from "@/lib/design";
 import { STEPS } from "./onboarding.config";
 import { useOnboarding } from "./useOnboarding";
-import { StepAccount } from "./steps/StepAccount";
 import { StepStyle } from "./steps/StepStyle";
 import { StepInterests } from "./steps/StepInterests";
 import { StepPace } from "./steps/StepPace";
@@ -14,7 +13,6 @@ import { StepComplete } from "./steps/StepComplete";
 
 /** Maps step index → its component. */
 const STEP_COMPONENTS = [
-  StepAccount,
   StepStyle,
   StepInterests,
   StepPace,

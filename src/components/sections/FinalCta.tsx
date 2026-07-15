@@ -46,7 +46,6 @@ export function FinalCta({
       className="relative isolate w-full overflow-hidden pt-12 pb-16 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-28"
       style={{ backgroundColor: "#5b6c53" }}
     >
-
       <GrainOverlay opacity={0.07} />
       <SectionDivider />
 
@@ -75,11 +74,17 @@ export function FinalCta({
             className="inline"
           >
             {words.map((word, i) => (
-              <span key={i} className="inline-block overflow-hidden pb-[0.1em] align-bottom">
+              <span
+                key={i}
+                className="inline-block overflow-hidden pb-[0.1em] align-bottom"
+              >
                 <motion.span
                   variants={{
                     hidden: { y: "110%" },
-                    show: { y: "0%", transition: { duration: 0.9, ease: EASE_EXPO } },
+                    show: {
+                      y: "0%",
+                      transition: { duration: 0.9, ease: EASE_EXPO },
+                    },
                   }}
                   className={`inline-block ${word === "__ACCENT__" ? "italic text-[#D8D2C8]" : ""}`}
                 >
@@ -108,7 +113,10 @@ export function FinalCta({
           transition={{ duration: 0.8, ease: EASE_EXPO, delay: 0.45 }}
           className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
         >
-          <a href="/login" className={`${buttonStyles.primary} h-14 px-8 text-sm`}>
+          <a
+            href="/login"
+            className={`${buttonStyles.primary} h-14 px-8 text-sm`}
+          >
             {buttonText}
             <svg
               aria-hidden
@@ -127,7 +135,7 @@ export function FinalCta({
           </a>
           <a
             href="#journeys"
-            className="inline-flex h-14 items-center justify-center rounded-full px-7 text-sm font-medium text-[rgba(244,239,230,0.88)] transition-colors duration-300 hover:text-[#F4EFE6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F4EFE6]/40"
+            className="group inline-flex h-13 items-center justify-center gap-2 rounded-full border border-[rgba(244,239,230,0.45)] px-7 py-3.5 text-sm font-medium text-[#F4EFE6] transition-colors duration-300 hover:border-[#F4EFE6]/40 hover:bg-[rgba(244,239,230,0.08)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F4EFE6]/40"
           >
             Explore journeys first
           </a>

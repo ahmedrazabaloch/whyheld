@@ -12,8 +12,6 @@ const paceIds = PACES.map((option) => option.id) as [string, ...string[]];
 const preferenceIds = PREFERENCES.map((option) => option.id) as [string, ...string[]];
 
 const onboardingDataSchema = z.object({
-  name: z.string().trim().min(2).max(120),
-  email: z.string().trim().email(),
   style: z.enum(styleIds).nullable(),
   interests: z.array(z.enum(interestIds)),
   pace: z.enum(paceIds).nullable(),
@@ -50,10 +48,7 @@ function toDbPace(pace: string | null) {
   return pace ? paceToDb[pace as keyof typeof paceToDb] : undefined;
 }
 
-function splitName(name: string) {
-  const [firstName, ...rest] = name.trim().split(/\s+/);
-  return { firstName, lastName: rest.join(" ") || null };
-}
+
 
 function extrasStep(extras: unknown): number | null {
   if (extras && typeof extras === "object" && "onboardingStep" in extras) {
@@ -93,7 +88,6 @@ async function saveOnboarding({
   data: OnboardingData;
   complete: boolean;
 }) {
-  const { firstName, lastName } = splitName(data.name);
   const style = data.style
     ? TRAVEL_STYLES.find((option) => option.id === data.style)
     : null;
@@ -101,18 +95,38 @@ async function saveOnboarding({
     data.interests.includes(option.id),
   );
 
-  return prisma.$transaction(async (tx) => {
-    const profile = await tx.profile.upsert({
-      where: { userId },
+  let styleRecord: { id: string } | undefined;
+  if (style) {
+    styleRecord = await prisma.travelStyle.upsert({
+      where: { slug: style.id },
       update: {
-        firstName,
-        lastName,
-        ...(complete ? { onboardingCompletedAt: new Date() } : {}),
+        name: style.label,
+        description: style.description,
+        glyph: style.glyph,
       },
       create: {
-        userId,
-        firstName,
-        lastName,
+        slug: style.id,
+        name: style.label,
+        description: style.description,
+        glyph: style.glyph,
+      },
+    });
+  }
+
+  const interestRecords = await Promise.all(
+    selectedInterests.map((interest) =>
+      prisma.interest.upsert({
+        where: { slug: interest.id },
+        update: { name: interest.label, glyph: interest.glyph },
+        create: { slug: interest.id, name: interest.label, glyph: interest.glyph },
+      })
+    )
+  );
+
+  return prisma.$transaction(async (tx) => {
+    const profile = await tx.profile.update({
+      where: { userId },
+      data: {
         ...(complete ? { onboardingCompletedAt: new Date() } : {}),
       },
     });
@@ -143,35 +157,19 @@ async function saveOnboarding({
     });
 
     await tx.profileTravelStyle.deleteMany({ where: { profileId: profile.id } });
-    if (style) {
-      const styleRecord = await tx.travelStyle.upsert({
-        where: { slug: style.id },
-        update: {
-          name: style.label,
-          description: style.description,
-          glyph: style.glyph,
-        },
-        create: {
-          slug: style.id,
-          name: style.label,
-          description: style.description,
-          glyph: style.glyph,
-        },
-      });
+    if (styleRecord) {
       await tx.profileTravelStyle.create({
         data: { profileId: profile.id, styleId: styleRecord.id },
       });
     }
 
     await tx.profileInterest.deleteMany({ where: { profileId: profile.id } });
-    for (const interest of selectedInterests) {
-      const interestRecord = await tx.interest.upsert({
-        where: { slug: interest.id },
-        update: { name: interest.label, glyph: interest.glyph },
-        create: { slug: interest.id, name: interest.label, glyph: interest.glyph },
-      });
-      await tx.profileInterest.create({
-        data: { profileId: profile.id, interestId: interestRecord.id },
+    if (interestRecords.length > 0) {
+      await tx.profileInterest.createMany({
+        data: interestRecords.map((record) => ({
+          profileId: profile.id,
+          interestId: record.id,
+        })),
       });
     }
 
@@ -225,8 +223,6 @@ export async function GET() {
   const profile = user.profile;
   const preferences = profile?.preferences;
   const data: OnboardingData = {
-    name: [profile?.firstName, profile?.lastName].filter(Boolean).join(" "),
-    email: user.email,
     style: profile?.styles[0]?.style.slug ?? null,
     interests: profile?.interests.map(({ interest }) => interest.slug) ?? [],
     pace: preferences ? dbToPace[preferences.pace] ?? null : null,

@@ -17,8 +17,11 @@ export interface JourneyData {
 }
 
 export function useJourneyBuilder(draft: Journey) {
+  const TOTAL_STEPS = 5; // Must stay in sync with STEPS array in JourneyBuilder.tsx
   const meta = draft.metadata as { lastCompletedStep?: number } | null;
-  const initialStep = meta?.lastCompletedStep ?? 0;
+  const rawStep = meta?.lastCompletedStep ?? 0;
+  const safeStep = typeof rawStep === "number" && isFinite(rawStep) ? rawStep : 0;
+  const initialStep = Math.min(Math.max(0, safeStep), TOTAL_STEPS - 1);
 
   const [step, setStep] = useState(initialStep);
   const [data, setData] = useState<JourneyData>({
@@ -38,6 +41,9 @@ export function useJourneyBuilder(draft: Journey) {
   const pendingDataRef = useRef<Partial<JourneyData> & { lastCompletedStep?: number }>({});
 
   const saveToDb = useCallback(async (payload: Partial<JourneyData> & { lastCompletedStep?: number }) => {
+    // Guard: skip the network hop entirely if there is nothing to persist.
+    if (Object.keys(payload).length === 0) return;
+
     setIsSaving(true);
     try {
       await updateDraft(draft.id, payload);
@@ -47,6 +53,21 @@ export function useJourneyBuilder(draft: Journey) {
     } finally {
       setIsSaving(false);
     }
+  }, [draft.id]);
+
+  // Flush any pending debounced save when the component unmounts.
+  // Prevents data loss if the user navigates away before the debounce fires.
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      if (Object.keys(pendingDataRef.current).length > 0) {
+        // Fire-and-forget: best-effort flush on unmount.
+        updateDraft(draft.id, { ...pendingDataRef.current });
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft.id]);
 
   const queueSave = useCallback((payload: Partial<JourneyData> & { lastCompletedStep?: number }, immediate = false) => {
@@ -75,19 +96,15 @@ export function useJourneyBuilder(draft: Journey) {
   }, [queueSave]);
 
   const next = () => {
-    setStep((s) => {
-      const nextStep = s + 1;
-      queueSave({ lastCompletedStep: nextStep }, true);
-      return nextStep;
-    });
+    const nextStep = step + 1;
+    setStep(nextStep);
+    queueSave({ lastCompletedStep: nextStep }, true);
   };
 
   const back = () => {
-    setStep((s) => {
-      const prevStep = Math.max(0, s - 1);
-      queueSave({ lastCompletedStep: prevStep }, true);
-      return prevStep;
-    });
+    const prevStep = Math.max(0, step - 1);
+    setStep(prevStep);
+    queueSave({ lastCompletedStep: prevStep }, true);
   };
 
   const goTo = (s: number) => {

@@ -22,7 +22,7 @@ const UpdateDraftSchema = z.object({
   region: z.string().nullable().optional(),
   startDate: z.date().nullable().optional(),
   endDate: z.date().nullable().optional(),
-  durationDays: z.number().nullable().optional(),
+  durationDays: z.number().int().min(1).max(30).nullable().optional(),
   pace: z.enum(["ONE_PLACE_DEEPLY", "SLOW_UNHURRIED", "GENTLY_BALANCED"]).nullable().optional(),
   budget: z.enum(["MODEST", "COMFORTABLE", "PREMIUM", "LUXURY"]).nullable().optional(),
   lastCompletedStep: z.number().int().min(0).max(5).optional(),
@@ -123,7 +123,10 @@ export async function updateDraft(id: string, data: z.infer<typeof UpdateDraftSc
       },
     });
 
-    revalidatePath(`/journeys/${parsedId.data}/build`);
+    // NOTE: revalidatePath intentionally omitted here.
+    // updateDraft is called exclusively by the background autosave in useJourneyBuilder.
+    // The client already maintains optimistic local state; revalidating would cause
+    // unnecessary RSC payload generation and network overhead on every keystroke.
     return { success: true, data: undefined };
   } catch (error) {
     const err = handleServerError(error, "updateDraft");

@@ -13,6 +13,7 @@ interface ProfileFormProps {
   phone: string;
   email: string;
   initialLocation: string;
+  onboardingComplete: boolean;
 }
 
 // Map location strings to 2-letter ISO country codes
@@ -56,7 +57,10 @@ function validatePhone(value: string, country?: CountryCode): string | null {
   }
 }
 
-export function ProfileForm({ firstName, lastName, phone: initialPhone, email, initialLocation }: ProfileFormProps) {
+import { useRouter } from "next/navigation";
+
+export function ProfileForm({ firstName, lastName, phone: initialPhone, email, initialLocation, onboardingComplete }: ProfileFormProps) {
+  const router = useRouter();
   const fullName = [firstName, lastName].filter(Boolean).join(" ");
   const [name, setName] = useState(fullName);
   
@@ -145,6 +149,9 @@ export function ProfileForm({ firstName, lastName, phone: initialPhone, email, i
 
       if (response.success) {
         toast.success("Profile updated successfully.");
+        if (!onboardingComplete) {
+          router.push("/start");
+        }
       } else {
         toast.error(response.error || "Failed to update profile.");
       }
@@ -185,11 +192,18 @@ export function ProfileForm({ firstName, lastName, phone: initialPhone, email, i
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-2">
           <label className={formStyles.label}>Phone</label>
-          <div className="flex gap-2">
+          <div
+            className={`flex w-full items-stretch overflow-hidden rounded-2xl border bg-brand-card transition-colors duration-300 ${
+              phoneError
+                ? "border-red-400 focus-within:border-red-400 focus-within:outline-red-400 focus-within:outline-2 focus-within:outline-offset-2"
+                : "border-brand-border hover:border-brand-text-secondary focus-within:border-brand-btn-primary focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand-btn-primary"
+            }`}
+          >
             <select
-              className={`${formStyles.input} w-[110px] shrink-0 text-sm px-2`}
+              className="w-[110px] shrink-0 cursor-pointer bg-transparent py-3 pl-4 pr-1 text-sm text-brand-text-primary outline-none focus:outline-none"
               value={country || ""}
               onChange={handleCountryChange}
+              aria-label="Country code"
             >
               <option value="">Intl</option>
               {getCountries().map((c) => (
@@ -198,9 +212,10 @@ export function ProfileForm({ firstName, lastName, phone: initialPhone, email, i
                 </option>
               ))}
             </select>
+            <div className="my-auto h-6 w-px shrink-0 bg-brand-border" aria-hidden />
             <input
               type="tel"
-              className={`${formStyles.input} w-full ${phoneError ? "border-red-400 focus:border-red-400 focus-visible:outline-red-400" : ""}`}
+              className="w-full bg-transparent py-3 pl-3 pr-4 text-brand-text-primary placeholder:text-brand-text-secondary/50 outline-none focus:outline-none"
               placeholder="(555) 000-0000"
               value={phone}
               onChange={handlePhoneChange}

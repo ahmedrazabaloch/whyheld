@@ -19,16 +19,43 @@ export class AnthropicProvider implements AiProvider {
   private translateError(error: unknown): never {
     console.error("[AnthropicProvider] Raw provider error:", error);
 
+    // Handle SDK connection errors (Network failures before HTTP response)
+    if (
+      error instanceof Anthropic.APIConnectionError ||
+      error instanceof Anthropic.APIConnectionTimeoutError ||
+      error instanceof TypeError
+    ) {
+      throw new ProviderUnavailableError("A network failure occurred while connecting to the AI provider. Please try again.");
+    }
+
     if (error instanceof Anthropic.APIError) {
-      if (error.status === 429) {
-        throw new RateLimitError("The AI is currently busy. Please try again in a few minutes.");
-      }
+      // Anthropic returns the inner error object inside 'error.error'
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const innerType = (error as any).error?.error?.type || (error as any).error?.type;
+
+      // 4. Authentication errors
+      // 5. Invalid API key
       if (error.status === 401) {
-        throw new ProviderUnavailableError("Authentication with the AI provider failed.");
+        throw new ProviderUnavailableError("Invalid API key provided. Please check your Anthropic API key configuration.");
       }
       if (error.status === 403) {
-        throw new ProviderUnavailableError("The AI provider is currently unavailable.");
+        throw new ProviderUnavailableError("Authentication error: You do not have permission to access the AI provider.");
       }
+
+      if (error.status === 429) {
+        // 2. Temporary provider overload
+        if (innerType === "overloaded_error") {
+          throw new ProviderUnavailableError("The AI provider is currently overloaded. Please try again in a few moments.");
+        }
+        // 1. Anthropic rate_limit_error caused by exhausted account quota.
+        throw new RateLimitError("Your Anthropic account quota has been exhausted or rate limited. Please check your billing details.");
+      }
+
+      // 2. Temporary provider overload (529 is officially overloaded_error)
+      if (error.status === 529) {
+        throw new ProviderUnavailableError("The AI provider is currently overloaded. Please try again in a few moments.");
+      }
+
       if (error.status && error.status >= 500) {
         throw new ProviderUnavailableError("The AI service is temporarily unavailable.");
       }

@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { buttonStyles, formStyles, riseVariants } from "@/lib/design";
 import type { useJourneyBuilder } from "@/hooks/useJourneyBuilder";
+import { DateRangePicker } from "@/components/ui/DateRangePicker";
 
 export function StepDates({ controller }: { controller: ReturnType<typeof useJourneyBuilder> }) {
   const { data, update, next, back } = controller;
@@ -26,7 +27,15 @@ export function StepDates({ controller }: { controller: ReturnType<typeof useJou
               className={formStyles.input}
               placeholder="e.g. 7"
               value={data.durationDays || ""}
-              onChange={(e) => update("durationDays", parseInt(e.target.value, 10) || null)}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                update("durationDays", val > 0 ? val : null);
+                // Mutual exclusivity: clear specific dates when duration is entered
+                if (val > 0) {
+                  update("startDate", null);
+                  update("endDate", null);
+                }
+              }}
             />
           </div>
           
@@ -35,26 +44,20 @@ export function StepDates({ controller }: { controller: ReturnType<typeof useJou
             <span className="flex-shrink-0 mx-4 text-xs font-medium text-brand-text-secondary uppercase tracking-widest">Or Specific Dates</span>
             <div className="flex-grow border-t border-brand-border"></div>
           </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className={formStyles.label}>Start Date</label>
-              <input
-                type="date"
-                className={formStyles.input}
-                value={data.startDate ? data.startDate.toISOString().split("T")[0] : ""}
-                onChange={(e) => update("startDate", e.target.value ? new Date(e.target.value) : null)}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className={formStyles.label}>End Date</label>
-              <input
-                type="date"
-                className={formStyles.input}
-                value={data.endDate ? data.endDate.toISOString().split("T")[0] : ""}
-                onChange={(e) => update("endDate", e.target.value ? new Date(e.target.value) : null)}
-              />
-            </div>
+          <div className="space-y-2">
+            <label className={formStyles.label}>Select Dates</label>
+            <DateRangePicker
+              startDate={data.startDate}
+              endDate={data.endDate}
+              onUpdate={(start, end) => {
+                if (start !== data.startDate) update("startDate", start);
+                if (end !== data.endDate) update("endDate", end);
+                // Mutual exclusivity: clear duration when specific dates are selected
+                if ((start || end) && data.durationDays !== null) {
+                  update("durationDays", null);
+                }
+              }}
+            />
           </div>
         </div>
       </motion.div>

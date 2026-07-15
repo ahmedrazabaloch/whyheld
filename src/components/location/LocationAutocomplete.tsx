@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { formStyles } from "@/lib/design";
 import type { AutocompletePrediction } from "@/lib/location/types";
 
@@ -35,6 +36,7 @@ export function LocationAutocomplete({
   const [isLoading, setIsLoading] = useState(false);
   
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLUListElement>(null);
   const sessionTokenRef = useRef<string | null>(null);
 
   const getSessionToken = () => {
@@ -57,7 +59,13 @@ export function LocationAutocomplete({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(target) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
@@ -130,6 +138,60 @@ export function LocationAutocomplete({
     getSessionToken(); // Generate token when input receives focus
   };
 
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const updatePosition = () => {
+      if (wrapperRef.current) {
+        const rect = wrapperRef.current.getBoundingClientRect();
+        setDropdownStyle({
+          position: "absolute",
+          top: rect.bottom + window.scrollY,
+          left: rect.left + window.scrollX,
+          width: rect.width,
+        });
+      }
+    };
+
+    updatePosition();
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [isOpen, predictions]);
+
+  const dropdown = (
+    <ul
+      ref={dropdownRef}
+      className="z-[9999] mt-2 max-h-64 overflow-y-auto rounded-xl border border-brand-card-border bg-brand-card p-1 shadow-2xl outline-none ring-1 ring-black/5"
+      style={dropdownStyle}
+    >
+      {predictions.map((p) => (
+        <li key={p.placeId}>
+          <button
+            type="button"
+            className="w-full cursor-pointer rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-brand-text-primary/5 focus:bg-brand-text-primary/5 focus:outline-none"
+            onClick={() => handleSelect(p.placeId, p.description)}
+          >
+            <div className="text-sm font-medium text-brand-text-primary">
+              {p.mainText}
+            </div>
+            {p.secondaryText && (
+              <div className="text-xs text-brand-text-secondary/80 mt-0.5">
+                {p.secondaryText}
+              </div>
+            )}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
     <div className={`relative flex flex-col gap-2 ${className}`} ref={wrapperRef}>
       {label && <label className={formStyles.label}>{label}</label>}
@@ -149,29 +211,10 @@ export function LocationAutocomplete({
           </div>
         )}
       </div>
-      
-      {isOpen && predictions.length > 0 && (
-        <ul className="absolute top-full z-10 mt-2 w-full overflow-hidden rounded-2xl border border-brand-border bg-brand-card shadow-panel">
-          {predictions.map((p) => (
-            <li key={p.placeId}>
-              <button
-                type="button"
-                className="w-full px-4 py-3 text-left transition-colors hover:bg-brand-text-primary/5 focus:bg-brand-text-primary/5 focus:outline-none"
-                onClick={() => handleSelect(p.placeId, p.description)}
-              >
-                <div className="text-sm font-medium text-brand-text-primary">
-                  {p.mainText}
-                </div>
-                {p.secondaryText && (
-                  <div className="text-xs text-brand-text-secondary">
-                    {p.secondaryText}
-                  </div>
-                )}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+
+      {isOpen && predictions.length > 0 && typeof document !== "undefined"
+        ? createPortal(dropdown, document.body)
+        : null}
 
       {error && (
         <p className={formStyles.error} role="alert">

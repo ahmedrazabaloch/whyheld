@@ -22,6 +22,12 @@ export default async function OnboardingPage() {
   // fetch it here rather than paying a DB round-trip on every
   // jwt() callback across the entire app.
   const profile = await getCachedProfile(session.user.id);
+  
+  const isProfileComplete = profile && profile.firstName && profile.phone && (profile.city || profile.country || profile.homeCity);
+  if (!isProfileComplete) {
+    redirect("/profile");
+  }
+
   if (profile?.onboardingCompletedAt) {
     redirect("/dashboard");
   }

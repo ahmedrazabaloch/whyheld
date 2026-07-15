@@ -43,13 +43,16 @@ export async function fetchPlacesAutocomplete(query: string, sessionToken?: stri
 
 export async function fetchPlaceDetails(placeId: string, sessionToken?: string): Promise<GooglePlaceDetailsResponse> {
   const apiKey = requireGoogleApiKey();
-  const url = `https://places.googleapis.com/v1/places/${placeId}?fields=id,formattedAddress,location,addressComponents`;
+  const url = `https://places.googleapis.com/v1/places/${placeId}`;
   
   const headers: Record<string, string> = {
     "X-Goog-Api-Key": apiKey,
+    "X-Goog-FieldMask": "id,formattedAddress,location,addressComponents",
   };
   
-  // New Places API uses field masks in headers or query params. We added it to query param fields=...
+  if (sessionToken) {
+    headers["X-Goog-Places-Session-Token"] = sessionToken;
+  }
   
   const response = await fetch(url, { headers });
   if (!response.ok) {
