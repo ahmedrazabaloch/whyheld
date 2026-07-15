@@ -7,6 +7,7 @@ import { AI_CONFIG } from "../config";
 // API key presence is validated by client.ts before this module is used.
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
+  maxRetries: 0, // Disable SDK auto-retries. AnthropicProvider manual loop is the sole owner.
 });
 
 export class AnthropicProvider implements AiProvider {
@@ -113,7 +114,8 @@ export class AnthropicProvider implements AiProvider {
     system: string,
     prompt: string,
     schema: z.ZodSchema<T>,
-    externalSignal?: AbortSignal // P1#4
+    externalSignal?: AbortSignal, // P1#4
+    options?: { maxTokens?: number }
   ): Promise<T> {
     const model = AI_CONFIG.models.anthropic.default;
     const timeoutMs = AI_CONFIG.generation.timeoutMs;
@@ -135,7 +137,7 @@ export class AnthropicProvider implements AiProvider {
         const response = await client.messages.create(
           {
             model,
-            max_tokens: AI_CONFIG.generation.maxTokens.journeyPlan,
+            max_tokens: options?.maxTokens ?? AI_CONFIG.generation.maxTokens.journeyPlan,
             // P2#9: Structured object generation uses strictTemperature.
             temperature: AI_CONFIG.generation.strictTemperature,
             system,
@@ -191,7 +193,8 @@ export class AnthropicProvider implements AiProvider {
     system: string,
     prompt: string,
     schema: z.ZodSchema<T>,
-    externalSignal?: AbortSignal // P1#4
+    externalSignal?: AbortSignal, // P1#4
+    options?: { maxTokens?: number }
   ): AsyncIterable<AiStreamEvent> {
     const model = AI_CONFIG.models.anthropic.default;
     const timeoutMs = AI_CONFIG.generation.timeoutMs;
@@ -227,8 +230,8 @@ export class AnthropicProvider implements AiProvider {
         stream = await client.messages.create(
           {
             model,
-            max_tokens: AI_CONFIG.generation.maxTokens.journeyPlan,
-            temperature: AI_CONFIG.generation.defaultTemperature,
+            max_tokens: options?.maxTokens ?? AI_CONFIG.generation.maxTokens.journeyPlan,
+            temperature: AI_CONFIG.generation.strictTemperature,
             system,
             messages: [{ role: "user", content: prompt }],
             stream: true,

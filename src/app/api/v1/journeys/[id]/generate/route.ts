@@ -16,20 +16,20 @@ export async function POST(
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
   }
 
-  // 2. Load draft — ownership scoped to the authenticated user
-  const journey = await prisma.journey.findUnique({
-    where: { id, userId: session.user.id },
-  });
+  // 2. Parallel data fetching for independent resources
+  const [journey, user] = await Promise.all([
+    prisma.journey.findUnique({
+      where: { id, userId: session.user.id },
+    }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { plan: true, creditWallet: { select: { balance: true } } }
+    })
+  ]);
 
   if (!journey) {
     return new Response(JSON.stringify({ error: "Journey not found" }), { status: 404 });
   }
-
-  // 3. Credit Validation
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { plan: true, creditWallet: { select: { balance: true } } }
-  });
 
   if (!user) {
     return new Response(JSON.stringify({ error: "User not found" }), { status: 404 });

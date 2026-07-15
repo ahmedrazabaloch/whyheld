@@ -85,12 +85,8 @@ export function useJourneyGeneration(journeyId: string, initialStatus?: string) 
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    let retryCount = 0;
-    const maxRetries = 3;
-
-    while (retryCount <= maxRetries) {
-      try {
-        const response = await fetch(`/api/v1/journeys/${journeyId}/generate`, {
+    try {
+      const response = await fetch(`/api/v1/journeys/${journeyId}/generate`, {
           method: "POST",
           signal: controller.signal,
         });
@@ -125,7 +121,12 @@ export function useJourneyGeneration(journeyId: string, initialStatus?: string) 
             try {
               const event: AiStreamEvent = JSON.parse(line);
               
-              queueEventForPersistence(event);
+              if (
+                event.type === "day" || 
+                (event.type === "status" && event.message === "Connecting to AI...")
+              ) {
+                queueEventForPersistence(event);
+              }
 
               switch (event.type) {
                 case "status":
@@ -175,8 +176,6 @@ export function useJourneyGeneration(journeyId: string, initialStatus?: string) 
         } else {
           setState("PERSISTING");
         }
-        break; 
-
       } catch (e: any) {
         if (e.name === "AbortError") {
           setState("CANCELLED");
@@ -185,29 +184,14 @@ export function useJourneyGeneration(journeyId: string, initialStatus?: string) 
           return;
         }
 
-        setState((prevState) => {
-          if (prevState === "PREPARING" && retryCount < maxRetries) {
-            setStatusMessage(`Reconnecting (attempt ${retryCount + 1} of ${maxRetries})...`);
-            return "PREPARING";
-          }
-          
-          // Sanitize error message to prevent leaking raw details
-          const friendlyMessage = "We hit a snag while crafting your journey. Please try again.";
-          setError(friendlyMessage);
-          toast.error(friendlyMessage);
-          
-          isGeneratingRef.current = false;
-          return "FAILED";
-        });
-
-        if (retryCount >= maxRetries || state === "STREAMING") {
-          break;
-        }
-
-        retryCount++;
-        await new Promise((res) => setTimeout(res, 1000 * retryCount));
+        // Sanitize error message to prevent leaking raw details
+        const friendlyMessage = "We hit a snag while crafting your journey. Please try again.";
+        setError(friendlyMessage);
+        toast.error(friendlyMessage);
+        
+        setState("FAILED");
+        isGeneratingRef.current = false;
       }
-    }
   }, [journeyId, queueEventForPersistence, flushBuffer, state]);
 
   // Handle finalization safely
@@ -242,7 +226,18 @@ export function useJourneyGeneration(journeyId: string, initialStatus?: string) 
   const abort = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
+  }, []);
+
+  // Cleanup active generation on unmount to prevent memory/credit leaks
+  useEffect(() => {
+    return () => {
+      if (isGeneratingRef.current && abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
   }, []);
 
   const retry = useCallback(() => {

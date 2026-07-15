@@ -3,7 +3,7 @@ export const AI_CONFIG = {
   
   models: {
     anthropic: {
-      default: "claude-3-5-sonnet-20240620",
+      default: "claude-3-5-sonnet-latest",
       fast: "claude-3-haiku-20240307",
     },
     openai: {

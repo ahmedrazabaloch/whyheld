@@ -44,7 +44,8 @@ export async function createDraft(): Promise<ActionResponse<string>> {
         status: "DRAFT",
         title: "Untitled Journey",
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
+      select: { id: true }
     });
 
     if (existingEmptyDraft) {
@@ -134,6 +135,23 @@ export async function updateDraft(id: string, data: z.infer<typeof UpdateDraftSc
   }
 }
 
+const AppendEventsPayloadSchema = z.array(
+  z.union([
+    z.object({
+      type: z.literal("status"),
+      message: z.string().optional()
+    }).passthrough(),
+    z.object({
+      type: z.literal("day"),
+      index: z.number().int().min(0),
+      payload: z.any()
+    }).passthrough(),
+    z.object({
+      type: z.string()
+    }).passthrough()
+  ])
+);
+
 export async function appendGenerationEvent(journeyId: string, events: AiStreamEvent[]): Promise<ActionResponse> {
   try {
     const session = await auth();
@@ -141,8 +159,14 @@ export async function appendGenerationEvent(journeyId: string, events: AiStreamE
       return { success: false, error: "Unauthorized", code: "UNAUTHORIZED" };
     }
 
+    const parsedEvents = AppendEventsPayloadSchema.safeParse(events);
+    if (!parsedEvents.success) {
+      return { success: false, error: "Invalid events payload", code: "VALIDATION_ERROR" };
+    }
+    const validEvents = parsedEvents.data as AiStreamEvent[];
+
     // Determine if we need to update the journey status
-    const hasConnectingStatus = events.some(
+    const hasConnectingStatus = validEvents.some(
       (e) => e.type === "status" && e.message === "Connecting to AI..."
     );
 
@@ -154,7 +178,7 @@ export async function appendGenerationEvent(journeyId: string, events: AiStreamE
     }
 
     // Filter for day events to persist incrementally
-    const dayEvents = events.filter((e) => e.type === "day");
+    const dayEvents = validEvents.filter((e) => e.type === "day");
     
     if (dayEvents.length > 0) {
       // Use a transaction to perform idempotent upserts based on day order
@@ -164,13 +188,6 @@ export async function appendGenerationEvent(journeyId: string, events: AiStreamE
           const stop = event.payload;
           const order = event.index + 1; // Assuming event.index is 0-based
           
-          // Upsert using the unique constraint on (journeyId, order) if it exists.
-          // Since our schema might not have a unique constraint on (journeyId, order), 
-          // we use findFirst + update/create to ensure idempotency.
-          const existing = await tx.journeyStop.findFirst({
-            where: { journeyId, order }
-          });
-
           const data = {
             name: stop.name || `Stop ${order}`,
             description: stop.description || stop.summary || "",
@@ -182,20 +199,20 @@ export async function appendGenerationEvent(journeyId: string, events: AiStreamE
             highlights: stop.highlights || []
           };
 
-          if (existing) {
-            await tx.journeyStop.update({
-              where: { id: existing.id },
-              data
-            });
-          } else {
-            await tx.journeyStop.create({
-              data: {
-                ...data,
+          await tx.journeyStop.upsert({
+            where: {
+              journeyId_order: {
                 journeyId,
                 order
               }
-            });
-          }
+            },
+            update: data,
+            create: {
+              ...data,
+              journeyId,
+              order
+            }
+          });
         }
       });
     }
@@ -246,24 +263,20 @@ export async function completeJourneyGeneration(
       });
 
       // 2. Create the new stops
-      const createdStops = await Promise.all(
-        finalStops.map((stop, index) => 
-          tx.journeyStop.create({
-            data: {
-              journeyId,
-              order: index + 1,
-              name: stop.name || `Stop ${index + 1}`,
-              description: stop.description || stop.summary || "",
-              latitude: stop.latitude || null,
-              longitude: stop.longitude || null,
-              googlePlaceId: stop.googlePlaceId || null,
-              kind: stop.kind || "CITY",
-              nights: stop.nights || 1,
-              highlights: stop.highlights || []
-            }
-          })
-        )
-      );
+      await tx.journeyStop.createMany({
+        data: finalStops.map((stop, index) => ({
+          journeyId,
+          order: index + 1,
+          name: stop.name || `Stop ${index + 1}`,
+          description: stop.description || stop.summary || "",
+          latitude: stop.latitude || null,
+          longitude: stop.longitude || null,
+          googlePlaceId: stop.googlePlaceId || null,
+          kind: stop.kind || "CITY",
+          nights: stop.nights || 1,
+          highlights: stop.highlights || []
+        }))
+      });
 
       // 3. Concurrency-safe atomic credit deduction
       const currentUser = await tx.user.findUnique({ where: { id: session.user.id } });

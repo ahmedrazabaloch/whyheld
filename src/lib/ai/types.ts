@@ -40,7 +40,8 @@ export interface AiProvider {
     system: string,
     prompt: string,
     schema: z.ZodSchema<T>,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    options?: { maxTokens?: number }
   ): Promise<T>;
 
   /** Generate an NDJSON stream for a structured response */
@@ -48,6 +49,7 @@ export interface AiProvider {
     system: string,
     prompt: string,
     schema: z.ZodSchema<T>,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    options?: { maxTokens?: number }
   ): AsyncIterable<AiStreamEvent>;
 }

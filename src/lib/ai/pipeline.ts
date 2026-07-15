@@ -24,12 +24,22 @@ export async function executeAiPipeline<T>(input: AiPipelineInput): Promise<T> {
   // 3. Resolve provider
   const provider = getAiProvider();
 
+  let maxTokens: number | undefined;
+  if (promptId === "JOURNEY_PLAN" && variables.duration) {
+    const d = Number(variables.duration);
+    if (d >= 1 && d <= 5) maxTokens = 1500;
+    else if (d >= 6 && d <= 10) maxTokens = 2500;
+    else if (d >= 11 && d <= 20) maxTokens = 4500;
+    else if (d >= 21) maxTokens = 7000;
+  }
+
   // 4. Execute — P1#4: forward cancellation signal to the provider
   const rawOutput = await provider.generateObject<T>(
     promptDef.systemPrompt,
     userPrompt,
     promptDef.schema,
-    signal
+    signal,
+    { maxTokens }
   );
 
   // 5. Strict Output Validation
@@ -61,12 +71,22 @@ export async function* streamAiPipeline<T>(
   // 3. Resolve provider
   const provider = getAiProvider();
 
+  let maxTokens: number | undefined;
+  if (promptId === "JOURNEY_PLAN" && variables.duration) {
+    const d = Number(variables.duration);
+    if (d >= 1 && d <= 5) maxTokens = 1500;
+    else if (d >= 6 && d <= 10) maxTokens = 2500;
+    else if (d >= 11 && d <= 20) maxTokens = 4500;
+    else if (d >= 21) maxTokens = 7000;
+  }
+
   // 4. Stream — P1#4: forward cancellation signal to the provider
   const stream = provider.streamObject<T>(
     promptDef.systemPrompt,
     userPrompt,
     promptDef.schema,
-    signal
+    signal,
+    { maxTokens }
   );
 
   for await (const chunk of stream) {

@@ -22,7 +22,13 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const rawCallbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = 
+    rawCallbackUrl.startsWith("/") && 
+    !rawCallbackUrl.startsWith("//") && 
+    !rawCallbackUrl.startsWith("/\\") 
+      ? rawCallbackUrl 
+      : "/dashboard";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

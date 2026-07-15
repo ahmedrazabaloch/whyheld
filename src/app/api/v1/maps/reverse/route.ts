@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { resolveReverseGeocode } from "@/lib/location/service";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
+  const ip = getClientIp(request);
+  const { success } = rateLimit(`reverse:${ip}`, { limit: 30, windowMs: 60000 });
+  if (!success) {
+    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+  }
+
   const { searchParams } = new URL(request.url);
   const latStr = searchParams.get("lat");
   const lngStr = searchParams.get("lng");

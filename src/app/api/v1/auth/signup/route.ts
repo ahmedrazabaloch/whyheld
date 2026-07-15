@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth/password";
@@ -6,6 +5,7 @@ import { signupSchema } from "@/lib/auth/validation";
 import { createToken } from "@/lib/auth/tokens";
 import { sendVerificationEmail } from "@/lib/auth/email";
 import { resolvePlaceDetails } from "@/lib/location/service";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 /**
  * POST /api/v1/auth/signup
@@ -15,6 +15,15 @@ import { resolvePlaceDetails } from "@/lib/location/service";
  * the user in via the Credentials provider.
  */
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const { success } = rateLimit(`signup:${ip}`, { limit: 5, windowMs: 60000 });
+  if (!success) {
+    return NextResponse.json(
+      { error: { code: "RATE_LIMITED", message: "Too many signup attempts. Please try again later." } },
+      { status: 429 }
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();

@@ -344,7 +344,6 @@ model JourneyStop {
   journey       Journey  @relation(fields: [journeyId], references: [id], onDelete: Cascade)
 
   @@unique([journeyId, order])
-  @@index([journeyId])
   @@index([googlePlaceId])
   @@map("journey_stops")
 }

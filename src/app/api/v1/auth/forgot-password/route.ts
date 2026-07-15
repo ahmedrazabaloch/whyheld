@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { forgotPasswordSchema } from "@/lib/auth/validation";
 import { createToken } from "@/lib/auth/tokens";
 import { sendPasswordResetEmail } from "@/lib/auth/email";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 /**
  * POST /api/v1/auth/forgot-password
@@ -13,6 +14,15 @@ import { sendPasswordResetEmail } from "@/lib/auth/email";
  * accounts.
  */
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const { success } = rateLimit(`forgot-password:${ip}`, { limit: 5, windowMs: 60000 });
+  if (!success) {
+    return NextResponse.json(
+      { error: { code: "RATE_LIMITED", message: "Too many password reset attempts. Please try again later." } },
+      { status: 429 }
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();

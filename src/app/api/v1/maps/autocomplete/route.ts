@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
 import { handleServerError, getUserFriendlyMessage } from "@/lib/utils/errors";
 import { autocompletePlaces } from "@/lib/location/service";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
+  const ip = getClientIp(request);
+  const { success } = rateLimit(`autocomplete:${ip}`, { limit: 100, windowMs: 60000 });
+  if (!success) {
+    return NextResponse.json(
+      { success: false, error: "Too many requests. Please try again later.", code: "RATE_LIMITED" },
+      { status: 429 }
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q");
   const sessionToken = searchParams.get("sessionToken") || undefined;
