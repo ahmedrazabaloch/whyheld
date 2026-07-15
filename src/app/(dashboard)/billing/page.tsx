@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { PageHeader } from "@/components/dashboard";
+import { PageHeader, PlanBadge, ActiveCardGlow } from "@/components/dashboard";
 import { getCachedSession } from "@/lib/auth/session-cache";
 import { getMembershipPlans } from "@/lib/membership/getMembershipPlans";
 
@@ -67,40 +67,37 @@ export default async function BillingPage() {
             return (
             <div
               key={plan.id}
-              className={`flex flex-col h-full rounded-[2rem] border p-6 sm:p-8 shadow-sm ${
+              className={`relative z-0 flex flex-col h-full rounded-[2rem] p-6 sm:p-8 transition-all duration-300 ${
                 isActivePlan
                   ? plan.featured
-                    ? "border-green-500 bg-[#33332F] text-[#F4EFE6]" 
-                    : "border-green-500 bg-green-50/20 text-brand-text-primary"
+                    ? "border-2 border-brand-btn-primary/60 bg-brand-sidebar text-brand-bg"
+                    : "border-2 border-brand-btn-primary/60 bg-brand-card text-brand-text-primary"
                   : plan.featured 
-                    ? "border-[#74876B] bg-[#33332F] text-[#F4EFE6]" 
-                    : "border-brand-border/60 bg-brand-card text-brand-text-primary"
+                    ? "border border-brand-btn-primary bg-brand-sidebar text-brand-bg shadow-sm" 
+                    : "border border-brand-border/60 bg-brand-card text-brand-text-primary shadow-sm hover:shadow-md hover:border-brand-border"
               }`}
             >
+              {isActivePlan && <ActiveCardGlow isDark={plan.featured} />}
+              {isActivePlan && <PlanBadge />}
               <div className="flex items-center justify-between gap-2">
-                <h4 className={`font-display text-xl truncate ${plan.featured ? "text-white" : ""}`}>{plan.name}</h4>
-                {isActivePlan && (
-                  <span className="shrink-0 whitespace-nowrap inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-green-800">
-                    CURRENT PLAN
-                  </span>
-                )}
+                <h4 className={`font-display text-xl truncate ${plan.featured ? "text-brand-bg" : ""}`}>{plan.name}</h4>
               </div>
               <div className="mt-4 mb-6">
                 <span className="font-display text-3xl font-bold">{plan.price}</span>
-                {plan.cadence && <span className={`ml-2 text-sm ${plan.featured ? "text-[#A8A69D]" : "text-brand-text-secondary"}`}>{plan.cadence}</span>}
+                {plan.cadence && <span className={`ml-2 text-sm ${plan.featured ? "text-brand-text-muted" : "text-brand-text-secondary"}`}>{plan.cadence}</span>}
               </div>
               <ul className="flex-1 space-y-3 mb-8">
                 {plan.features.map((feature, i) => (
                   <li key={i} className="text-sm flex items-start gap-2">
-                    <span className={plan.featured ? "text-[#74876B]" : "text-brand-text-secondary"}>•</span>
-                    <span className={plan.featured ? "text-[#F4EFE6]" : "text-brand-text-primary"}>{feature}</span>
+                    <span className={plan.featured ? "text-brand-btn-primary" : "text-brand-text-secondary"}>•</span>
+                    <span className={plan.featured ? "text-brand-bg" : "text-brand-text-primary"}>{feature}</span>
                   </li>
                 ))}
               </ul>
               <button
                 className={`mt-auto w-full rounded-full px-4 py-3 text-sm font-medium transition-colors ${
                   plan.featured
-                    ? "bg-[#74876B] text-[#F4EFE6] hover:bg-[#68795f]"
+                    ? "bg-brand-btn-primary text-brand-bg hover:bg-brand-btn-primary-hover"
                     : "border border-brand-border bg-transparent hover:bg-brand-border/30"
                 }`}
               >
