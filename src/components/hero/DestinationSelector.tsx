@@ -64,7 +64,7 @@ export function DestinationSelector({
               />
               
               <div className="absolute inset-x-2.5 bottom-2.5 sm:bottom-3 sm:inset-x-3 flex flex-col text-left">
-                <span className="text-[0.5rem] sm:text-[0.55rem] font-bold uppercase tracking-[0.14em] text-sun-300/90 leading-none">
+                <span className="text-[0.5rem] sm:text-[0.55rem] font-bold uppercase tracking-[0.14em] text-[#E5B869] leading-none">
                   {country}
                 </span>
                 <span className="mt-0.5 sm:mt-1 text-[0.68rem] sm:text-xs font-semibold text-[#F4EFE6] tracking-wide leading-tight line-clamp-1">

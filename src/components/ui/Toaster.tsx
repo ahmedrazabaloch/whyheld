@@ -6,7 +6,7 @@ import { Check, AlertCircle, Info, AlertTriangle } from "lucide-react";
 export function Toaster() {
   return (
     <SonnerToaster 
-      position="bottom-center"
+      position="top-right"
       duration={5000}
       icons={{
         success: <Check className="h-5 w-5 text-[#74876B]" strokeWidth={2} />,

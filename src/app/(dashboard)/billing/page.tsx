@@ -77,7 +77,7 @@ export default async function BillingPage() {
                     : "border border-brand-border/60 bg-brand-card text-brand-text-primary shadow-sm hover:shadow-md hover:border-brand-border"
               }`}
             >
-              {isActivePlan && <ActiveCardGlow isDark={plan.featured} />}
+              {isActivePlan && <ActiveCardGlow isDark={!!plan.featured} />}
               {isActivePlan && <PlanBadge />}
               <div className="flex items-center justify-between gap-2">
                 <h4 className={`font-display text-xl truncate ${plan.featured ? "text-brand-bg" : ""}`}>{plan.name}</h4>

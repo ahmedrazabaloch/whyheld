@@ -149,9 +149,7 @@ export function ProfileForm({ firstName, lastName, phone: initialPhone, email, i
 
       if (response.success) {
         toast.success("Profile updated successfully.");
-        if (!onboardingComplete) {
-          router.push("/start");
-        }
+        router.refresh();
       } else {
         toast.error(response.error || "Failed to update profile.");
       }

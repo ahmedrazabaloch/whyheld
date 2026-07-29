@@ -76,7 +76,8 @@ export function FeaturedStage({ destination }: FeaturedStageProps) {
 
             <div className="relative flex flex-col gap-2">
               <div className="flex items-center justify-between gap-4">
-                <span className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-sun-300">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.2em] text-[#FFFFFF] backdrop-blur-md shadow-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#E5B869]" aria-hidden />
                   {destination.region}
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-0.5 text-[0.62rem] font-medium uppercase tracking-[0.16em] text-[#FFFFFF] backdrop-blur-sm border border-white/5">

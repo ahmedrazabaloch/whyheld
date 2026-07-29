@@ -6,7 +6,7 @@ import { LocationAutocomplete } from "./LocationAutocomplete";
 import { LocationDetect } from "./LocationDetect";
 import { updateProfileLocation } from "@/actions/profile-actions";
 
-export function LocationForm({ initialLocation = "" }: { initialLocation?: string }) {
+export function LocationForm({ initialLocation = "", label = "Location" }: { initialLocation?: string; label?: string }) {
   // Tracks the label displayed in the autocomplete input after a successful save
   const [savedLabel, setSavedLabel] = useState(initialLocation);
   const [isSaving, setIsSaving] = useState(false);
@@ -18,7 +18,7 @@ export function LocationForm({ initialLocation = "" }: { initialLocation?: strin
     setIsSaving(false);
     if (res.success) {
       setSavedLabel(description);
-      toast.success("Home location updated.");
+      toast.success("Location updated.");
     } else {
       toast.error(res.error || "Failed to update location.");
     }
@@ -45,7 +45,7 @@ export function LocationForm({ initialLocation = "" }: { initialLocation?: strin
   return (
     <div className="space-y-3">
       <LocationAutocomplete
-        label="Home Location"
+        label={label}
         placeholder="Search for a city..."
         value={savedLabel}
         onChange={handlePlaceSelect}

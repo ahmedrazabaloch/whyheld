@@ -69,7 +69,7 @@ export function OnboardingFlow() {
         </Link>
         <Link
           href="/"
-          className="text-sm text-brand-text-secondary transition-colors hover:text-brand-text-primary"
+          className="inline-flex items-center justify-center rounded-full border border-brand-border bg-brand-card px-4 py-2 text-xs font-semibold text-brand-text-primary shadow-xs transition-all duration-200 hover:border-brand-text-secondary hover:bg-white hover:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary"
         >
           Save & exit
         </Link>
@@ -99,7 +99,7 @@ export function OnboardingFlow() {
           aria-label="Onboarding progress"
           className="hidden lg:col-span-4 lg:block"
         >
-          <ol className="relative flex flex-col gap-1">
+          <ol className="relative flex flex-col gap-1.5">
             {STEPS.map((s, i) => {
               const done = i < step;
               const active = i === step;
@@ -110,22 +110,26 @@ export function OnboardingFlow() {
                     onClick={() => (i <= step ? goTo(i) : undefined)}
                     disabled={i > step}
                     aria-current={active ? "step" : undefined}
-                    className={`group flex w-full items-center gap-3.5 rounded-2xl px-3 py-3 text-left transition-colors duration-300 ${
-                      active ? "bg-brand-text-primary/5" : "hover:bg-brand-text-primary/3"
+                    className={`group flex w-full items-center gap-3.5 rounded-2xl px-3.5 py-3 text-left transition-all duration-300 ${
+                      active
+                        ? "bg-brand-text-primary/8 border border-brand-text-primary/10 shadow-xs"
+                        : done
+                          ? "hover:bg-brand-btn-primary/8"
+                          : "opacity-60 hover:bg-brand-text-primary/3"
                     } ${i > step ? "cursor-not-allowed" : ""}`}
                   >
                     <span
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-medium transition-colors duration-300 ${
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-all duration-300 ${
                         done
-                          ? "border-brand-btn-primary/50 bg-brand-btn-primary/10 text-brand-btn-primary"
+                          ? "border-[#74876B] bg-[#74876B] text-white shadow-xs"
                           : active
-                            ? "border-brand-btn-primary bg-brand-btn-primary text-brand-bg"
-                            : "border-brand-border text-brand-text-secondary"
+                            ? "border-[#33332F] bg-[#33332F] text-white shadow-xs ring-2 ring-[#33332F]/20"
+                            : "border-brand-border bg-transparent text-brand-text-secondary/70"
                       }`}
                     >
                       {done ? (
                         <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5" aria-hidden>
-                          <path d="M3.5 8.5l3 3 6-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          <path d="M3.5 8.5l3 3 6-7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       ) : (
                         s.index
@@ -133,8 +137,12 @@ export function OnboardingFlow() {
                     </span>
                     <span className="flex flex-col">
                       <span
-                        className={`text-sm font-medium transition-colors ${
-                          active || done ? "text-brand-text-primary" : "text-brand-text-secondary"
+                        className={`text-sm transition-colors ${
+                          active
+                            ? "font-bold text-brand-text-primary"
+                            : done
+                              ? "font-semibold text-brand-text-primary"
+                              : "font-medium text-brand-text-secondary/80"
                         }`}
                       >
                         {s.label}

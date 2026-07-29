@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
 import { formStyles } from "@/lib/design";
 import type { AutocompletePrediction } from "@/lib/location/types";
 
@@ -12,6 +13,7 @@ interface LocationAutocompleteProps {
   onChange?: (placeId: string, description: string) => void;
   error?: string;
   className?: string;
+  showDetectButton?: boolean;
 }
 
 function debounce<T extends (...args: any[]) => any>(fn: T, delay: number) {
@@ -29,15 +31,72 @@ export function LocationAutocomplete({
   onChange,
   error,
   className = "",
+  showDetectButton = true,
 }: LocationAutocompleteProps) {
   const [query, setQuery] = useState(value);
   const [predictions, setPredictions] = useState<AutocompletePrediction[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDetecting, setIsDetecting] = useState(false);
   
   const wrapperRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLUListElement>(null);
   const sessionTokenRef = useRef<string | null>(null);
+
+  const handleDetectLocation = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setIsDetecting(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude: lat, longitude: lng } = position.coords;
+        try {
+          const res = await fetch(`/api/v1/maps/reverse?lat=${lat}&lng=${lng}`);
+          if (res.ok) {
+            const data = await res.json();
+            const loc = data.location;
+            const labelParts = [loc?.city, loc?.state, loc?.country].filter(Boolean);
+            const resolvedLabel =
+              labelParts.length > 0
+                ? labelParts.join(", ")
+                : loc?.formattedAddress || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+            setQuery(resolvedLabel);
+            if (onChange) {
+              onChange(loc?.placeId || "", resolvedLabel);
+            }
+            toast.success("Location detected!");
+          } else {
+            const fallback = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            setQuery(fallback);
+            if (onChange) onChange("", fallback);
+            toast.success("Coordinates detected!");
+          }
+        } catch {
+          const fallback = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+          setQuery(fallback);
+          if (onChange) onChange("", fallback);
+        } finally {
+          setIsDetecting(false);
+        }
+      },
+      (error) => {
+        setIsDetecting(false);
+        let errorMsg = "Unable to retrieve location.";
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMsg = "Location permission denied.";
+        }
+        toast.error(errorMsg);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const getSessionToken = () => {
     if (!sessionTokenRef.current) {
@@ -198,18 +257,32 @@ export function LocationAutocomplete({
       <div className="relative">
         <input
           type="text"
-          className={formStyles.input}
+          className={`${formStyles.input} pr-11`}
           placeholder={placeholder}
           value={query}
           onChange={handleInputChange}
           onFocus={handleFocus}
           autoComplete="off"
         />
-        {isLoading && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+        <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
+          {isLoading || isDetecting ? (
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-brand-border border-t-brand-btn-primary" />
-          </div>
-        )}
+          ) : (
+            showDetectButton && (
+              <button
+                type="button"
+                onClick={handleDetectLocation}
+                title="Detect my current location"
+                aria-label="Detect my current location"
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-brand-text-secondary/70 transition-colors hover:bg-brand-text-primary/5 hover:text-brand-btn-primary focus:outline-none"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="3 11 22 2 13 21 11 13 3 11" />
+                </svg>
+              </button>
+            )
+          )}
+        </div>
       </div>
 
       {isOpen && predictions.length > 0 && typeof document !== "undefined"
