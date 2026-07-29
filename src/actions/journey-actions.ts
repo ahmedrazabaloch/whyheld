@@ -196,7 +196,8 @@ export async function appendGenerationEvent(journeyId: string, events: AiStreamE
             googlePlaceId: stop.googlePlaceId || null,
             kind: stop.kind || "CITY",
             nights: stop.nights || 1,
-            highlights: stop.highlights || []
+            highlights: stop.highlights || [],
+            metadata: stop.metadata || null
           };
 
           await tx.journeyStop.upsert({
@@ -274,7 +275,8 @@ export async function completeJourneyGeneration(
           googlePlaceId: stop.googlePlaceId || null,
           kind: stop.kind || "CITY",
           nights: stop.nights || 1,
-          highlights: stop.highlights || []
+          highlights: stop.highlights || [],
+          metadata: stop.metadata || null
         }))
       });
 
