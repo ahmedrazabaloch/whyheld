@@ -64,6 +64,7 @@ export function JourneyBuilder({
 
   return (
     <>
+      {/* ── Step header — hidden during generation ─────────────────── */}
       {!isGenerating && (
         <div className="flex items-center justify-between mb-8">
           <PageHeader
@@ -77,11 +78,18 @@ export function JourneyBuilder({
         </div>
       )}
 
-      <div className="rounded-[2rem] border border-brand-border/60 bg-brand-card shadow-sm overflow-hidden relative min-h-[400px]">
-        <AnimatePresence mode="wait">
-          {isGenerating ? (
+      <AnimatePresence mode="wait">
+        {isGenerating ? (
+          /* ── Full-bleed generation experience ─────────────────────── */
+          <motion.div
+            key="generating"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="w-full"
+          >
             <GeneratingState
-              key="generating"
               state={generation.state}
               statusMessage={generation.statusMessage}
               progress={generation.progress}
@@ -91,28 +99,33 @@ export function JourneyBuilder({
               onAbort={generation.abort}
               onRetry={generation.retry}
               expectedDurationDays={data.durationDays || undefined}
+              originQuery={data.originQuery}
+              draftData={data}
             />
-          ) : (
-            <motion.div
-              key={`step-${step}`}
-              initial="hidden"
-              animate="show"
-              exit={{ opacity: 0, y: -10 }}
-              variants={containerVariants}
-              className="p-6 sm:p-8 flex flex-col min-h-[400px]"
-            >
+          </motion.div>
+        ) : (
+          /* ── Builder step card ─────────────────────────────────────── */
+          <motion.div
+            key={`step-${step}`}
+            initial="hidden"
+            animate="show"
+            exit={{ opacity: 0, y: -10 }}
+            variants={containerVariants}
+            className="rounded-[2rem] border border-brand-border/60 bg-brand-card shadow-sm overflow-hidden relative"
+          >
+            <div className="p-6 sm:p-8 flex flex-col min-h-[400px]">
               {ActiveStep ? (
-                <ActiveStep 
-                  controller={controller} 
+                <ActiveStep
+                  controller={controller}
                   onGenerate={generation.startGeneration}
                   userCredits={userCredits}
                   userPlan={userPlan}
                 />
               ) : null}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

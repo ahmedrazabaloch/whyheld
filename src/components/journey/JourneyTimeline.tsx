@@ -46,6 +46,7 @@ export function JourneyTimeline({ stops }: JourneyTimelineProps) {
           name={stop.name}
           description={stop.description || ""}
           highlights={stop.highlights || []}
+          metadata={stop.metadata}
         />
       ))}
     </div>

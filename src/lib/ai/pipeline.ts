@@ -92,6 +92,7 @@ export async function* streamAiPipeline<T>(
   for await (const chunk of stream) {
     // P2#7: Validate streamed "day" event payloads when the prompt defines an itemSchema.
     if (chunk.type === "day" && promptDef.itemSchema) {
+      console.log("[DEBUG Raw Day Payload Before Zod Validation]:", JSON.stringify(chunk.payload, null, 2));
       const result = promptDef.itemSchema.safeParse(chunk.payload);
       if (!result.success) {
         yield {

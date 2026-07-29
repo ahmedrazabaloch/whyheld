@@ -123,68 +123,74 @@ async function saveOnboarding({
     )
   );
 
-  return prisma.$transaction(async (tx) => {
-    const profile = await tx.profile.update({
-      where: { userId },
-      data: {
-        ...(complete ? { onboardingCompletedAt: new Date() } : {}),
+  const profileUpdate = prisma.profile.update({
+    where: { userId },
+    data: {
+      ...(complete ? { onboardingCompletedAt: new Date() } : {}),
+      preferences: {
+        upsert: {
+          update: {
+            pace: toDbPace(data.pace),
+            transport: data.preferences.includes("rail-first") ? "RAIL_FIRST" : "MIXED",
+            avoidCrowds: data.preferences.includes("avoid-crowds"),
+            regenerativeOnly: data.preferences.includes("regenerative"),
+            localGuides: data.preferences.includes("local-guides"),
+            smallScale: data.preferences.includes("small-group"),
+            lowWaste: data.preferences.includes("plastic-free"),
+            extras: { onboardingStep: step },
+          },
+          create: {
+            pace: toDbPace(data.pace) ?? "SLOW_UNHURRIED",
+            transport: data.preferences.includes("rail-first") ? "RAIL_FIRST" : "MIXED",
+            avoidCrowds: data.preferences.includes("avoid-crowds"),
+            regenerativeOnly: data.preferences.includes("regenerative"),
+            localGuides: data.preferences.includes("local-guides"),
+            smallScale: data.preferences.includes("small-group"),
+            lowWaste: data.preferences.includes("plastic-free"),
+            extras: { onboardingStep: step },
+          },
+        },
       },
-    });
-
-    await tx.travelPreference.upsert({
-      where: { profileId: profile.id },
-      update: {
-        pace: toDbPace(data.pace),
-        transport: data.preferences.includes("rail-first") ? "RAIL_FIRST" : "MIXED",
-        avoidCrowds: data.preferences.includes("avoid-crowds"),
-        regenerativeOnly: data.preferences.includes("regenerative"),
-        localGuides: data.preferences.includes("local-guides"),
-        smallScale: data.preferences.includes("small-group"),
-        lowWaste: data.preferences.includes("plastic-free"),
-        extras: { onboardingStep: step },
+      styles: {
+        deleteMany: {},
+        ...(styleRecord
+          ? {
+              create: {
+                styleId: styleRecord.id,
+              },
+            }
+          : {}),
       },
-      create: {
-        profileId: profile.id,
-        pace: toDbPace(data.pace) ?? "SLOW_UNHURRIED",
-        transport: data.preferences.includes("rail-first") ? "RAIL_FIRST" : "MIXED",
-        avoidCrowds: data.preferences.includes("avoid-crowds"),
-        regenerativeOnly: data.preferences.includes("regenerative"),
-        localGuides: data.preferences.includes("local-guides"),
-        smallScale: data.preferences.includes("small-group"),
-        lowWaste: data.preferences.includes("plastic-free"),
-        extras: { onboardingStep: step },
+      interests: {
+        deleteMany: {},
+        ...(interestRecords.length > 0
+          ? {
+              createMany: {
+                data: interestRecords.map((record) => ({
+                  interestId: record.id,
+                })),
+              },
+            }
+          : {}),
       },
-    });
+    },
+  });
 
-    await tx.profileTravelStyle.deleteMany({ where: { profileId: profile.id } });
-    if (styleRecord) {
-      await tx.profileTravelStyle.create({
-        data: { profileId: profile.id, styleId: styleRecord.id },
-      });
-    }
-
-    await tx.profileInterest.deleteMany({ where: { profileId: profile.id } });
-    if (interestRecords.length > 0) {
-      await tx.profileInterest.createMany({
-        data: interestRecords.map((record) => ({
-          profileId: profile.id,
-          interestId: record.id,
-        })),
-      });
-    }
-
-    if (complete) {
-      await tx.userActivity.create({
+  const operations: [typeof profileUpdate, ...Array<any>] = [profileUpdate];
+  if (complete) {
+    operations.push(
+      prisma.userActivity.create({
         data: {
           userId,
           type: "ONBOARDING_COMPLETE",
           metadata: { step, style: data.style, pace: data.pace },
         },
-      });
-    }
+      })
+    );
+  }
 
-    return profile;
-  });
+  const [profile] = await prisma.$transaction(operations);
+  return profile;
 }
 
 export async function GET() {

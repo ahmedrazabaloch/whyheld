@@ -1,7 +1,15 @@
-import { motion } from "motion/react";
-import { buttonStyles, containerVariants, riseVariants } from "@/lib/design";
+"use client";
+
+import { motion, AnimatePresence } from "motion/react";
+import { buttonStyles } from "@/lib/design";
 import { JourneyBeingCrafted } from "./JourneyBeingCrafted";
-import { GenerationSummary } from "./GenerationSummary";
+import {
+  GenerationHero,
+  GenerationTimeline,
+  GenerationProgressBar,
+  GenerationStatusChip,
+  GenerationErrorState,
+} from "./generation";
 import type { GenerationState } from "@/hooks/useJourneyGeneration";
 
 interface GeneratingStateProps {
@@ -14,6 +22,8 @@ interface GeneratingStateProps {
   onAbort: () => void;
   onRetry: () => void;
   expectedDurationDays?: number;
+  originQuery?: string | null;
+  draftData?: any;
 }
 
 export function GeneratingState({
@@ -26,93 +36,215 @@ export function GeneratingState({
   onAbort,
   onRetry,
   expectedDurationDays,
+  originQuery,
+  draftData,
 }: GeneratingStateProps) {
-  
-  if (state === "FAILED") {
+  /* ── Error / Cancelled states ─────────────────────────────────────── */
+  if (state === "FAILED" || state === "CANCELLED") {
     return (
-      <motion.div 
-        variants={containerVariants}
-        initial="hidden"
-        animate="show"
-        className="flex flex-col items-center justify-center flex-1 py-12 text-center"
-      >
-        <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-6">
-          <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        </div>
-        <h3 className="font-display text-2xl font-light text-brand-text-primary mb-2">
-          Generation Failed
-        </h3>
-        <p className="text-brand-text-secondary max-w-md mb-8">
-          {error || "An unexpected error occurred while communicating with the AI. Your credit was not charged."}
-        </p>
-        <div className="flex gap-4">
-          <button onClick={onAbort} className={buttonStyles.ghost}>Cancel</button>
-          <button onClick={onRetry} className={buttonStyles.primary}>Try Again</button>
-        </div>
-      </motion.div>
+      <GenerationErrorState
+        type={state}
+        error={error}
+        onRetry={onRetry}
+        onAbort={onAbort}
+      />
     );
   }
 
-  if (state === "CANCELLED") {
-    return (
-      <motion.div 
-        variants={containerVariants}
-        initial="hidden"
-        animate="show"
-        className="flex flex-col items-center justify-center flex-1 py-12 text-center"
-      >
-        <h3 className="font-display text-2xl font-light text-brand-text-primary mb-2">
-          Generation Cancelled
-        </h3>
-        <p className="text-brand-text-secondary max-w-md mb-8">
-          You cancelled the generation process. Your credit was not charged.
-        </p>
-        <button onClick={onAbort} className={buttonStyles.primary}>Return to Builder</button>
-      </motion.div>
-    );
+  /* ── Active generation (PREPARING / STREAMING / PERSISTING) ────────── */
+  // Destination for the hero should NOT be the full title.
+  // We want just the country/region or originQuery.
+  const heroDestination =
+    draftData?.primaryCountry ||
+    draftData?.originQuery ||
+    originQuery ||
+    "Your Journey";
+
+  let calculatedProgress = 0;
+  if (state === "PREPARING") {
+    calculatedProgress = 10; // Connecting
+  } else if (state === "STREAMING") {
+    if (!metadata) {
+      calculatedProgress = 20; // Meta not yet received
+    } else {
+      const daysCount = days.length;
+      const total = expectedDurationDays || metadata.durationDays || 7;
+      const daysProgress = total > 0 ? (daysCount / total) * 60 : 0;
+      calculatedProgress = Math.min(25 + daysProgress, 85);
+    }
+  } else if (state === "PERSISTING") {
+    calculatedProgress = 90;
+  } else if (state === "READY") {
+    calculatedProgress = 100;
   }
 
   return (
-    <motion.div 
-      variants={containerVariants} 
-      initial="hidden" 
-      animate="show" 
-      className="flex flex-col flex-1 w-full max-w-4xl mx-auto relative"
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+      className="w-full"
     >
-      <div className="sticky top-0 z-10 bg-brand-card/90 backdrop-blur-sm pb-6 pt-2 border-b border-brand-border/40 mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <motion.h3 
-            variants={riseVariants}
-            className="font-display text-2xl font-light text-brand-text-primary"
-          >
-            {statusMessage || "Crafting your journey..."}
-          </motion.h3>
-          <button 
-            onClick={onAbort} 
-            className={`${buttonStyles.ghost} text-sm`}
-            disabled={state === "PERSISTING"}
-          >
-            {state === "PERSISTING" ? "Finalizing..." : "Cancel"}
-          </button>
-        </div>
-        
-        {/* Progress Bar */}
-        <motion.div variants={riseVariants} className="w-full h-1 bg-brand-border/40 rounded-full overflow-hidden">
-          <motion.div 
-            className="h-full bg-brand-primary"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ type: "spring", stiffness: 50, damping: 15 }}
-          />
-        </motion.div>
-      </div>
+      {/* ── Two-column layout on md+ ─────────────────────────────────── */}
+      <div className="flex flex-col md:flex-row gap-8 w-full">
 
-      <GenerationSummary metadata={metadata} daysCount={days.length} />
-      
-      <JourneyBeingCrafted days={days} expectedDurationDays={expectedDurationDays} />
-      
+        {/* ── LEFT RAIL: Hero + Controls ─────────────────────────────── */}
+        <div className="w-full md:w-[340px] flex-shrink-0 flex flex-col gap-6">
+
+          {/* Destination hero */}
+          <GenerationHero destination={heroDestination} state={state} />
+
+          {/* Glassmorphism status chip */}
+          <GenerationStatusChip message={statusMessage} state={state} />
+
+          {/* Progress bar */}
+          <div className="px-1">
+            <GenerationProgressBar progress={calculatedProgress} state={state} />
+          </div>
+
+          {/* AI thinking timeline */}
+          <div
+            className="rounded-2xl px-5 py-6"
+            style={{
+              background: "rgba(255, 255, 255, 0.65)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+              border: "1px solid rgba(216, 210, 200, 0.5)",
+              boxShadow: "0 4px 24px -8px rgba(51, 51, 47, 0.07)",
+            }}
+          >
+            <p
+              className="text-[0.62rem] font-semibold uppercase tracking-[0.28em] mb-5"
+              style={{ color: "rgba(168, 166, 157, 0.8)" }}
+            >
+              Generation steps
+            </p>
+            <GenerationTimeline progress={calculatedProgress} state={state} />
+          </div>
+
+          {/* Cancel button */}
+          <div className="pb-1">
+            <AnimatePresence>
+              {state !== "PERSISTING" && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <button
+                    type="button"
+                    onClick={onAbort}
+                    className={`${buttonStyles.ghost} w-full justify-center text-sm`}
+                    aria-label="Cancel journey generation"
+                  >
+                    Cancel generation
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {state === "PERSISTING" && (
+              <p
+                className="text-center text-xs"
+                style={{ color: "rgba(168, 166, 157, 0.7)" }}
+              >
+                Saving your itinerary — almost done…
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* ── RIGHT PANEL: Live itinerary stream ─────────────────────── */}
+        <div className="flex-1 min-w-0">
+          {/* Metadata summary card — appears once AI has produced a title */}
+          <AnimatePresence>
+            {metadata && (
+              <motion.div
+                key="meta-card"
+                initial={{ opacity: 0, y: 16, filter: "blur(6px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+                className="rounded-2xl px-6 py-5 mb-6"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(116,135,107,0.08) 0%, rgba(180,160,120,0.06) 100%)",
+                  border: "1px solid rgba(116, 135, 107, 0.2)",
+                  boxShadow: "0 4px 24px -8px rgba(116, 135, 107, 0.12)",
+                }}
+              >
+                {metadata.title && (
+                  <h3
+                    className="font-display text-2xl font-light leading-tight tracking-[-0.01em] mb-2"
+                    style={{ color: "rgba(51, 51, 47, 1)" }}
+                  >
+                    {metadata.title}
+                  </h3>
+                )}
+                {metadata.summary && (
+                  <p
+                    className="text-sm leading-relaxed mb-6"
+                    style={{ color: "rgba(80, 79, 74, 0.85)" }}
+                  >
+                    {metadata.summary}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-x-8 gap-y-4">
+                  {(metadata.durationDays || expectedDurationDays) && (
+                    <MetaStat
+                      label="Est. Days"
+                      value={`${metadata.durationDays || expectedDurationDays} days`}
+                    />
+                  )}
+                  {draftData?.pace && (
+                    <MetaStat
+                      label="Travel Style"
+                      value={draftData.pace.replace(/_/g, " ")}
+                    />
+                  )}
+                  {draftData?.budget && (
+                    <MetaStat
+                      label="Budget"
+                      value={draftData.budget}
+                    />
+                  )}
+                  {(metadata.destination || heroDestination) && (
+                    <MetaStat
+                      label="Destination"
+                      value={metadata.destination || heroDestination}
+                    />
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Live itinerary cards */}
+          <JourneyBeingCrafted
+            days={days}
+            expectedDurationDays={expectedDurationDays}
+          />
+        </div>
+      </div>
     </motion.div>
+  );
+}
+
+/* ── Tiny stat display inside metadata card ─────────────────────── */
+function MetaStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col">
+      <span
+        className="text-[0.6rem] font-semibold uppercase tracking-[0.25em] mb-0.5"
+        style={{ color: "rgba(168, 166, 157, 0.8)" }}
+      >
+        {label}
+      </span>
+      <span
+        className="text-sm font-medium"
+        style={{ color: "rgba(51, 51, 47, 0.9)" }}
+      >
+        {value}
+      </span>
+    </div>
   );
 }

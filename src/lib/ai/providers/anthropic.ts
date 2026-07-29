@@ -134,12 +134,13 @@ export class AnthropicProvider implements AiProvider {
         : abortController.signal;
 
       try {
+        const supportsTemperature = !model.toLowerCase().includes("sonnet-5");
+
         const response = await client.messages.create(
           {
             model,
             max_tokens: options?.maxTokens ?? AI_CONFIG.generation.maxTokens.journeyPlan,
-            // P2#9: Structured object generation uses strictTemperature.
-            temperature: AI_CONFIG.generation.strictTemperature,
+            ...(supportsTemperature ? { temperature: AI_CONFIG.generation.strictTemperature } : {}),
             system,
             messages: [{ role: "user", content: prompt }],
           },
@@ -225,13 +226,15 @@ export class AnthropicProvider implements AiProvider {
         : activeAbortController.signal;
 
       try {
+        const supportsTemperature = !model.toLowerCase().includes("sonnet-5");
+
         // Awaiting create() establishes the HTTP connection (this is the retryable boundary).
         // P0#2: system prompt is passed as-is — the provider does NOT append NDJSON instructions.
         stream = await client.messages.create(
           {
             model,
             max_tokens: options?.maxTokens ?? AI_CONFIG.generation.maxTokens.journeyPlan,
-            temperature: AI_CONFIG.generation.strictTemperature,
+            ...(supportsTemperature ? { temperature: AI_CONFIG.generation.strictTemperature } : {}),
             system,
             messages: [{ role: "user", content: prompt }],
             stream: true,
@@ -290,7 +293,9 @@ export class AnthropicProvider implements AiProvider {
 
             try {
               const parsed = JSON.parse(line);
+              console.log("[DEBUG Raw NDJSON Line Received]:", line);
               if (
+                parsed.type === "meta" ||
                 parsed.type === "day" ||
                 parsed.type === "stop" ||
                 parsed.type === "status"
@@ -313,6 +318,7 @@ export class AnthropicProvider implements AiProvider {
             try {
               const parsed = JSON.parse(remaining);
               if (
+                parsed.type === "meta" ||
                 parsed.type === "day" ||
                 parsed.type === "stop" ||
                 parsed.type === "status"
