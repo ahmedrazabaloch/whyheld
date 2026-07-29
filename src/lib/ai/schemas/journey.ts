@@ -4,6 +4,21 @@ import { z } from "zod";
 export const GeneratedMetadataSchema = z.object({
   confidenceScore: z.number().min(0).max(1).optional(),
   curatorNote: z.string().optional(),
+  morning: z.string().optional(),
+  afternoon: z.string().optional(),
+  evening: z.string().optional(),
+  travelNotes: z.string().optional(),
+  accommodation: z.string().optional(),
+  food: z.string().optional(),
+  hiddenGems: z.string().optional(),
+  photographyTips: z.string().optional(),
+  localTips: z.string().optional(),
+  recommendedDuration: z.string().optional(),
+  logistics: z.object({
+    drivingTime: z.string().optional(),
+    walkingDistance: z.string().optional(),
+    estimatedCost: z.string().optional(),
+  }).optional(),
 });
 
 // Single point of interest / stop
