@@ -28,10 +28,12 @@ const PROTECTED_PREFIXES = [
   "/profile",
 ];
 
-/** NextAuth v5 session cookie names (secure variant in production). */
+/** NextAuth session cookie names (supports both NextAuth v4/v5 variants). */
 const SESSION_COOKIES = [
   "authjs.session-token",
   "__Secure-authjs.session-token",
+  "next-auth.session-token",
+  "__Secure-next-auth.session-token",
 ];
 
 function hasSession(request: NextRequest): boolean {
@@ -59,6 +61,7 @@ export function proxy(request: NextRequest) {
 
   return NextResponse.next();
 }
+
 
 export const config = {
   // Run on app routes; skip Next internals, API and static assets.
