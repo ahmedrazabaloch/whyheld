@@ -152,6 +152,72 @@ const AppendEventsPayloadSchema = z.array(
   ])
 );
 
+/**
+ * Helper to extract individual stops from streamed/finalized day objects or flat stops.
+ */
+function extractFlatStops(items: any[]): Array<{
+  name: string;
+  kind: string;
+  description: string;
+  nights: number;
+  dayStart: number;
+  dayEnd: number;
+  googlePlaceId: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  highlights: string[];
+  metadata: any;
+}> {
+  const flattened: any[] = [];
+
+  for (const item of items) {
+    // Case 1: Item is a DayObject containing a `stops` array
+    if (item && Array.isArray(item.stops) && item.stops.length > 0) {
+      const dayNumber = item.dayNumber || 1;
+      const dayTheme = item.theme || "";
+      const daySummary = item.summary || "";
+
+      for (const stop of item.stops) {
+        flattened.push({
+          name: stop.name || "Stop",
+          kind: stop.kind || "EXPERIENCE",
+          description: stop.description || "",
+          nights: stop.nights ?? 1,
+          dayStart: stop.dayStart ?? dayNumber,
+          dayEnd: stop.dayEnd ?? dayNumber,
+          googlePlaceId: stop.googlePlaceId || null,
+          latitude: stop.latitude || null,
+          longitude: stop.longitude || null,
+          highlights: stop.highlights || [],
+          metadata: {
+            dayNumber,
+            dayTheme,
+            daySummary,
+            ...(stop.metadata || {}),
+          },
+        });
+      }
+    } else if (item && typeof item === "object") {
+      // Case 2: Item is directly a stop object
+      flattened.push({
+        name: item.name || item.title || "Stop",
+        kind: item.kind || "EXPERIENCE",
+        description: item.description || item.summary || "",
+        nights: item.nights ?? 1,
+        dayStart: item.dayStart ?? item.dayNumber ?? 1,
+        dayEnd: item.dayEnd ?? item.dayNumber ?? 1,
+        googlePlaceId: item.googlePlaceId || null,
+        latitude: item.latitude || null,
+        longitude: item.longitude || null,
+        highlights: item.highlights || [],
+        metadata: item.metadata || null,
+      });
+    }
+  }
+
+  return flattened;
+}
+
 export async function appendGenerationEvent(journeyId: string, events: AiStreamEvent[]): Promise<ActionResponse> {
   try {
     const session = await auth();
@@ -181,23 +247,27 @@ export async function appendGenerationEvent(journeyId: string, events: AiStreamE
     const dayEvents = validEvents.filter((e) => e.type === "day");
     
     if (dayEvents.length > 0) {
-      // Use a transaction to perform idempotent upserts based on day order
+      const dayPayloads = dayEvents.map((e) => (e as any).payload);
+      const flatStops = extractFlatStops(dayPayloads);
+
+      // Use a transaction to perform idempotent upserts based on global stop order
       await prisma.$transaction(async (tx) => {
-        for (const event of dayEvents) {
-          if (event.type !== "day") continue;
-          const stop = event.payload;
-          const order = event.index + 1; // Assuming event.index is 0-based
-          
+        for (let idx = 0; idx < flatStops.length; idx++) {
+          const stop = flatStops[idx];
+          const order = idx + 1;
+
           const data = {
-            name: stop.name || `Stop ${order}`,
-            description: stop.description || stop.summary || "",
-            latitude: stop.latitude || null,
-            longitude: stop.longitude || null,
-            googlePlaceId: stop.googlePlaceId || null,
-            kind: stop.kind || "CITY",
-            nights: stop.nights || 1,
-            highlights: stop.highlights || [],
-            metadata: stop.metadata || null
+            name: stop.name,
+            description: stop.description,
+            latitude: stop.latitude,
+            longitude: stop.longitude,
+            googlePlaceId: stop.googlePlaceId,
+            kind: (stop.kind as any) || "EXPERIENCE",
+            nights: stop.nights,
+            dayStart: stop.dayStart,
+            dayEnd: stop.dayEnd,
+            highlights: stop.highlights,
+            metadata: stop.metadata
           };
 
           await tx.journeyStop.upsert({
@@ -256,6 +326,11 @@ export async function completeJourneyGeneration(
       throw new Error("Validation failed: Generation summary is missing or empty.");
     }
 
+    const flatStops = extractFlatStops(finalStops);
+    if (flatStops.length === 0) {
+      throw new Error("Validation failed: Generation resulted in 0 valid stops.");
+    }
+
     // Final DB transaction
     const updatedJourney = await prisma.$transaction(async (tx) => {
       // 1. Delete any existing stops (in case of a retry that partially wrote)
@@ -263,20 +338,22 @@ export async function completeJourneyGeneration(
         where: { journeyId }
       });
 
-      // 2. Create the new stops
+      // 2. Create the new stops from flattened list
       await tx.journeyStop.createMany({
-        data: finalStops.map((stop, index) => ({
+        data: flatStops.map((stop, index) => ({
           journeyId,
           order: index + 1,
-          name: stop.name || `Stop ${index + 1}`,
-          description: stop.description || stop.summary || "",
-          latitude: stop.latitude || null,
-          longitude: stop.longitude || null,
-          googlePlaceId: stop.googlePlaceId || null,
-          kind: stop.kind || "CITY",
-          nights: stop.nights || 1,
-          highlights: stop.highlights || [],
-          metadata: stop.metadata || null
+          name: stop.name,
+          description: stop.description,
+          latitude: stop.latitude,
+          longitude: stop.longitude,
+          googlePlaceId: stop.googlePlaceId,
+          kind: (stop.kind as any) || "EXPERIENCE",
+          nights: stop.nights,
+          dayStart: stop.dayStart,
+          dayEnd: stop.dayEnd,
+          highlights: stop.highlights,
+          metadata: stop.metadata
         }))
       });
 
@@ -316,11 +393,13 @@ export async function completeJourneyGeneration(
         where: { id: journeyId },
         data: {
           status: "READY",
+          summary: metadata?.summary || journey.summary,
           title: metadata?.title || journey.title,
           metadata: {
             ...existingMetadata,
             aiSummary: metadata?.summary,
             aiDurationDays: metadata?.durationDays,
+            aiDays: finalStops, // preserve raw structured days array
             usage,
             promptVersion
           }

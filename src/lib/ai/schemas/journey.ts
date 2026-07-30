@@ -23,7 +23,18 @@ export const GeneratedMetadataSchema = z.object({
 
 // Single point of interest / stop
 export const StopOutputSchema = z.object({
-  name: z.string(),
+  name: z.string().refine(
+    (val) => {
+      const trimmed = val.trim();
+      if (!trimmed) return false;
+      if (/^(stop|day|arrival|departure)\s*\d*$/i.test(trimmed)) return false;
+      return true;
+    },
+    {
+      message:
+        "Stop name must be a real place — a hotel, neighbourhood, trail, or landmark — not a generic label like 'Stop 1' or 'Day 2'.",
+    }
+  ),
   kind: z.enum([
     "CITY", "TOWN", "VILLAGE", "NATURE", 
     "HERITAGE_SITE", "STAY", "EXPERIENCE", "TRANSIT", "MEAL"

@@ -55,15 +55,30 @@ export async function POST(
       try {
         // 3. Call pipeline — P1#4: thread request.signal so a client disconnect
         //    immediately aborts the Anthropic generation and stops wasting API credits.
+
+        // When the user picks specific dates instead of a plain duration,
+        // durationDays may be null. Derive it from the date range so the
+        // pipeline can scale maxTokens correctly.
+        let duration = journey.durationDays;
+        if (!duration && journey.startDate && journey.endDate) {
+          const msPerDay = 86_400_000;
+          duration = Math.max(1, Math.round(
+            (journey.endDate.getTime() - journey.startDate.getTime()) / msPerDay
+          ));
+        }
+        duration = duration || 5;
+
         const aiStream = streamAiPipeline({
           promptId: "JOURNEY_PLAN",
           userId: session.user.id,
           signal: request.signal,
           variables: {
             destination: journey.originQuery || "",
-            duration: journey.durationDays || 5,
+            duration,
             pace: journey.pace || "GENTLY_BALANCED",
             budget: journey.budget || "COMFORTABLE",
+            ...(journey.startDate ? { startDate: journey.startDate.toISOString().split("T")[0] } : {}),
+            ...(journey.endDate ? { endDate: journey.endDate.toISOString().split("T")[0] } : {}),
           },
         });
 
