@@ -11,6 +11,10 @@ export const GeneratedMetadataSchema = z.object({
   accommodation: z.string().optional(),
   food: z.string().optional(),
   hiddenGems: z.string().optional(),
+  pointsOfInterest: z.array(z.object({
+    name: z.string(),
+    description: z.string(),
+  })).max(5).optional(),
   photographyTips: z.string().optional(),
   localTips: z.string().optional(),
   recommendedDuration: z.string().optional(),

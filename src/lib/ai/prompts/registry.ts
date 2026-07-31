@@ -136,6 +136,7 @@ registerPrompt({
     '3. PREMIUM METADATA:',
     '   Instead of placing all narrative content into "description", use the optional "metadata" object on each stop.',
     '   Available metadata string fields: morning, afternoon, evening, travelNotes, food, accommodation, hiddenGems, photographyTips, localTips, recommendedDuration.',
+    '   Available metadata array field: pointsOfInterest: [{ name, description }] (up to 5 named, real, specific points of interest within that stop — landmarks, hidden gems, cafés, markets, viewpoints — each with a name and a 1–3 sentence description). Prefer pointsOfInterest over free-text hiddenGems; use hiddenGems only as a fallback for general highlight notes that do not fit a single named place.',
     '   Available logistics object: { drivingTime, walkingDistance, estimatedCost }.',
     '   - Morning, Afternoon, and Evening narratives belong ONLY inside this metadata object, never in dayStart/dayEnd.',
     '   - Generate metadata only when useful. If a field is not applicable, omit it. Do not invent data.',

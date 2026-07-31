@@ -132,8 +132,8 @@ export function JourneyTimeline({ stops }: JourneyTimelineProps) {
             <div key={day.dayNumber} className="relative">
               {/* Day Header Banner */}
               <div className="mb-4 pl-2">
-                <div className="flex flex-wrap items-center gap-3 mb-1.5">
-                  <span className="text-[0.65rem] font-semibold uppercase tracking-[0.25em] px-3 py-1 rounded-full bg-brand-btn-primary/10 text-brand-btn-primary border border-brand-btn-primary/20">
+                <div className="flex flex-wrap items-center gap-2.5 mb-1.5">
+                  <span className="text-[0.65rem] font-semibold uppercase tracking-[0.2em] px-2.5 py-0.5 rounded-full bg-brand-border/40 text-brand-text-secondary/90 border border-brand-border/60">
                     Day {day.dayNumber}
                   </span>
                   {day.theme && (
@@ -154,12 +154,16 @@ export function JourneyTimeline({ stops }: JourneyTimelineProps) {
                 {day.stops.map((stop, idx) => (
                   <JourneyStopCard
                     key={stop.id}
+                    stopId={stop.id}
                     order={idx + 1}
                     name={stop.name}
                     kind={stop.kind}
                     description={stop.description || ""}
                     highlights={stop.highlights || []}
                     metadata={stop.metadata}
+                    googlePlaceId={stop.googlePlaceId || undefined}
+                    latitude={stop.latitude || undefined}
+                    longitude={stop.longitude || undefined}
                   />
                 ))}
               </div>
