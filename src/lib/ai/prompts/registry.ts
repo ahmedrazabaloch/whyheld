@@ -155,6 +155,7 @@ registerPrompt({
     const budget = requireVar(vars, "budget");
     const startDate = optionalVar(vars, "startDate");
     const endDate = optionalVar(vars, "endDate");
+    const d = Number(duration);
 
     return `<input>
   <destination>${destination}</destination>
@@ -164,7 +165,8 @@ registerPrompt({
   ${startDate ? `<startDate>${startDate}</startDate>` : ""}
   ${endDate ? `<endDate>${endDate}</endDate>` : ""}
 </input>
-Create a slow-travel journey matching these parameters.`;
+Create a slow-travel journey matching these parameters.
+IMPORTANT: You MUST emit exactly ${d} day objects, one for each day from Day 1 through Day ${d}. Do not stop early.${d > 7 ? " Keep each stop's metadata concise (1-2 sentences per field) to ensure all days fit in the response." : ""}`;
   },
 });
 

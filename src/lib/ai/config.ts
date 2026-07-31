@@ -23,7 +23,7 @@ export const AI_CONFIG = {
       insight: 1000,
     },
     
-    timeoutMs: 60000, // 60 seconds
+    timeoutMs: 180000, // 180 seconds — long journeys (10-15 days) need more time
     retryCount: 2,
   }
 } as const;
