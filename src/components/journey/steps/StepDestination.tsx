@@ -1,46 +1,36 @@
 "use client";
 
-import { motion } from "motion/react";
 import { LocationAutocomplete } from "@/components/location/LocationAutocomplete";
-import { buttonStyles, riseVariants } from "@/lib/design";
 import type { useJourneyBuilder } from "@/hooks/useJourneyBuilder";
 
 export function StepDestination({ controller }: { controller: ReturnType<typeof useJourneyBuilder> }) {
-  const { data, update, next } = controller;
-
-  const canAdvance = !!data.originQuery && data.originQuery.length > 2;
+  const { data, update } = controller;
 
   return (
-    <div className="flex flex-col flex-1">
-      <motion.div variants={riseVariants} className="flex-1">
-        <h3 className="font-display text-2xl font-light text-brand-text-primary mb-6">
-          Where are you dreaming of going?
-        </h3>
-        
-        <LocationAutocomplete
-          label="Primary Destination"
-          placeholder="e.g. Kyoto, Japan or The Scottish Highlands"
-          value={data.originQuery || ""}
-          onChange={(placeId, desc) => {
-            update("originQuery", desc);
-            // Default the journey title to the destination
-            if (data.title === "Untitled Journey") {
-              update("title", `Journey to ${desc.split(",")[0]}`);
-            }
-          }}
-        />
-      </motion.div>
+    <section
+      id="setup-destination"
+      className="scroll-mt-[var(--setup-scroll-margin,7.5rem)] space-y-5"
+    >
+      <h2 className="font-display text-2xl font-light tracking-tight text-brand-text-primary sm:text-[1.75rem]">
+        Where are you feeling called?
+      </h2>
 
-      <motion.div variants={riseVariants} className="mt-8 flex justify-end">
-        <button
-          type="button"
-          onClick={next}
-          disabled={!canAdvance}
-          className={buttonStyles.primary}
-        >
-          Continue
-        </button>
-      </motion.div>
-    </div>
+      <LocationAutocomplete
+        label="Destination"
+        placeholder="e.g. Kyoto, Japan or The Scottish Highlands"
+        value={data.originQuery || ""}
+        onChange={(_placeId, desc) => {
+          update("originQuery", desc);
+          if (data.title === "Untitled Journey") {
+            update("title", `Journey to ${desc.split(",")[0]}`);
+          }
+        }}
+      />
+
+      <p className="max-w-md text-sm leading-relaxed text-brand-text-secondary">
+        Start with a place that&apos;s been on your mind.
+        The rest can unfold from there.
+      </p>
+    </section>
   );
 }

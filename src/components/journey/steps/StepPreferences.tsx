@@ -1,58 +1,63 @@
 "use client";
 
-import { motion } from "motion/react";
 import { OptionCard } from "@/components/onboarding/primitives";
-import { buttonStyles, riseVariants } from "@/lib/design";
 import type { useJourneyBuilder } from "@/hooks/useJourneyBuilder";
 
 const BUDGETS = [
-  { id: "MODEST", label: "Modest", description: "Simple stays, local food, mindful spending.", glyph: "🏕️" },
-  { id: "COMFORTABLE", label: "Comfortable", description: "Boutique stays, nice meals, some taxis.", glyph: "🏡" },
-  { id: "PREMIUM", label: "Premium", description: "Upscale hotels, fine dining, premium transport.", glyph: "✨" },
-  { id: "LUXURY", label: "Luxury", description: "5-star luxury, exclusive access, private transfers.", glyph: "💎" },
+  {
+    id: "MODEST",
+    label: "Modest",
+    description: "Thoughtful stays, local tables and simple comforts.",
+    glyph: "🏕️",
+  },
+  {
+    id: "COMFORTABLE",
+    label: "Comfortable",
+    description: "Comfortable places to stay, good food and time well spent.",
+    glyph: "🏡",
+  },
+  {
+    id: "PREMIUM",
+    label: "Premium",
+    description: "A little more comfort, with room for memorable experiences.",
+    glyph: "✨",
+  },
+  {
+    id: "LUXURY",
+    label: "Luxury",
+    description: "Exceptional comfort, privacy and carefully chosen experiences.",
+    glyph: "💎",
+  },
 ] as const;
 
 export function StepPreferences({ controller }: { controller: ReturnType<typeof useJourneyBuilder> }) {
-  const { data, update, next, back } = controller;
+  const { data, update } = controller;
 
   return (
-    <div className="flex flex-col flex-1">
-      <motion.div variants={riseVariants} className="flex-1">
-        <h3 className="font-display text-2xl font-light text-brand-text-primary mb-6">
-          What is your budget tier?
-        </h3>
-        
-        <div role="radiogroup" aria-label="Budget tier" className="flex flex-col gap-3">
-          {BUDGETS.map((option, index) => (
-            <OptionCard
-              key={option.id}
-              option={option}
-              role="radio"
-              index={index}
-              selected={data.budget === option.id}
-              onToggle={() => update("budget", option.id as any)}
-            />
-          ))}
-        </div>
-      </motion.div>
+    <section
+      id="setup-travel-style"
+      className="scroll-mt-[var(--setup-scroll-margin,7.5rem)] space-y-5"
+    >
+      <h2 className="font-display text-2xl font-light tracking-tight text-brand-text-primary sm:text-[1.75rem]">
+        How would you like to travel?
+      </h2>
 
-      <motion.div variants={riseVariants} className="mt-8 flex justify-between">
-        <button
-          type="button"
-          onClick={back}
-          className={buttonStyles.ghost}
-        >
-          Back
-        </button>
-        <button
-          type="button"
-          onClick={next}
-          disabled={!data.budget}
-          className={buttonStyles.primary}
-        >
-          Continue
-        </button>
-      </motion.div>
-    </div>
+      <div
+        role="radiogroup"
+        aria-label="Travel style"
+        className="flex flex-col gap-3"
+      >
+        {BUDGETS.map((option, index) => (
+          <OptionCard
+            key={option.id}
+            option={option}
+            role="radio"
+            index={index}
+            selected={data.budget === option.id}
+            onToggle={() => update("budget", option.id)}
+          />
+        ))}
+      </div>
+    </section>
   );
 }

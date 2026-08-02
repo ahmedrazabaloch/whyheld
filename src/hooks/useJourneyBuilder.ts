@@ -17,13 +17,6 @@ export interface JourneyData {
 }
 
 export function useJourneyBuilder(draft: Journey) {
-  const TOTAL_STEPS = 5; // Must stay in sync with STEPS array in JourneyBuilder.tsx
-  const meta = draft.metadata as { lastCompletedStep?: number } | null;
-  const rawStep = meta?.lastCompletedStep ?? 0;
-  const safeStep = typeof rawStep === "number" && isFinite(rawStep) ? rawStep : 0;
-  const initialStep = Math.min(Math.max(0, safeStep), TOTAL_STEPS - 1);
-
-  const [step, setStep] = useState(initialStep);
   const [data, setData] = useState<JourneyData>({
     title: draft.title || "Untitled Journey",
     originQuery: draft.originQuery || null,
@@ -95,31 +88,10 @@ export function useJourneyBuilder(draft: Journey) {
     }
   }, [queueSave]);
 
-  const next = () => {
-    const nextStep = step + 1;
-    setStep(nextStep);
-    queueSave({ lastCompletedStep: nextStep }, true);
-  };
-
-  const back = () => {
-    const prevStep = Math.max(0, step - 1);
-    setStep(prevStep);
-    queueSave({ lastCompletedStep: prevStep }, true);
-  };
-
-  const goTo = (s: number) => {
-    setStep(s);
-    queueSave({ lastCompletedStep: s }, true);
-  };
-
   return {
-    step,
     data,
     isSaving,
     update,
-    next,
-    back,
-    goTo,
     flushSave,
   };
 }

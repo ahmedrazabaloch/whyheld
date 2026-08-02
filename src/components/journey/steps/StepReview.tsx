@@ -1,102 +1,158 @@
 "use client";
 
-import { motion } from "motion/react";
 import Link from "next/link";
-import { buttonStyles, riseVariants } from "@/lib/design";
-import type { useJourneyBuilder } from "@/hooks/useJourneyBuilder";
+import { buttonStyles } from "@/lib/design";
+import type { useJourneyBuilder, JourneyData } from "@/hooks/useJourneyBuilder";
 
-export function StepReview({ 
+function placeName(originQuery: string | null): string {
+  if (!originQuery) return "";
+  return originQuery.split(",")[0]?.trim() || originQuery;
+}
+
+function buildNarrative(data: JourneyData): {
+  destination: string;
+  body: string[];
+} {
+  const place = placeName(data.originQuery);
+  const destination = place
+    ? `You're setting out for ${place}.`
+    : "A destination is still waiting to be chosen.";
+
+  const body: string[] = [];
+
+  const paceLine = (() => {
+    switch (data.pace) {
+      case "ONE_PLACE_DEEPLY":
+        return "You've chosen to settle into one place deeply, with room for it to unfold completely.";
+      case "SLOW_UNHURRIED":
+        return "You've chosen a slower pace with enough time to let each place unfold naturally.";
+      case "GENTLY_BALANCED":
+        return "You've chosen a gently balanced rhythm — some movement, and plenty of stillness.";
+      default:
+        return null;
+    }
+  })();
+
+  const timeLine = (() => {
+    if (data.startDate && data.endDate) {
+      const fmt = new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+      return `Your days fall between ${fmt.format(data.startDate)} and ${fmt.format(data.endDate)}.`;
+    }
+    if (data.durationDays) {
+      return `You're giving this journey about ${data.durationDays} days.`;
+    }
+    return null;
+  })();
+
+  if (paceLine && timeLine) {
+    body.push(`${paceLine} ${timeLine}`);
+  } else if (paceLine) {
+    body.push(paceLine);
+  } else if (timeLine) {
+    body.push(timeLine);
+  }
+
+  const comfortLine = (() => {
+    switch (data.budget) {
+      case "MODEST":
+        return "Comfort shows up quietly here — thoughtful stays, local tables, and simple character.";
+      case "COMFORTABLE":
+        return "Comfort matters, but not at the expense of character.";
+      case "PREMIUM":
+        return "A little more comfort, with room for experiences that linger.";
+      case "LUXURY":
+        return "Exceptional comfort and privacy, chosen with care.";
+      default:
+        return null;
+    }
+  })();
+
+  if (comfortLine) {
+    body.push(comfortLine);
+  }
+
+  return { destination, body };
+}
+
+export function StepReview({
   controller,
   onGenerate,
   userCredits = 0,
-  userPlan = "FREE"
-}: { 
+  userPlan = "FREE",
+  canBegin = false,
+}: {
   controller: ReturnType<typeof useJourneyBuilder>;
   onGenerate?: () => void;
   userCredits?: number;
   userPlan?: string;
+  canBegin?: boolean;
 }) {
-  const { data, back, goTo, flushSave } = controller;
+  const { data, flushSave } = controller;
 
-  const handleGenerate = () => {
+  const handleBegin = () => {
     flushSave();
     if (onGenerate) {
       onGenerate();
     }
   };
 
+  const narrative = buildNarrative(data);
+
   return (
-    <div className="flex flex-col flex-1">
-      <motion.div variants={riseVariants} className="flex-1">
-        <h3 className="font-display text-2xl font-light text-brand-text-primary mb-6">
-          Review your journey
-        </h3>
-        
-        <div className="space-y-6">
-          <div className="rounded-xl border border-brand-border/60 p-4">
-            <div className="flex justify-between items-start mb-2">
-              <h4 className="text-xs font-medium uppercase tracking-widest text-brand-text-secondary">Destination</h4>
-              <button onClick={() => goTo(0)} className="text-sm text-brand-btn-primary hover:underline">Edit</button>
-            </div>
-            <p className="text-brand-text-primary font-medium">{data.originQuery || "Not selected"}</p>
-          </div>
+    <section
+      id="setup-review"
+      className="scroll-mt-[var(--setup-scroll-margin,7.5rem)] space-y-8"
+    >
+      <div className="space-y-3">
+        <h2 className="font-display text-2xl font-light tracking-tight text-brand-text-primary sm:text-[1.75rem]">
+          A quiet look before we begin.
+        </h2>
+        <p className="max-w-md text-sm leading-relaxed text-brand-text-secondary">
+          Everything above shapes the journey. You can scroll up to change any
+          of it.
+        </p>
+      </div>
 
-          <div className="rounded-xl border border-brand-border/60 p-4">
-            <div className="flex justify-between items-start mb-2">
-              <h4 className="text-xs font-medium uppercase tracking-widest text-brand-text-secondary">Dates</h4>
-              <button onClick={() => goTo(1)} className="text-sm text-brand-btn-primary hover:underline">Edit</button>
-            </div>
-            <p className="text-brand-text-primary font-medium">
-              {data.startDate && data.endDate 
-                ? `${data.startDate.toLocaleDateString()} to ${data.endDate.toLocaleDateString()}`
-                : data.durationDays ? `${data.durationDays} Days` : "Not selected"}
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-brand-border/60 p-4">
-            <div className="flex justify-between items-start mb-2">
-              <h4 className="text-xs font-medium uppercase tracking-widest text-brand-text-secondary">Travel Style</h4>
-              <button onClick={() => goTo(2)} className="text-sm text-brand-btn-primary hover:underline">Edit</button>
-            </div>
-            <p className="text-brand-text-primary font-medium">{data.pace ? data.pace.replace(/_/g, " ") : "Not selected"}</p>
-          </div>
-
-          <div className="rounded-xl border border-brand-border/60 p-4">
-            <div className="flex justify-between items-start mb-2">
-              <h4 className="text-xs font-medium uppercase tracking-widest text-brand-text-secondary">Budget</h4>
-              <button onClick={() => goTo(3)} className="text-sm text-brand-btn-primary hover:underline">Edit</button>
-            </div>
-            <p className="text-brand-text-primary font-medium">{data.budget || "Not selected"}</p>
-          </div>
-        </div>
-      </motion.div>
-
-      <motion.div variants={riseVariants} className="mt-8 flex justify-between">
-        <button
-          type="button"
-          onClick={back}
-          className={buttonStyles.ghost}
-        >
-          Back
-        </button>
-        
-        {userPlan !== "PREMIUM" && userCredits <= 0 ? (
-          <Link
-            href="/billing"
-            className={buttonStyles.primary}
+      <div className="max-w-xl space-y-5 border-l border-brand-btn-primary/30 pl-5 sm:pl-6">
+        <p className="font-display text-2xl font-light leading-snug tracking-tight text-brand-text-primary sm:text-[1.65rem]">
+          {narrative.destination}
+        </p>
+        {narrative.body.map((line) => (
+          <p
+            key={line}
+            className="text-base font-light leading-relaxed text-brand-text-secondary sm:text-lg"
           >
+            {line}
+          </p>
+        ))}
+      </div>
+
+      <div className="space-y-5 pt-4">
+        <p className="max-w-sm text-sm leading-relaxed text-brand-text-secondary">
+          Nothing is set in stone.
+          <br />
+          You&apos;ll be able to shape this journey as it unfolds.
+        </p>
+
+        {userPlan !== "PREMIUM" && userCredits <= 0 ? (
+          <Link href="/billing" className={buttonStyles.primary}>
             Choose a Plan
           </Link>
         ) : (
           <button
             type="button"
-            onClick={handleGenerate}
+            onClick={handleBegin}
+            disabled={!canBegin}
             className={buttonStyles.primary}
           >
-            Generate Journey
+            Begin Exploring
           </button>
         )}
-      </motion.div>
-    </div>
+      </div>
+    </section>
   );
 }

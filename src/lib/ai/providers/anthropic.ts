@@ -149,11 +149,30 @@ export class AnthropicProvider implements AiProvider {
 
         clearTimeout(timeout);
 
-        if (response.content[0].type !== "text") {
-          throw new ParsingError("Unexpected non-text response from Anthropic");
+        // Always log the full provider payload before any content assumptions.
+        console.info(
+          "[AnthropicProvider] Raw messages.create response:",
+          JSON.stringify(response, null, 2),
+        );
+
+        const contentBlocks = Array.isArray(response.content) ? response.content : [];
+        const blockTypes = contentBlocks.map((block) => block.type);
+        const textBlock = contentBlocks.find(
+          (block): block is Anthropic.TextBlock => block.type === "text",
+        );
+
+        if (!textBlock) {
+          const stopReason = response.stop_reason ?? "unknown";
+          throw new ParsingError(
+            `Unexpected non-text response from Anthropic. ` +
+              `Expected a content block with type "text". ` +
+              `Received block types: [${blockTypes.map((t) => `"${t}"`).join(", ") || "none"}]. ` +
+              `stop_reason: ${stopReason}.`,
+            response,
+          );
         }
 
-        const rawText = response.content[0].text;
+        const rawText = textBlock.text;
 
         let parsed: unknown;
         try {

@@ -33,6 +33,16 @@ export async function executeAiPipeline<T>(input: AiPipelineInput): Promise<T> {
     else if (d <= 10) maxTokens = 12000;
     else if (d <= 14) maxTokens = 16000;
     else maxTokens = 16000;
+  } else if (promptId === "DISCOVERY_PLACES") {
+    const c = variables.count ? Number(variables.count) : 10;
+    maxTokens = c <= 5 ? 3500 : 5500;
+  } else if (promptId === "JOURNEY_FROM_DISCOVERY") {
+    const d = variables.duration ? Number(variables.duration) : 7;
+    if (d <= 5) maxTokens = 6000;
+    else if (d <= 10) maxTokens = 10000;
+    else maxTokens = 14000;
+  } else if (promptId === "REGENERATE_JOURNEY_DAY") {
+    maxTokens = 3500;
   }
 
   // 4. Execute — P1#4: forward cancellation signal to the provider

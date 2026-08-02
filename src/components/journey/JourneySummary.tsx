@@ -5,6 +5,8 @@ export interface JourneySummaryProps {
   destination: string;
   pace: string;
   budget: string;
+  /** Section heading. Defaults to "Journey Summary". */
+  heading?: string;
 }
 
 export function JourneySummary({
@@ -12,11 +14,12 @@ export function JourneySummary({
   destination,
   pace,
   budget,
+  heading = "Journey Summary",
 }: JourneySummaryProps) {
   return (
     <div className={`${surfaces.card} p-6 sm:p-8`}>
       <h2 className="font-display text-xl text-brand-text-primary mb-4">
-        Journey Summary
+        {heading}
       </h2>
       <p className="text-sm leading-relaxed text-brand-text-secondary mb-8">
         {summary}

@@ -69,10 +69,17 @@ export function JourneyStopCard({
       });
 
       if (res.success) {
-        toast.success(`Saved "${name}" to Favourites`);
+        toast.success(
+          res.data?.saved
+            ? `Saved "${name}" to Wishlist`
+            : `Removed "${name}" from Wishlist`,
+        );
+        if (res.data && !res.data.saved) {
+          setIsSaved(false);
+        }
       } else {
         setIsSaved(prevSaved);
-        toast.error(res.error || "Failed to save place");
+        toast.error(res.error || "Failed to update Wishlist");
       }
     } catch {
       setIsSaved(prevSaved);
@@ -124,10 +131,10 @@ export function JourneyStopCard({
             onClick={handleSaveStop}
             disabled={isSaving}
             className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors text-brand-text-secondary hover:text-brand-text-primary hover:bg-brand-border/20 cursor-pointer"
-            title={isSaved ? "Saved to Favourites" : "Save to Favourites"}
+            title={isSaved ? "In Wishlist" : "Add to Wishlist"}
           >
             <BookmarkIcon saved={isSaved} />
-            <span className="hidden sm:inline">{isSaved ? "Saved" : "Save"}</span>
+            <span className="hidden sm:inline">{isSaved ? "Wishlisted" : "Wishlist"}</span>
           </button>
         </div>
 
@@ -281,10 +288,17 @@ function PoiSubCard({
       });
 
       if (res.success) {
-        toast.success(`Saved "${poi.name}" to Favourites`);
+        toast.success(
+          res.data?.saved
+            ? `Saved "${poi.name}" to Wishlist`
+            : `Removed "${poi.name}" from Wishlist`,
+        );
+        if (res.data && !res.data.saved) {
+          setIsSaved(false);
+        }
       } else {
         setIsSaved(prevSaved);
-        toast.error(res.error || "Failed to save place");
+        toast.error(res.error || "Failed to update Wishlist");
       }
     } catch {
       setIsSaved(prevSaved);
@@ -312,7 +326,7 @@ function PoiSubCard({
         onClick={handleSavePoi}
         disabled={isSaving}
         className="shrink-0 p-1.5 rounded-full hover:bg-brand-text-primary/10 text-brand-text-secondary transition-colors cursor-pointer"
-        title={isSaved ? "Saved to Favourites" : "Save to Favourites"}
+        title={isSaved ? "In Wishlist" : "Add to Wishlist"}
       >
         <BookmarkIcon saved={isSaved} />
       </button>

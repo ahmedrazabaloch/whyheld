@@ -6,7 +6,6 @@ import { PageHeader } from "@/components/dashboard";
 import { getCachedSession, getCachedProfile } from "@/lib/auth/session-cache";
 import { getPlanCreditLimit } from "@/lib/membership/utils";
 
-
 export const metadata: Metadata = {
   title: "Dashboard — Wayheld",
   description:
@@ -46,23 +45,43 @@ export default async function DashboardPage() {
       }),
     ]);
 
-  const greeting = profile?.firstName
-    ? `Welcome back, ${profile.firstName}.`
-    : "Welcome back.";
+  const isFirstVisit = journeyCount === 0;
+  const firstName = profile?.firstName?.trim();
+
+  const greeting = isFirstVisit
+    ? "Welcome to Wayheld."
+    : firstName
+      ? `Welcome back, ${firstName}.`
+      : "Welcome back.";
+
+  const supportingCopy = isFirstVisit
+    ? "Every meaningful journey begins with a place."
+    : "Every journey has its own rhythm. Where will yours lead next?";
 
   return (
     <>
       <PageHeader
         eyebrow="Dashboard"
         title={greeting}
-        description="Here's an overview of your Wayheld experience."
+        description={supportingCopy}
       />
 
       {/* Stats row */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <CreditsCard credits={userDb?.creditWallet?.balance ?? 0} plan={userDb?.plan ?? "FREE"} />
-        <StatCard label="Journeys" value={journeyCount} />
-        <StatCard label="Saved places" value={savedCount} />
+        <CreditsCard
+          credits={userDb?.creditWallet?.balance ?? 0}
+          plan={userDb?.plan ?? "FREE"}
+        />
+        <StatCard
+          label="Journeys"
+          value={journeyCount}
+          helper="Places you've chosen to explore."
+        />
+        <StatCard
+          label="Wishlist"
+          value={savedCount}
+          helper="Waiting for the right journey."
+        />
       </div>
 
       {/* Quick actions */}
@@ -70,18 +89,19 @@ export default async function DashboardPage() {
         {/* Journey prompt */}
         <div className="rounded-2xl border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
           <h2 className="font-display text-xl text-brand-text-primary">
-            Start a new journey
+            Begin a New Journey
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-brand-text-secondary">
-            Tell Wayheld where you&apos;d like to go and we&apos;ll craft a slow-travel
-            itinerary around your interests.
+            Choose a place that&apos;s been calling to you.
+            <br />
+            We&apos;ll help you uncover it slowly.
           </p>
           <Link
             href="/journeys/new"
             prefetch={false}
             className="mt-6 inline-flex min-h-[48px] items-center gap-2 rounded-full bg-brand-btn-primary px-6 py-2.5 text-sm font-medium text-brand-bg shadow-sm transition-all duration-200 hover:-translate-y-[1px] hover:bg-brand-btn-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary"
           >
-            Plan a journey
+            Begin Exploring
             <svg
               width="14"
               height="14"
@@ -109,9 +129,15 @@ export default async function DashboardPage() {
               unread notification{unreadCount !== 1 ? "s" : ""}.
             </p>
           ) : (
-            <p className="mt-2 text-sm leading-relaxed text-brand-text-secondary">
-              You&apos;re all caught up — no new notifications.
-            </p>
+            <div className="mt-2 space-y-1.5">
+              <p className="text-sm font-medium text-brand-text-primary">
+                Nothing new today.
+              </p>
+              <p className="text-sm leading-relaxed text-brand-text-secondary">
+                When something meaningful changes in one of your journeys,
+                you&apos;ll find it here.
+              </p>
+            </div>
           )}
         </div>
       </div>
@@ -123,7 +149,15 @@ export default async function DashboardPage() {
 /* Small stat card                                                     */
 /* ------------------------------------------------------------------ */
 
-function StatCard({ label, value }: { label: string; value: number }) {
+function StatCard({
+  label,
+  value,
+  helper,
+}: {
+  label: string;
+  value: number;
+  helper: string;
+}) {
   return (
     <div className="h-full flex flex-col justify-between rounded-2xl border border-brand-border/60 bg-brand-card px-6 py-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
       <p className="text-[0.65rem] font-medium uppercase tracking-[0.2em] text-brand-text-secondary/80">
@@ -133,9 +167,28 @@ function StatCard({ label, value }: { label: string; value: number }) {
         <p className="font-display text-3xl tracking-tight text-brand-text-primary">
           {value}
         </p>
+        <p className="mt-1.5 text-xs leading-relaxed text-brand-text-secondary/80">
+          {helper}
+        </p>
       </div>
     </div>
   );
+}
+
+function creditsHelper(credits: number, plan: string): string {
+  if (plan === "PREMIUM") {
+    return "As many journeys as you need.";
+  }
+  if (credits <= 0) {
+    return "When you're ready, another journey awaits.";
+  }
+  if (credits === 1) {
+    return "One journey still remains.";
+  }
+  if (credits === 2) {
+    return "Two journeys still remain.";
+  }
+  return `${credits} journeys still remain.`;
 }
 
 function CreditsCard({ credits, plan }: { credits: number; plan: string }) {
@@ -149,11 +202,17 @@ function CreditsCard({ credits, plan }: { credits: number; plan: string }) {
         AI Credits
       </p>
       <div className="mt-2">
-        <p className={`font-display text-3xl tracking-tight ${isExhausted ? 'text-red-500' : 'text-brand-text-primary'}`}>
-          {isPremium ? "∞ Credits" : isExhausted ? "No Credits Remaining" : `${credits} / ${limit} Credits`}
+        <p
+          className={`font-display text-3xl tracking-tight ${isExhausted ? "text-red-500" : "text-brand-text-primary"}`}
+        >
+          {isPremium
+            ? "∞ Credits"
+            : isExhausted
+              ? "No Credits Remaining"
+              : `${credits} / ${limit} Credits`}
         </p>
-        <p className="mt-1 text-sm text-brand-text-secondary">
-          {isPremium ? "Premium Plan" : isExhausted ? "Upgrade Required" : "Free Plan"}
+        <p className="mt-1.5 text-xs leading-relaxed text-brand-text-secondary/80">
+          {creditsHelper(credits, plan)}
         </p>
       </div>
     </div>
