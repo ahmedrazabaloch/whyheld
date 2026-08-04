@@ -20,8 +20,8 @@ export default async function ExplorePage() {
     <>
       <PageHeader
         eyebrow="Explore"
-        title="Explore a place"
-        description="Search a country, city, or route — no preferences needed. Add what resonates to a journey, or save it for later."
+        title="Explore"
+        description="Search a place, refine with chips, then add what resonates to a journey."
       />
       <ExploreView />
     </>

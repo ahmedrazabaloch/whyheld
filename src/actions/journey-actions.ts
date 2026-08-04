@@ -559,6 +559,7 @@ export async function renameJourney(id: string, newTitle: string): Promise<Actio
     });
 
     revalidatePath("/journeys");
+    revalidatePath("/past-journeys");
     revalidatePath(`/journeys/${parsedId.data}`);
     return { success: true, data: undefined };
   } catch (error) {
@@ -585,6 +586,7 @@ export async function archiveJourney(id: string): Promise<ActionResponse> {
     });
 
     revalidatePath("/journeys");
+    revalidatePath("/past-journeys");
     revalidatePath(`/journeys/${parsedId.data}`);
     return { success: true, data: undefined };
   } catch (error) {
@@ -611,10 +613,62 @@ export async function deleteJourney(id: string): Promise<ActionResponse> {
     });
 
     revalidatePath("/journeys");
+    revalidatePath("/past-journeys");
     return { success: true, data: undefined };
   } catch (error) {
     const err = handleServerError(error, "deleteJourney");
     return { success: false, error: getUserFriendlyMessage(err.code), code: err.code, referenceId: err.referenceId };
+  }
+}
+
+export async function markJourneyCompleted(id: string): Promise<ActionResponse> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Unauthorized", code: "UNAUTHORIZED" };
+    }
+
+    const parsedId = IdSchema.safeParse(id);
+    if (!parsedId.success) {
+      return { success: false, error: "Invalid journey ID", code: "INVALID_INPUT" };
+    }
+
+    const journey = await prisma.journey.findFirst({
+      where: { id: parsedId.data, userId: session.user.id, deletedAt: null },
+      select: { status: true },
+    });
+
+    if (!journey) {
+      return { success: false, error: "Journey not found", code: "NOT_FOUND" };
+    }
+
+    if (journey.status !== "READY" && journey.status !== "COMPLETED") {
+      return {
+        success: false,
+        error: "Only ready journeys can be marked completed.",
+        code: "INVALID_STATE",
+      };
+    }
+
+    await prisma.journey.update({
+      where: { id: parsedId.data, userId: session.user.id },
+      data: {
+        status: journey.status === "COMPLETED" ? "READY" : "COMPLETED",
+      },
+    });
+
+    revalidatePath("/journeys");
+    revalidatePath("/past-journeys");
+    revalidatePath(`/journeys/${parsedId.data}`);
+    return { success: true, data: undefined };
+  } catch (error) {
+    const err = handleServerError(error, "markJourneyCompleted");
+    return {
+      success: false,
+      error: getUserFriendlyMessage(err.code),
+      code: err.code,
+      referenceId: err.referenceId,
+    };
   }
 }
 

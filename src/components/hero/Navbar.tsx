@@ -121,11 +121,11 @@ export function Navbar({ user }: { user?: User }) {
                 Dashboard
               </Link>
               <Link
-                href="/settings"
+                href="/profile"
                 onClick={() => setDropdownOpen(false)}
                 className="block cursor-pointer rounded-2xl px-4 py-2.5 text-sm font-medium text-[#33332F] transition-colors duration-150 hover:bg-[#74876B] hover:text-[#F4EFE6]"
               >
-                Settings
+                Profile
               </Link>
               <button
                 disabled={isSigningOut}

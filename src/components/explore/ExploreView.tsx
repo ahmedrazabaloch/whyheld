@@ -12,10 +12,16 @@ import { JourneyPickerModal } from "@/components/discovery/JourneyPickerModal";
 import type { DiscoveryPlace } from "@/components/discovery/discovery-data";
 import { addPlaceToJourneyBoard } from "@/actions/journey-actions";
 import { toggleWishlistPlace } from "@/actions/place-actions";
+import { LocationAutocomplete } from "@/components/location/LocationAutocomplete";
 import {
   EXPLORE_FILTERS,
   exploreFilterLabels,
 } from "@/lib/explore/filters";
+import {
+  TRENDING_DESTINATIONS,
+  pushRecentSearch,
+  readRecentSearches,
+} from "@/lib/explore/recents";
 
 type ApiPlace = {
   category: string;
@@ -140,9 +146,11 @@ export function ExploreView() {
     useState<PreferredAddTarget | null>(null);
   const [addBusyId, setAddBusyId] = useState<string | null>(null);
   const [wishlistBusyId, setWishlistBusyId] = useState<string | null>(null);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   useEffect(() => {
     setPreferredAddTarget(readPreferredAddTarget());
+    setRecentSearches(readRecentSearches());
   }, []);
 
   const rememberAddTarget = useCallback((target: PreferredAddTarget) => {
@@ -164,45 +172,54 @@ export function ExploreView() {
     );
   };
 
+  const runSearch = useCallback(
+    async (rawDestination: string) => {
+      const destination = rawDestination.trim();
+      if (destination.length < 2 || isLoading) return;
+
+      setQuery(destination);
+      setIsLoading(true);
+      setFailed(false);
+      setErrorMessage(null);
+      setPlaces([]);
+      setJourneyIds(new Set());
+      setWishlistIds(new Set());
+      clearPreferredAddTarget();
+      setPreferredAddTarget(null);
+      setActiveDestination(destination);
+
+      try {
+        const raw = await requestPlaces({
+          destination,
+          count: 10,
+          excludeTitles: [],
+          selectedTitles: [],
+          wishlistTitles: [],
+          filters: selectedFilters,
+        });
+        const next = toDiscoveryPlaces(raw, new Set());
+        if (next.length === 0) {
+          setFailed(true);
+          setErrorMessage("No places found for that search. Try another place.");
+          return;
+        }
+        setPlaces(next);
+        setRecentSearches(pushRecentSearch(destination));
+      } catch (err) {
+        setFailed(true);
+        setErrorMessage(
+          err instanceof Error ? err.message : "Could not gather places.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [isLoading, selectedFilters],
+  );
+
   const handleSearch = async (event?: FormEvent) => {
     event?.preventDefault();
-    const destination = query.trim();
-    if (destination.length < 2 || isLoading) return;
-
-    setIsLoading(true);
-    setFailed(false);
-    setErrorMessage(null);
-    setPlaces([]);
-    setJourneyIds(new Set());
-    setWishlistIds(new Set());
-    clearPreferredAddTarget();
-    setPreferredAddTarget(null);
-    setActiveDestination(destination);
-
-    try {
-      const raw = await requestPlaces({
-        destination,
-        count: 10,
-        excludeTitles: [],
-        selectedTitles: [],
-        wishlistTitles: [],
-        filters: selectedFilters,
-      });
-      const next = toDiscoveryPlaces(raw, new Set());
-      if (next.length === 0) {
-        setFailed(true);
-        setErrorMessage("No places found for that search. Try another place.");
-        return;
-      }
-      setPlaces(next);
-    } catch (err) {
-      setFailed(true);
-      setErrorMessage(
-        err instanceof Error ? err.message : "Could not gather places.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
+    await runSearch(query);
   };
 
   const handleExploreMore = async () => {
@@ -329,45 +346,106 @@ export function ExploreView() {
     [wishlistBusyId, wishlistIds, activeDestination, query],
   );
 
+  const chipClass = (selected?: boolean) =>
+    [
+      "rounded-full border px-3.5 py-2 text-xs font-medium tracking-wide transition-colors",
+      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary",
+      selected
+        ? "border-brand-btn-primary bg-brand-btn-primary/15 text-brand-text-primary"
+        : "border-brand-border/80 bg-brand-card text-brand-text-secondary hover:border-brand-text-secondary hover:text-brand-text-primary",
+    ].join(" ");
+
   return (
-    <div className="mx-auto w-full max-w-3xl pb-16">
+    <div className="w-full pb-16">
       <form
         onSubmit={(e) => {
           void handleSearch(e);
         }}
-        className="mb-10"
+        className="mb-10 rounded-2xl border border-brand-btn-primary/25 bg-brand-btn-primary/[0.08] p-6 shadow-sm sm:p-8"
       >
-        <label htmlFor="explore-query" className={formStyles.label}>
-          Where to explore
-        </label>
-        <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-stretch">
-          <input
-            id="explore-query"
+        <h2 className="font-display text-2xl font-light tracking-tight text-brand-text-primary sm:text-3xl">
+          Where would you like to wander?
+        </h2>
+
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-stretch">
+          <LocationAutocomplete
+            label=""
+            placeholder="Search a city, country, or route"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Country, city, or place — e.g. Kyoto, Portugal, Lake Como"
-            className={formStyles.input}
+            onChange={(_placeId, desc) => setQuery(desc)}
+            onInputChange={setQuery}
             disabled={isLoading}
-            autoComplete="off"
+            className="min-w-0 flex-1 gap-0"
+            inputClassName="h-12 py-0"
           />
           <button
             type="submit"
-            className={`${buttonStyles.primary} w-fit shrink-0 sm:min-w-[9rem]`}
+            className={`${buttonStyles.primary} w-full shrink-0 sm:w-auto sm:min-w-[8.5rem]`}
             disabled={isLoading || query.trim().length < 2}
           >
-            {isLoading ? "Searching…" : "Explore"}
+            {isLoading ? "Exploring…" : "Explore"}
           </button>
         </div>
-        <p className={`${formStyles.hint} mt-2`}>
-          Explore with intention — filter if you like, or leave it open.
-        </p>
 
-        <div className="mt-5">
-          <p className={formStyles.label}>Filter chips</p>
+        <div className="mt-7 grid grid-cols-1 gap-6 border-t border-brand-border/50 pt-6 md:grid-cols-2 md:gap-8">
+          <div>
+            <p className={formStyles.label}>Trending destinations</p>
+            <div
+              role="group"
+              aria-label="Trending destinations"
+              className="mt-2.5 flex flex-wrap gap-2"
+            >
+              {TRENDING_DESTINATIONS.map((place) => (
+                <button
+                  key={place}
+                  type="button"
+                  className={chipClass()}
+                  disabled={isLoading}
+                  onClick={() => setQuery(place)}
+                >
+                  {place}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="md:border-l md:border-brand-border/50 md:pl-8">
+            <p className={formStyles.label}>Recent searches</p>
+            {recentSearches.length > 0 ? (
+              <div
+                role="group"
+                aria-label="Recent searches"
+                className="mt-2.5 flex flex-wrap gap-2"
+              >
+                {recentSearches.map((place) => (
+                  <button
+                    key={place}
+                    type="button"
+                    className={chipClass()}
+                    disabled={isLoading}
+                    onClick={() => setQuery(place)}
+                  >
+                    {place}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className={`${formStyles.hint} mt-2.5`}>
+                Your recent places will appear here after you explore.
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-7 border-t border-brand-border/50 pt-6">
+          <p className={formStyles.label}>Refine suggestions</p>
+          <p className={`${formStyles.hint} mt-1.5`}>
+            Tap chips to focus the kinds of places we gather for this search.
+          </p>
           <div
             role="group"
             aria-label="Explore filters"
-            className="mt-2.5 flex flex-wrap gap-2"
+            className="mt-3 flex flex-wrap gap-2"
           >
             {EXPLORE_FILTERS.map((filter) => {
               const selected = selectedFilters.includes(filter.id);
@@ -377,13 +455,7 @@ export function ExploreView() {
                   type="button"
                   aria-pressed={selected}
                   onClick={() => toggleFilter(filter.id)}
-                  className={[
-                    "rounded-full border px-3.5 py-2 text-xs font-medium tracking-wide transition-colors",
-                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary",
-                    selected
-                      ? "border-brand-btn-primary bg-brand-btn-primary/10 text-brand-text-primary"
-                      : "border-brand-border/70 bg-brand-bg/50 text-brand-text-secondary hover:border-brand-text-secondary hover:text-brand-text-primary",
-                  ].join(" ")}
+                  className={chipClass(selected)}
                 >
                   {filter.label}
                 </button>
@@ -391,7 +463,7 @@ export function ExploreView() {
             })}
           </div>
           {selectedFilters.length > 0 ? (
-            <p className={`${formStyles.hint} mt-2`}>
+            <p className={`${formStyles.hint} mt-3`}>
               Looking toward {exploreFilterLabels(selectedFilters).join(" · ")}.
             </p>
           ) : null}

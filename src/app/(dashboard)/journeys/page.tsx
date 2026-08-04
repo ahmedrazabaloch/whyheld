@@ -40,22 +40,27 @@ export default async function JourneysPage({
   const statusFilter = typeof params.status === "string" ? params.status : undefined;
   const sortParam = typeof params.sort === "string" ? params.sort : "newest";
 
-  // 2. Build Where Clause (Excludes drafts and soft-deleted records)
+  // 2. Build Where Clause — default list shows created READY journeys only.
+  // Drafts have their own section. Filters can reveal archived / completed / etc.
   const whereClause: Prisma.JourneyWhereInput = {
     userId,
     deletedAt: null,
-    status: {
-      not: "DRAFT",
-    },
+    status: "READY",
   };
 
   if (query) {
     whereClause.title = { contains: query, mode: "insensitive" };
   }
 
-  // Archive remains accessible through filters as requested
-  if (statusFilter && ["READY", "ARCHIVED", "GENERATING", "REFINING", "FAILED"].includes(statusFilter)) {
+  if (
+    statusFilter &&
+    ["READY", "ARCHIVED", "GENERATING", "REFINING", "FAILED", "COMPLETED"].includes(
+      statusFilter,
+    )
+  ) {
     whereClause.status = statusFilter as JourneyStatus;
+  } else if (statusFilter === "ALL") {
+    whereClause.status = { not: "DRAFT" };
   }
 
   // 3. Build OrderBy Clause
@@ -118,17 +123,27 @@ export default async function JourneysPage({
         description="Every slow-travel itinerary you've created lives here."
       />
       
-      {/* 1. Continue Draft Section */}
+      {/* 1. Continue Journey — unfinished drafts */}
       {hasDrafts && (
         <div className="mb-12">
-          <h2 className="font-display text-2xl font-light tracking-tight text-brand-text-primary mb-6">
-            Continue Draft
-          </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {drafts.map(draft => (
-              <JourneyDraftCard 
-                key={draft.id} 
-                id={draft.id} 
+          <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="mb-2 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-brand-text-secondary">
+                In progress
+              </p>
+              <h2 className="font-display text-2xl font-light tracking-tight text-brand-text-primary">
+                Continue Journey
+              </h2>
+            </div>
+            <p className="max-w-sm text-sm text-brand-text-secondary">
+              Pick up a draft where you left the builder.
+            </p>
+          </div>
+          <div className="flex flex-col gap-4">
+            {drafts.map((draft) => (
+              <JourneyDraftCard
+                key={draft.id}
+                id={draft.id}
                 title={draft.title || "Untitled Journey"}
                 updatedDate={formatJourneyDate(draft.updatedAt)}
               />
@@ -137,13 +152,10 @@ export default async function JourneysPage({
         </div>
       )}
 
-      {/* 2. Completed Journeys Section */}
+      {/* 2. Created journeys (READY by default) */}
       <div>
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6">
-          <h2 className="font-display text-2xl font-light tracking-tight text-brand-text-primary">
-            Completed Journeys
-          </h2>
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
+        <div className="mb-6 flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 w-full xl:w-auto xl:ml-auto">
             <JourneyFilters />
             <JourneySearchInput />
           </div>
@@ -170,6 +182,16 @@ export default async function JourneysPage({
               title="No archived journeys"
               description="Journeys you archive will appear here."
             />
+          ) : statusFilter === "COMPLETED" ? (
+            <EmptyState
+              icon={
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
+                </svg>
+              }
+              title="No completed journeys"
+              description="When a ready journey is finished, mark it completed and it will appear here."
+            />
           ) : (
             <EmptyState
               icon={
@@ -182,7 +204,7 @@ export default async function JourneysPage({
             />
           )
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-col gap-4">
             {journeys.map(journey => {
               const meta = normalizeJourneyMetadata({
                 originQuery: journey.originQuery,

@@ -48,7 +48,6 @@ export async function updateProfileLocation(
     });
 
     revalidatePath("/profile");
-    revalidatePath("/settings");
     
     const label = formatLocation({
       city: locationData?.city,
@@ -116,7 +115,6 @@ export async function updateProfileDetails(
 
     // 4. Revalidate cache
     revalidatePath("/profile");
-    revalidatePath("/settings");
 
     return { success: true, data: null };
   } catch (error) {

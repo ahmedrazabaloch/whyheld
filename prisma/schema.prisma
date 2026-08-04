@@ -611,6 +611,7 @@ enum JourneyStatus {
   REFINING
   ARCHIVED
   FAILED
+  COMPLETED
 }
 
 /// Why a journey was (re)generated — supports analytics + Claude context.

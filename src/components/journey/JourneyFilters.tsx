@@ -11,13 +11,14 @@ export function JourneyFilters() {
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const params = new URLSearchParams(searchParams);
     const value = e.target.value;
-    
-    if (value && value !== "ALL") {
-      params.set("status", value);
-    } else {
+
+    // READY is the default list (no query param).
+    if (!value || value === "READY") {
       params.delete("status");
+    } else {
+      params.set("status", value);
     }
-    
+
     params.delete("page"); // Reset pagination
     replace(`${pathname}?${params.toString()}`);
   };
@@ -36,7 +37,7 @@ export function JourneyFilters() {
     replace(`${pathname}?${params.toString()}`);
   };
 
-  const currentStatus = searchParams.get("status") || "ALL";
+  const currentStatus = searchParams.get("status") || "READY";
   const currentSort = searchParams.get("sort") || "newest";
 
   return (
@@ -48,9 +49,10 @@ export function JourneyFilters() {
           className={`${formStyles.input} appearance-none pr-10 py-2 sm:min-w-[140px] cursor-pointer`}
           aria-label="Filter by status"
         >
-          <option value="ALL">All Statuses</option>
           <option value="READY">Ready</option>
+          <option value="COMPLETED">Completed</option>
           <option value="ARCHIVED">Archived</option>
+          <option value="ALL">All Statuses</option>
         </select>
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
           <svg className="h-4 w-4 text-brand-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -58,11 +58,11 @@ export const getCachedProfile = cache(async (userId: string) => {
 /**
  * Deduplicated travel-preferences fetcher — one SQL round-trip.
  *
- * Separated from getCachedProfile so that the five pages that never display
+ * Separated from getCachedProfile so that pages that never display
  * preferences (/dashboard, /billing, /journeys, /wishlist, /profile) do not
- * execute a second database round-trip. Only /settings awaits this function,
- * and it does so in a Promise.all alongside the already-in-flight profile
- * fetch so the two queries resolve in parallel.
+ * execute a second database round-trip. Only preference-heavy flows await
+ * this function, typically in a Promise.all alongside the already-in-flight
+ * profile fetch so the two queries resolve in parallel.
  */
 export const getCachedPreferences = cache(async (userId: string) => {
   const prefs = await prisma.travelPreference.findFirst({

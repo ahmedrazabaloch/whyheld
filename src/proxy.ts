@@ -21,10 +21,10 @@ const PROTECTED_PREFIXES = [
   "/dashboard",
   "/onboarding",
   "/journeys",
+  "/past-journeys",
   "/wishlist",
   "/saved",
   "/billing",
-  "/settings",
   "/recommendations",
   "/profile",
 ];

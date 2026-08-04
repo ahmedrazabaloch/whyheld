@@ -35,7 +35,7 @@ export default async function ProfilePage() {
       <PageHeader
         eyebrow="Account"
         title="Your Profile"
-        description="Manage your personal details, travel preferences, and account security."
+        description="Manage your personal details and account security."
       />
 
       <ProfileTabs

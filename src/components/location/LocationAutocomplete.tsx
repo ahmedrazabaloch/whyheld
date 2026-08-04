@@ -11,8 +11,12 @@ interface LocationAutocompleteProps {
   placeholder?: string;
   value?: string;
   onChange?: (placeId: string, description: string) => void;
+  /** Fires on every keystroke (and when value is set programmatically via chips). */
+  onInputChange?: (value: string) => void;
   error?: string;
   className?: string;
+  inputClassName?: string;
+  disabled?: boolean;
   showDetectButton?: boolean;
 }
 
@@ -29,8 +33,11 @@ export function LocationAutocomplete({
   placeholder = "Search for a city...",
   value = "",
   onChange,
+  onInputChange,
   error,
   className = "",
+  inputClassName = "",
+  disabled = false,
   showDetectButton = true,
 }: LocationAutocompleteProps) {
   const [query, setQuery] = useState(value);
@@ -68,6 +75,7 @@ export function LocationAutocomplete({
                 : loc?.formattedAddress || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 
             setQuery(resolvedLabel);
+            onInputChange?.(resolvedLabel);
             if (onChange) {
               onChange(loc?.placeId || "", resolvedLabel);
             }
@@ -75,12 +83,14 @@ export function LocationAutocomplete({
           } else {
             const fallback = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
             setQuery(fallback);
+            onInputChange?.(fallback);
             if (onChange) onChange("", fallback);
             toast.success("Coordinates detected!");
           }
         } catch {
           const fallback = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
           setQuery(fallback);
+          onInputChange?.(fallback);
           if (onChange) onChange("", fallback);
         } finally {
           setIsDetecting(false);
@@ -178,6 +188,7 @@ export function LocationAutocomplete({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setQuery(val);
+    onInputChange?.(val);
     if (!isOpen) setIsOpen(true);
     setIsLoading(true);
     fetchPredictions(val, sessionTokenRef.current);
@@ -187,6 +198,7 @@ export function LocationAutocomplete({
     setQuery(description);
     setIsOpen(false);
     sessionTokenRef.current = null; // Reset token after place selection
+    onInputChange?.(description);
     if (onChange) {
       onChange(placeId, description);
     }
@@ -257,12 +269,13 @@ export function LocationAutocomplete({
       <div className="relative">
         <input
           type="text"
-          className={`${formStyles.input} pr-11`}
+          className={`${formStyles.input} pr-11 ${inputClassName}`}
           placeholder={placeholder}
           value={query}
           onChange={handleInputChange}
           onFocus={handleFocus}
           autoComplete="off"
+          disabled={disabled}
         />
         <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
           {isLoading || isDetecting ? (
