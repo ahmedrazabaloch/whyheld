@@ -1,16 +1,28 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
+import { destinationDisplayName } from "@/components/discovery/discovery-data";
 
 type HubJourney = {
   id: string;
   title: string;
+  originQuery: string | null;
+  primaryCountry: string | null;
+  region: string | null;
 } | null;
 
 type Props = {
   draft: HubJourney;
   ready: HubJourney;
 };
+
+function resolveDestination(journey: NonNullable<HubJourney>): string | null {
+  if (journey.originQuery?.trim()) {
+    return destinationDisplayName(journey.originQuery);
+  }
+  return journey.region?.trim() || journey.primaryCountry?.trim() || null;
+}
 
 export function DashboardHub({ draft, ready }: Props) {
   const continueHref = draft
@@ -19,15 +31,16 @@ export function DashboardHub({ draft, ready }: Props) {
       ? `/journeys/${ready.id}`
       : null;
 
-  const continueLabel = draft
-    ? draft.title !== "Untitled Journey"
-      ? `Continue ${draft.title}`
-      : "Continue your draft"
-    : ready
-      ? ready.title !== "Untitled Journey"
-        ? `Continue ${ready.title}`
+  const active = draft ?? ready;
+  const destination = active ? resolveDestination(active) : null;
+
+  const continueLabel = active
+    ? destination
+      ? `Continue Journey to ${destination}`
+      : draft
+        ? "Continue your draft"
         : "Continue your journey"
-      : "No journey in progress";
+    : "No journey in progress";
 
   const continueHelper = draft
     ? "Pick up where you left the builder."
@@ -37,23 +50,13 @@ export function DashboardHub({ draft, ready }: Props) {
 
   return (
     <section aria-labelledby="dashboard-hub-title" className="mb-8">
-      <h2
-        id="dashboard-hub-title"
-        className="mb-2 font-display text-xl text-brand-text-primary sm:text-2xl"
-      >
-        What would you like to do?
-      </h2>
-      <p className="mb-6 max-w-xl text-sm leading-relaxed text-brand-text-secondary">
-        Begin a journey, or continue something already underway. Explore lives
-        in the sidebar when you want to wander without a plan.
-      </p>
-
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <HubCard
           title="Begin a New Journey"
           body="Choose a destination and shape the pace, length, and comfort of the path ahead."
           href="/journeys/new"
           cta="Begin"
+          illustrationSrc="/illustrations/journey-path.png"
         />
         <HubCard
           title="Continue Journey"
@@ -62,6 +65,9 @@ export function DashboardHub({ draft, ready }: Props) {
           cta={continueHref ? "Continue" : continueLabel}
           disabled={!continueHref}
           detail={continueHref ? continueLabel : undefined}
+          illustrationSrc="/illustrations/cityscape.png"
+          illustrationContainerClassName="pointer-events-none absolute -bottom-3 right-0 top-0 hidden w-[50%] md:block"
+          illustrationImageClassName="object-cover object-[28%_bottom]"
         />
       </div>
     </section>
@@ -75,6 +81,9 @@ function HubCard({
   cta,
   disabled,
   detail,
+  illustrationSrc,
+  illustrationContainerClassName,
+  illustrationImageClassName,
 }: {
   title: string;
   body: string;
@@ -82,48 +91,77 @@ function HubCard({
   cta: string;
   disabled?: boolean;
   detail?: string;
+  illustrationSrc: string;
+  illustrationContainerClassName?: string;
+  illustrationImageClassName?: string;
 }) {
   const className =
-    "flex h-full flex-col rounded-2xl border border-brand-border/60 bg-brand-card p-6 shadow-sm transition-shadow duration-200 hover:shadow-md sm:p-7";
+    "relative flex h-full overflow-hidden rounded-2xl border border-brand-border/60 bg-brand-card p-6 shadow-sm transition-shadow duration-200 hover:shadow-md sm:p-7";
 
   const content = (
     <>
-      <h3 className="font-display text-lg text-brand-text-primary sm:text-xl">
-        {title}
-      </h3>
-      <p className="mt-2 flex-1 text-sm leading-relaxed text-brand-text-secondary">
-        {body}
-      </p>
-      {detail ? (
-        <p className="mt-3 truncate text-xs font-medium text-brand-text-primary/80">
-          {detail}
+      <div className="relative z-10 flex w-full max-w-none flex-col md:max-w-[58%]">
+        <h3 className="font-display text-lg text-brand-text-primary sm:text-xl">
+          {title}
+        </h3>
+        <p className="mt-2 flex-1 text-sm leading-relaxed text-brand-text-secondary">
+          {body}
         </p>
-      ) : null}
-      <span
-        className={[
-          "mt-5 inline-flex min-h-[44px] w-fit items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors",
-          disabled
-            ? "cursor-not-allowed border border-brand-border/60 bg-brand-bg/60 text-brand-text-secondary/60"
-            : "bg-brand-btn-primary text-brand-bg hover:bg-brand-btn-primary-hover",
-        ].join(" ")}
-      >
-        {cta}
-        {!disabled ? (
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <path d="M1 7h12M8 2l5 5-5 5" />
-          </svg>
+        {detail ? (
+          <p className="mt-3 truncate text-xs font-medium text-brand-text-primary/80">
+            {detail}
+          </p>
         ) : null}
-      </span>
+        <span
+          className={[
+            "mt-5 inline-flex min-h-[44px] w-fit items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors",
+            disabled
+              ? "cursor-not-allowed border border-brand-border/60 bg-brand-bg/60 text-brand-text-secondary/60"
+              : "bg-brand-btn-primary text-brand-bg hover:bg-brand-btn-primary-hover",
+          ].join(" ")}
+        >
+          {cta}
+          {!disabled ? (
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M1 7h12M8 2l5 5-5 5" />
+            </svg>
+          ) : null}
+        </span>
+      </div>
+
+      <div
+        className={
+          illustrationContainerClassName ??
+          "pointer-events-none absolute -bottom-3 -right-4 top-0 hidden w-[50%] md:block"
+        }
+        style={{
+          maskImage:
+            "linear-gradient(to right, transparent 0%, black 18%)",
+          WebkitMaskImage:
+            "linear-gradient(to right, transparent 0%, black 18%)",
+        }}
+        aria-hidden
+      >
+        <Image
+          src={illustrationSrc}
+          alt=""
+          fill
+          className={
+            illustrationImageClassName ?? "object-cover object-right-bottom"
+          }
+          sizes="(min-width: 768px) 280px, 0px"
+        />
+      </div>
     </>
   );
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/dashboard";
@@ -11,6 +12,14 @@ export const metadata: Metadata = {
   description:
     "Your Wayheld dashboard — view journeys, credits, and recommendations at a glance.",
 };
+
+const journeySelect = {
+  id: true,
+  title: true,
+  originQuery: true,
+  primaryCountry: true,
+  region: true,
+} as const;
 
 export default async function DashboardPage() {
   // Cache hit — layout.tsx already resolved this session for this request.
@@ -46,7 +55,7 @@ export default async function DashboardPage() {
       prisma.journey.findFirst({
         where: { userId, deletedAt: null, status: "DRAFT" },
         orderBy: { updatedAt: "desc" },
-        select: { id: true, title: true },
+        select: journeySelect,
       }),
       prisma.journey.findFirst({
         where: {
@@ -55,7 +64,7 @@ export default async function DashboardPage() {
           status: "READY",
         },
         orderBy: { updatedAt: "desc" },
-        select: { id: true, title: true },
+        select: journeySelect,
       }),
     ]);
 
@@ -68,17 +77,65 @@ export default async function DashboardPage() {
       ? `Welcome back, ${firstName}.`
       : "Welcome back.";
 
-  const supportingCopy = isFirstVisit
-    ? "Every meaningful journey begins with a place."
-    : "Every journey has its own rhythm. Where will yours lead next?";
+  const supportingCopy = isFirstVisit ? (
+    "Every meaningful journey begins with a place."
+  ) : (
+    <>
+      Every journey has its own rhythm.
+      <br />
+      Where will yours lead next?
+    </>
+  );
 
   return (
     <>
-      <PageHeader
-        eyebrow="Dashboard"
-        title={greeting}
-        description={supportingCopy}
-      />
+      <div className="relative mb-8 overflow-hidden rounded-2xl">
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 z-0 hidden w-[58%] md:block"
+          aria-hidden
+        >
+          <div
+            className="relative h-full w-full"
+            style={{
+              maskImage:
+                "linear-gradient(to right, transparent 0%, black 14%, black 90%, transparent 100%), linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)",
+              WebkitMaskImage:
+                "linear-gradient(to right, transparent 0%, black 14%, black 90%, transparent 100%), linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%)",
+              maskComposite: "intersect",
+              WebkitMaskComposite: "source-in",
+            }}
+          >
+            <div className="absolute inset-x-0 top-[-46px] h-[170%]">
+              <Image
+                src="/illustrations/landscape.png"
+                alt=""
+                fill
+                className="object-contain object-right"
+                sizes="(min-width: 768px) 58vw, 0px"
+                priority
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 max-w-full pb-8 md:max-w-[48%]">
+          <div className="[&>div]:mb-0">
+            <PageHeader
+              eyebrow="Dashboard"
+              title={greeting}
+              description={supportingCopy}
+            />
+          </div>
+          <div className="mt-8 w-fit border-t border-brand-border/60 pt-8">
+            <h2
+              id="dashboard-hub-title"
+              className="font-display text-xl text-brand-text-primary sm:text-2xl"
+            >
+              What would you like to do?
+            </h2>
+          </div>
+        </div>
+      </div>
 
       <DashboardHub draft={latestDraft} ready={latestReady} />
 
@@ -101,27 +158,48 @@ export default async function DashboardPage() {
       </div>
 
       {/* Notifications */}
-      <div className="rounded-2xl border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
-        <h2 className="font-display text-xl text-brand-text-primary">
-          Notifications
-        </h2>
-        {unreadCount > 0 ? (
-          <p className="mt-2 text-sm leading-relaxed text-brand-text-secondary">
-            You have{" "}
-            <span className="font-medium text-brand-btn-primary">{unreadCount}</span>{" "}
-            unread notification{unreadCount !== 1 ? "s" : ""}.
-          </p>
-        ) : (
-          <div className="mt-2 space-y-1.5">
-            <p className="text-sm font-medium text-brand-text-primary">
-              Nothing new today.
+      <div className="relative overflow-hidden rounded-2xl border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
+        <div className="relative z-10 max-w-[75%] sm:max-w-[70%]">
+          <h2 className="font-display text-xl text-brand-text-primary">
+            Notifications
+          </h2>
+          {unreadCount > 0 ? (
+            <p className="mt-2 text-sm leading-relaxed text-brand-text-secondary">
+              You have{" "}
+              <span className="font-medium text-brand-btn-primary">{unreadCount}</span>{" "}
+              unread notification{unreadCount !== 1 ? "s" : ""}.
             </p>
-            <p className="text-sm leading-relaxed text-brand-text-secondary">
-              When something meaningful changes in one of your journeys,
-              you&apos;ll find it here.
-            </p>
-          </div>
-        )}
+          ) : (
+            <div className="mt-2 space-y-1.5">
+              <p className="text-sm font-medium text-brand-text-primary">
+                Nothing new today.
+              </p>
+              <p className="text-sm leading-relaxed text-brand-text-secondary">
+                When something meaningful changes in one of your journeys,
+                you&apos;ll find it here.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 z-0 hidden w-[42%] sm:block md:w-[20%]"
+          style={{
+            maskImage:
+              "linear-gradient(to right, transparent 0%, black 22%)",
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent 0%, black 22%)",
+          }}
+          aria-hidden
+        >
+          <Image
+            src="/illustrations/envelope.png"
+            alt=""
+            fill
+            className="object-cover object-right"
+            sizes="(min-width: 640px) 280px, 0px"
+          />
+        </div>
       </div>
     </>
   );
