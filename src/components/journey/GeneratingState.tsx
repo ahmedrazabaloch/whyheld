@@ -197,14 +197,8 @@ export function GeneratingState({
                   )}
                   {draftData?.pace && (
                     <MetaStat
-                      label="Travel Style"
+                      label="Pace"
                       value={draftData.pace.replace(/_/g, " ")}
-                    />
-                  )}
-                  {draftData?.budget && (
-                    <MetaStat
-                      label="Budget"
-                      value={draftData.budget}
                     />
                   )}
                   {(metadata.destination || heroDestination) && (

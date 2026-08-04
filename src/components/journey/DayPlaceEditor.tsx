@@ -262,18 +262,32 @@ export function JourneyEditToolbar({
   onSave,
   onCancel,
   onExitEdit,
+  accessLabel = null,
+  accessBlockedMessage = null,
 }: {
   dirty: boolean;
   saving: boolean;
   onSave: () => void;
   onCancel: () => void;
   onExitEdit: () => void;
+  accessLabel?: string | null;
+  accessBlockedMessage?: string | null;
 }) {
   return (
     <div className="sticky top-14 z-20 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-border/50 bg-brand-bg/95 px-4 py-3 backdrop-blur-md lg:top-0">
-      <p className="text-sm text-brand-text-secondary">
-        {dirty ? "Unsaved changes" : "Edit mode — rearrange places, then save."}
-      </p>
+      <div className="min-w-0 space-y-1">
+        <p className="text-sm text-brand-text-secondary">
+          {dirty ? "Unsaved changes" : "Edit mode — rearrange places, then save."}
+        </p>
+        {accessLabel ? (
+          <p className="text-xs text-brand-text-secondary/80">{accessLabel}</p>
+        ) : null}
+        {accessBlockedMessage ? (
+          <p className="text-xs text-brand-btn-primary" role="status">
+            {accessBlockedMessage}
+          </p>
+        ) : null}
+      </div>
       <div className="flex flex-wrap gap-2">
         {dirty ? (
           <>

@@ -106,7 +106,7 @@ export const formStyles = {
  */
 export function optionCard(selected: boolean): string {
   return [
-    "group relative flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary sm:p-5",
+    "group relative flex w-full cursor-pointer items-start gap-4 rounded-2xl border p-4 text-left transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary sm:p-5",
     selected
       ? "border-brand-btn-primary bg-brand-btn-primary/10 shadow-[0_20px_60px_-40px_rgba(116,135,107,0.3)]"
       : "border-brand-border bg-brand-card hover:border-brand-text-secondary hover:bg-brand-bg/40",

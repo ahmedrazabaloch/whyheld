@@ -7,6 +7,8 @@ import type { ComposedJourney } from "@/lib/ai/schemas/composed-journey";
 import { parseDiscoveryState } from "@/components/discovery/discovery-data";
 import { persistComposedItinerary } from "@/actions/journey-actions";
 import { normalizeComposedJourney } from "@/lib/utils/composed-journey";
+import { parseBuilderMeta } from "@/lib/journey/trip-shape";
+import { feelingLabels } from "@/lib/journey/feelings";
 
 export async function POST(
   request: NextRequest,
@@ -96,6 +98,12 @@ export async function POST(
   });
 
   try {
+    const builderMeta = parseBuilderMeta(journey.metadata);
+    const feelingText = feelingLabels(builderMeta.feelings).join(", ");
+    const mustVisitText = builderMeta.tripShape.mustVisit
+      .map((p) => p.name)
+      .join("; ");
+
     const result = await executeAiPipeline<ComposedJourney>({
       promptId: "JOURNEY_FROM_DISCOVERY",
       userId: session.user.id,
@@ -111,6 +119,14 @@ export async function POST(
           description: p.description,
           highlights: p.highlights,
         })),
+        ...(feelingText ? { feelings: feelingText } : {}),
+        ...(builderMeta.tripShape.startPoint?.name
+          ? { startPoint: builderMeta.tripShape.startPoint.name }
+          : {}),
+        ...(builderMeta.tripShape.endPoint?.name
+          ? { endPoint: builderMeta.tripShape.endPoint.name }
+          : {}),
+        ...(mustVisitText ? { mustVisit: mustVisitText } : {}),
         ...(journey.startDate
           ? { startDate: journey.startDate.toISOString().split("T")[0] }
           : {}),

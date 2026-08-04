@@ -13,6 +13,7 @@ export function JourneyActionMenu({ id, currentTitle }: JourneyActionMenuProps) 
   const [isOpen, setIsOpen] = useState(false);
   const [activeDialog, setActiveDialog] = useState<"rename" | "archive" | "delete" | null>(null);
   const [newTitle, setNewTitle] = useState(currentTitle);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -29,7 +30,8 @@ export function JourneyActionMenu({ id, currentTitle }: JourneyActionMenuProps) 
 
   const handleAction = async (action: "rename" | "archive" | "delete") => {
     setIsOpen(false);
-    
+    setActionError(null);
+
     startTransition(async () => {
       let res;
       if (action === "rename") {
@@ -39,11 +41,12 @@ export function JourneyActionMenu({ id, currentTitle }: JourneyActionMenuProps) 
       } else if (action === "delete") {
         res = await deleteJourney(id);
       }
-      
+
       if (res?.success) {
         setActiveDialog(null);
+        setActionError(null);
       } else {
-        alert(res?.error || "An error occurred");
+        setActionError(res?.error || "Something went wrong. Please try again.");
       }
     });
   };
@@ -68,19 +71,32 @@ export function JourneyActionMenu({ id, currentTitle }: JourneyActionMenuProps) 
         {isOpen && (
           <div className="absolute right-0 mt-2 w-48 rounded-2xl bg-brand-card border border-brand-border shadow-panel z-10 overflow-hidden py-1">
             <button
-              onClick={() => { setIsOpen(false); setActiveDialog("rename"); setNewTitle(currentTitle); }}
+              onClick={() => {
+                setIsOpen(false);
+                setActionError(null);
+                setActiveDialog("rename");
+                setNewTitle(currentTitle);
+              }}
               className="w-full text-left px-4 py-2.5 text-sm text-brand-text-primary hover:bg-brand-text-primary/5 transition-colors"
             >
               Rename
             </button>
             <button
-              onClick={() => { setIsOpen(false); setActiveDialog("archive"); }}
+              onClick={() => {
+                setIsOpen(false);
+                setActionError(null);
+                setActiveDialog("archive");
+              }}
               className="w-full text-left px-4 py-2.5 text-sm text-brand-text-primary hover:bg-brand-text-primary/5 transition-colors"
             >
               Archive
             </button>
             <button
-              onClick={() => { setIsOpen(false); setActiveDialog("delete"); }}
+              onClick={() => {
+                setIsOpen(false);
+                setActionError(null);
+                setActiveDialog("delete");
+              }}
               className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
             >
               Delete
@@ -125,9 +141,18 @@ export function JourneyActionMenu({ id, currentTitle }: JourneyActionMenuProps) 
               </>
             )}
 
+            {actionError ? (
+              <p className="mb-4 text-sm text-red-600" role="alert">
+                {actionError}
+              </p>
+            ) : null}
+
             <div className="flex justify-end gap-3">
               <button
-                onClick={() => setActiveDialog(null)}
+                onClick={() => {
+                  setActiveDialog(null);
+                  setActionError(null);
+                }}
                 className={buttonStyles.ghost}
                 disabled={isPending}
               >

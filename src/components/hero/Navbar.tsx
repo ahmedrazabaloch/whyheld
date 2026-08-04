@@ -133,7 +133,14 @@ export function Navbar({ user }: { user?: User }) {
                   if (isSigningOut) return;
                   setIsSigningOut(true);
                   setDropdownOpen(false);
-                  await signOut({ callbackUrl: "/" });
+                  try {
+                    await signOut({ callbackUrl: "/" });
+                  } catch {
+                    // Fallback if the client session helper fails mid-request
+                    window.location.assign("/");
+                  } finally {
+                    setIsSigningOut(false);
+                  }
                 }}
                 className="flex w-full items-center gap-2 cursor-pointer rounded-2xl px-4 py-2.5 text-left text-sm font-medium text-[#33332F] transition-colors duration-150 hover:bg-[#74876B] hover:text-[#F4EFE6] disabled:opacity-50 disabled:cursor-not-allowed"
               >

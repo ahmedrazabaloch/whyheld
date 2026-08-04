@@ -295,8 +295,17 @@ export async function syncDiscoveryWishlistToSavedPlaces(params: {
     highlights: string[];
   }>;
   wishlistPlaceIds: string[];
+  /** When false, skip cache revalidation (required during page render / hydrate). */
+  revalidate?: boolean;
 }): Promise<void> {
-  const { userId, journeyId, destination, places, wishlistPlaceIds } = params;
+  const {
+    userId,
+    journeyId,
+    destination,
+    places,
+    wishlistPlaceIds,
+    revalidate = true,
+  } = params;
   const wanted = new Set(wishlistPlaceIds);
   const placeById = new Map(places.map((p) => [p.id, p]));
 
@@ -352,7 +361,10 @@ export async function syncDiscoveryWishlistToSavedPlaces(params: {
     });
   }
 
-  revalidatePath("/saved");
+  // Never call revalidatePath during RSC render (e.g. Wishlist page hydrate).
+  if (revalidate) {
+    revalidatePath("/wishlist");
+  }
 }
 
 /**
@@ -423,6 +435,7 @@ export async function hydrateWishlistFromJourneys(
       destination,
       places: normalizedPlaces,
       wishlistPlaceIds,
+      revalidate: false,
     });
   }
 }
@@ -579,7 +592,7 @@ async function removeDiscoveryWishlistId(
 }
 
 function revalidateWishlistPaths(journeyId: string | null) {
-  revalidatePath("/saved");
+  revalidatePath("/wishlist");
   revalidatePath("/dashboard");
   if (journeyId) {
     revalidatePath(`/journeys/${journeyId}`);

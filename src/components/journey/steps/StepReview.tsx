@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { buttonStyles } from "@/lib/design";
+import { feelingLabels } from "@/lib/journey/feelings";
 import type { useJourneyBuilder, JourneyData } from "@/hooks/useJourneyBuilder";
 
 function placeName(originQuery: string | null): string {
@@ -56,23 +55,27 @@ function buildNarrative(data: JourneyData): {
     body.push(timeLine);
   }
 
-  const comfortLine = (() => {
-    switch (data.budget) {
-      case "MODEST":
-        return "Comfort shows up quietly here — thoughtful stays, local tables, and simple character.";
-      case "COMFORTABLE":
-        return "Comfort matters, but not at the expense of character.";
-      case "PREMIUM":
-        return "A little more comfort, with room for experiences that linger.";
-      case "LUXURY":
-        return "Exceptional comfort and privacy, chosen with care.";
-      default:
-        return null;
-    }
-  })();
+  const feelings = feelingLabels(data.feelings);
+  if (feelings.length > 0) {
+    body.push(`This journey leans toward ${feelings.join(", ").toLowerCase()}.`);
+  }
 
-  if (comfortLine) {
-    body.push(comfortLine);
+  const must = data.tripShape?.mustVisit ?? [];
+  if (data.tripShape?.startPoint?.name || data.tripShape?.endPoint?.name) {
+    const start = data.tripShape.startPoint?.name;
+    const end = data.tripShape.endPoint?.name;
+    if (start && end) {
+      body.push(`The path runs from ${start} toward ${end}.`);
+    } else if (start) {
+      body.push(`You begin in ${start}.`);
+    } else if (end) {
+      body.push(`You settle toward ${end}.`);
+    }
+  }
+  if (must.length > 0) {
+    body.push(
+      `You've asked to include ${must.map((p) => p.name).join(", ")}.`,
+    );
   }
 
   return { destination, body };
@@ -80,40 +83,24 @@ function buildNarrative(data: JourneyData): {
 
 export function StepReview({
   controller,
-  onGenerate,
-  userCredits = 0,
-  userPlan = "FREE",
-  canBegin = false,
 }: {
   controller: ReturnType<typeof useJourneyBuilder>;
-  onGenerate?: () => void;
-  userCredits?: number;
-  userPlan?: string;
-  canBegin?: boolean;
 }) {
-  const { data, flushSave } = controller;
-
-  const handleBegin = () => {
-    flushSave();
-    if (onGenerate) {
-      onGenerate();
-    }
-  };
-
+  const { data } = controller;
   const narrative = buildNarrative(data);
 
   return (
-    <section
-      id="setup-review"
-      className="scroll-mt-[var(--setup-scroll-margin,7.5rem)] space-y-8"
-    >
+    <section id="setup-review" className="space-y-8" aria-labelledby="setup-review-title">
       <div className="space-y-3">
-        <h2 className="font-display text-2xl font-light tracking-tight text-brand-text-primary sm:text-[1.75rem]">
+        <h2
+          id="setup-review-title"
+          className="font-display text-2xl font-light tracking-tight text-brand-text-primary sm:text-[1.75rem]"
+        >
           A quiet look before we begin.
         </h2>
         <p className="max-w-md text-sm leading-relaxed text-brand-text-secondary">
-          Everything above shapes the journey. You can scroll up to change any
-          of it.
+          Everything above shapes the journey. You can go back to change any of
+          it.
         </p>
       </div>
 
@@ -131,27 +118,12 @@ export function StepReview({
         ))}
       </div>
 
-      <div className="space-y-5 pt-4">
+      <div className="pt-2">
         <p className="max-w-sm text-sm leading-relaxed text-brand-text-secondary">
           Nothing is set in stone.
           <br />
           You&apos;ll be able to shape this journey as it unfolds.
         </p>
-
-        {userPlan !== "PREMIUM" && userCredits <= 0 ? (
-          <Link href="/billing" className={buttonStyles.primary}>
-            Choose a Plan
-          </Link>
-        ) : (
-          <button
-            type="button"
-            onClick={handleBegin}
-            disabled={!canBegin}
-            className={buttonStyles.primary}
-          >
-            Begin Exploring
-          </button>
-        )}
       </div>
     </section>
   );

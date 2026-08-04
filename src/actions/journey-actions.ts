@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/db";
@@ -12,9 +13,21 @@ import {
   getUserFriendlyMessage 
 } from "@/lib/utils/errors";
 import { syncDiscoveryWishlistToSavedPlaces } from "@/actions/place-actions";
+import {
+  accessExpiresAtFrom,
+  evaluateAccessGate,
+  parseAccessExpiresAt,
+} from "@/lib/journey/access";
 
 // Zod schemas for input validation
 const IdSchema = z.string().cuid();
+
+const TripPointDraftSchema = z.object({
+  name: z.string().min(1).max(200),
+  placeId: z.string().max(200).optional(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
+});
 
 const UpdateDraftSchema = z.object({
   title: z.string().optional(),
@@ -26,31 +39,60 @@ const UpdateDraftSchema = z.object({
   durationDays: z.number().int().min(1).max(30).nullable().optional(),
   pace: z.enum(["ONE_PLACE_DEEPLY", "SLOW_UNHURRIED", "GENTLY_BALANCED"]).nullable().optional(),
   budget: z.enum(["MODEST", "COMFORTABLE", "PREMIUM", "LUXURY"]).nullable().optional(),
-  lastCompletedStep: z.number().int().min(0).max(5).optional(),
+  lastCompletedStep: z.number().int().min(0).max(8).optional(),
+  feelings: z.array(z.string().min(1).max(40)).max(5).optional(),
+  intent: z.enum(["journey", "explore"]).optional(),
+  tripShape: z
+    .object({
+      startPoint: TripPointDraftSchema.optional(),
+      endPoint: TripPointDraftSchema.optional(),
+      mustVisit: z.array(TripPointDraftSchema).max(5).optional(),
+    })
+    .optional(),
 });
 
-export async function createDraft(): Promise<ActionResponse<string>> {
+export async function createDraft(
+  options?: { intent?: "journey" | "explore" },
+): Promise<ActionResponse<string>> {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return { success: false, error: "Unauthorized", code: "UNAUTHORIZED" };
     }
 
-    // Prevent duplicate draft creation: 
-    // If the user already has an empty DRAFT created in the last 24h that hasn't been advanced,
+    const intent = options?.intent === "explore" ? "explore" : "journey";
+
+    // Prevent duplicate draft creation for the same intent:
+    // If the user already has an empty DRAFT created that hasn't been advanced,
     // just return that one instead of spamming rows.
     const existingEmptyDraft = await prisma.journey.findFirst({
-      where: { 
-        userId: session.user.id, 
+      where: {
+        userId: session.user.id,
         status: "DRAFT",
         title: "Untitled Journey",
       },
       orderBy: { createdAt: "desc" },
-      select: { id: true }
+      select: { id: true, metadata: true },
     });
 
     if (existingEmptyDraft) {
-      return { success: true, data: existingEmptyDraft.id };
+      const meta =
+        existingEmptyDraft.metadata &&
+        typeof existingEmptyDraft.metadata === "object" &&
+        !Array.isArray(existingEmptyDraft.metadata)
+          ? (existingEmptyDraft.metadata as Record<string, unknown>)
+          : {};
+      if (meta.intent === intent || (!meta.intent && intent === "journey")) {
+        if (intent === "explore" && meta.intent !== "explore") {
+          await prisma.journey.update({
+            where: { id: existingEmptyDraft.id },
+            data: {
+              metadata: { ...meta, intent: "explore", lastCompletedStep: 0 },
+            },
+          });
+        }
+        return { success: true, data: existingEmptyDraft.id };
+      }
     }
 
     const journey = await prisma.journey.create({
@@ -58,7 +100,14 @@ export async function createDraft(): Promise<ActionResponse<string>> {
         userId: session.user.id,
         title: "Untitled Journey",
         status: "DRAFT",
-        metadata: { lastCompletedStep: 0 },
+        metadata: { lastCompletedStep: 0, intent },
+        ...(intent === "explore"
+          ? {
+              durationDays: 5,
+              budget: "COMFORTABLE" as const,
+              pace: "GENTLY_BALANCED" as const,
+            }
+          : {}),
       },
     });
 
@@ -113,11 +162,23 @@ export async function updateDraft(id: string, data: z.infer<typeof UpdateDraftSc
       return { success: false, error: "Invalid payload data", code: "VALIDATION_ERROR" };
     }
 
-    const { lastCompletedStep, ...fields } = parsedData.data;
+    const {
+      lastCompletedStep,
+      feelings,
+      intent,
+      tripShape,
+      ...fields
+    } = parsedData.data;
 
     // Merge metadata so builder autosave never wipes discovery selections.
+    const needsMetaMerge =
+      lastCompletedStep !== undefined ||
+      feelings !== undefined ||
+      intent !== undefined ||
+      tripShape !== undefined;
+
     let metadataUpdate: Prisma.InputJsonValue | undefined;
-    if (lastCompletedStep !== undefined) {
+    if (needsMetaMerge) {
       const existing = await prisma.journey.findUnique({
         where: { id: parsedId.data, userId: session.user.id, status: "DRAFT" },
         select: { metadata: true },
@@ -128,7 +189,25 @@ export async function updateDraft(id: string, data: z.infer<typeof UpdateDraftSc
         !Array.isArray(existing.metadata)
           ? (existing.metadata as Record<string, unknown>)
           : {};
-      metadataUpdate = { ...prev, lastCompletedStep };
+      metadataUpdate = {
+        ...prev,
+        ...(lastCompletedStep !== undefined ? { lastCompletedStep } : {}),
+        ...(feelings !== undefined ? { feelings } : {}),
+        ...(intent !== undefined ? { intent } : {}),
+        ...(tripShape !== undefined
+          ? {
+              tripShape: {
+                ...(typeof prev.tripShape === "object" &&
+                prev.tripShape &&
+                !Array.isArray(prev.tripShape)
+                  ? (prev.tripShape as Record<string, unknown>)
+                  : {}),
+                ...tripShape,
+                mustVisit: tripShape.mustVisit ?? [],
+              },
+            }
+          : {}),
+      };
     }
 
     await prisma.journey.update({
@@ -545,13 +624,373 @@ const DiscoveryPlacePersistSchema = z.object({
   title: z.string(),
   description: z.string(),
   highlights: z.array(z.string()),
+  localTips: z.string().optional(),
+  guideNote: z.string().optional(),
+  weatherNote: z.string().optional(),
 });
 
 const SaveDiscoveryStateSchema = z.object({
   places: z.array(DiscoveryPlacePersistSchema).optional(),
   journeyPlaceIds: z.array(z.string()).optional(),
   wishlistPlaceIds: z.array(z.string()).optional(),
+  boardStatus: z.enum(["PENDING", "COMPLETE"]).optional(),
 });
+
+export type JourneyPickerOption = {
+  id: string;
+  title: string;
+  destination: string;
+  status: string;
+  placeCount: number;
+};
+
+/**
+ * Journeys the traveller can add a Discovery place into.
+ */
+export async function listJourneyPickerOptions(
+  currentJourneyId?: string | null,
+): Promise<ActionResponse<JourneyPickerOption[]>> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Unauthorized", code: "UNAUTHORIZED" };
+    }
+
+    const journeys = await prisma.journey.findMany({
+      where: {
+        userId: session.user.id,
+        deletedAt: null,
+        status: { in: ["DRAFT", "READY", "FAILED"] },
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 40,
+      select: {
+        id: true,
+        title: true,
+        originQuery: true,
+        status: true,
+        metadata: true,
+      },
+    });
+
+    const currentId = currentJourneyId?.trim() || null;
+
+    const options: JourneyPickerOption[] = journeys.map((j) => {
+      const discovery =
+        j.metadata &&
+        typeof j.metadata === "object" &&
+        !Array.isArray(j.metadata) &&
+        (j.metadata as Record<string, unknown>).discovery &&
+        typeof (j.metadata as Record<string, unknown>).discovery === "object"
+          ? ((j.metadata as Record<string, unknown>).discovery as Record<
+              string,
+              unknown
+            >)
+          : null;
+      const ids = Array.isArray(discovery?.journeyPlaceIds)
+        ? discovery.journeyPlaceIds.filter((id): id is string => typeof id === "string")
+        : [];
+      const destination =
+        j.originQuery?.split(",")[0]?.trim() ||
+        j.originQuery ||
+        (currentId && j.id === currentId ? "This journey" : "Untitled destination");
+
+      return {
+        id: j.id,
+        title: j.title || `Journey to ${destination}`,
+        destination,
+        status: j.status,
+        placeCount: ids.length,
+      };
+    });
+
+    // Prefer current journey first when provided
+    if (currentId) {
+      options.sort((a, b) => {
+        if (a.id === currentId) return -1;
+        if (b.id === currentId) return 1;
+        return 0;
+      });
+    }
+
+    return { success: true, data: options };
+  } catch (error) {
+    const err = handleServerError(error, "listJourneyPickerOptions");
+    return {
+      success: false,
+      error: getUserFriendlyMessage(err.code),
+      code: err.code,
+      referenceId: err.referenceId,
+    };
+  }
+}
+
+const AssignPlaceSchema = z.object({
+  targetJourneyId: z.string().cuid(),
+  place: DiscoveryPlacePersistSchema,
+});
+
+/**
+ * Add (or upsert) a Discovery place onto another journey's discovery board.
+ */
+export async function addPlaceToJourneyBoard(
+  input: z.infer<typeof AssignPlaceSchema>,
+): Promise<ActionResponse<{ journeyId: string }>> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Unauthorized", code: "UNAUTHORIZED" };
+    }
+
+    const parsed = AssignPlaceSchema.safeParse(input);
+    if (!parsed.success) {
+      return { success: false, error: "Invalid payload", code: "VALIDATION_ERROR" };
+    }
+
+    const { targetJourneyId, place } = parsed.data;
+
+    const journey = await prisma.journey.findUnique({
+      where: {
+        id: targetJourneyId,
+        userId: session.user.id,
+        status: { in: ["DRAFT", "GENERATING", "FAILED", "READY"] },
+      },
+      select: { id: true, metadata: true },
+    });
+
+    if (!journey) {
+      return { success: false, error: "Journey not found", code: "NOT_FOUND" };
+    }
+
+    const prevMeta =
+      journey.metadata &&
+      typeof journey.metadata === "object" &&
+      !Array.isArray(journey.metadata)
+        ? (journey.metadata as Record<string, unknown>)
+        : {};
+    const prevDiscovery =
+      prevMeta.discovery &&
+      typeof prevMeta.discovery === "object" &&
+      !Array.isArray(prevMeta.discovery)
+        ? (prevMeta.discovery as Record<string, unknown>)
+        : {};
+
+    const prevPlaces = Array.isArray(prevDiscovery.places)
+      ? [...(prevDiscovery.places as unknown[])]
+      : [];
+    const prevIds = Array.isArray(prevDiscovery.journeyPlaceIds)
+      ? (prevDiscovery.journeyPlaceIds as unknown[]).filter(
+          (id): id is string => typeof id === "string",
+        )
+      : [];
+    const prevWishlist = Array.isArray(prevDiscovery.wishlistPlaceIds)
+      ? (prevDiscovery.wishlistPlaceIds as unknown[]).filter(
+          (id): id is string => typeof id === "string",
+        )
+      : [];
+
+    const existingIdx = prevPlaces.findIndex(
+      (p) =>
+        !!p &&
+        typeof p === "object" &&
+        ((p as { id?: string }).id === place.id ||
+          (typeof (p as { title?: string }).title === "string" &&
+            (p as { title: string }).title.toLowerCase() === place.title.toLowerCase())),
+    );
+
+    let placeId = place.id;
+    if (existingIdx >= 0) {
+      const existing = prevPlaces[existingIdx] as { id?: string };
+      placeId = existing.id || place.id;
+      prevPlaces[existingIdx] = { ...place, id: placeId };
+    } else {
+      prevPlaces.push(place);
+    }
+
+    const journeyPlaceIds = prevIds.includes(placeId)
+      ? prevIds
+      : [...prevIds, placeId];
+
+    await prisma.journey.update({
+      where: { id: journey.id, userId: session.user.id },
+      data: {
+        metadata: {
+          ...prevMeta,
+          discovery: {
+            places: prevPlaces,
+            journeyPlaceIds,
+            wishlistPlaceIds: prevWishlist,
+            boardStatus:
+              prevDiscovery.boardStatus === "COMPLETE" ? "COMPLETE" : "PENDING",
+          },
+        } as Prisma.InputJsonValue,
+      },
+    });
+
+    revalidatePath(`/journeys/${journey.id}`);
+    revalidatePath(`/journeys/${journey.id}/discover`);
+    revalidatePath("/journeys");
+
+    return { success: true, data: { journeyId: journey.id } };
+  } catch (error) {
+    const err = handleServerError(error, "addPlaceToJourneyBoard");
+    return {
+      success: false,
+      error: getUserFriendlyMessage(err.code),
+      code: err.code,
+      referenceId: err.referenceId,
+    };
+  }
+}
+
+/**
+ * Create a new journey draft seeded from a source journey or a free destination,
+ * with the given place already on the board.
+ */
+export async function createJourneyBoardWithPlace(input: {
+  sourceJourneyId?: string;
+  destination?: string;
+  place: z.infer<typeof DiscoveryPlacePersistSchema>;
+  title?: string;
+}): Promise<ActionResponse<{ journeyId: string; title: string }>> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Unauthorized", code: "UNAUTHORIZED" };
+    }
+
+    const place = {
+      ...input.place,
+      id: input.place.id || randomUUID(),
+    };
+
+    let originQuery: string | null = null;
+    let primaryCountry: string | null = null;
+    let region: string | null = null;
+    let pace: Journey["pace"] = "GENTLY_BALANCED";
+    let budget: Journey["budget"] = "COMFORTABLE";
+    let durationDays: number | null = 5;
+    let startDate: Date | null = null;
+    let endDate: Date | null = null;
+
+    if (input.sourceJourneyId?.trim()) {
+      const source = await prisma.journey.findUnique({
+        where: { id: input.sourceJourneyId, userId: session.user.id },
+      });
+      if (!source) {
+        return { success: false, error: "Source journey not found", code: "NOT_FOUND" };
+      }
+      originQuery = source.originQuery;
+      primaryCountry = source.primaryCountry;
+      region = source.region;
+      pace = source.pace;
+      budget = source.budget;
+      durationDays = source.durationDays;
+      startDate = source.startDate;
+      endDate = source.endDate;
+    } else if (input.destination?.trim()) {
+      originQuery = input.destination.trim();
+      primaryCountry =
+        originQuery.split(",").map((p) => p.trim()).filter(Boolean).at(-1) ||
+        originQuery;
+    } else {
+      return {
+        success: false,
+        error: "Destination is required",
+        code: "VALIDATION_ERROR",
+      };
+    }
+
+    const destinationLabel =
+      originQuery?.split(",")[0]?.trim() || originQuery || "New destination";
+    const title = input.title?.trim() || `Journey to ${destinationLabel}`;
+
+    const journey = await prisma.journey.create({
+      data: {
+        userId: session.user.id,
+        title,
+        status: "DRAFT",
+        originQuery,
+        primaryCountry,
+        region,
+        pace,
+        budget,
+        startDate,
+        endDate,
+        durationDays,
+        metadata: {
+          lastCompletedStep: 4,
+          generatedFrom: input.sourceJourneyId ? "discovery" : "explore",
+          discovery: {
+            places: [place],
+            journeyPlaceIds: [place.id],
+            wishlistPlaceIds: [],
+            boardStatus: "PENDING",
+          },
+        },
+      },
+    });
+
+    revalidatePath("/journeys");
+    revalidatePath(`/journeys/${journey.id}/discover`);
+
+    return { success: true, data: { journeyId: journey.id, title } };
+  } catch (error) {
+    const err = handleServerError(error, "createJourneyBoardWithPlace");
+    return {
+      success: false,
+      error: getUserFriendlyMessage(err.code),
+      code: err.code,
+      referenceId: err.referenceId,
+    };
+  }
+}
+
+/** Rename a journey card (works for draft and ready journeys). */
+export async function renameJourneyTitle(
+  journeyId: string,
+  title: string,
+): Promise<ActionResponse> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Unauthorized", code: "UNAUTHORIZED" };
+    }
+
+    const parsedId = IdSchema.safeParse(journeyId);
+    const trimmed = title.trim();
+    if (!parsedId.success || trimmed.length < 1 || trimmed.length > 120) {
+      return { success: false, error: "Invalid title", code: "VALIDATION_ERROR" };
+    }
+
+    const result = await prisma.journey.updateMany({
+      where: {
+        id: parsedId.data,
+        userId: session.user.id,
+        deletedAt: null,
+      },
+      data: { title: trimmed },
+    });
+
+    if (result.count === 0) {
+      return { success: false, error: "Journey not found", code: "NOT_FOUND" };
+    }
+
+    revalidatePath("/journeys");
+    revalidatePath(`/journeys/${parsedId.data}`);
+    revalidatePath(`/journeys/${parsedId.data}/discover`);
+
+    return { success: true, data: undefined };
+  } catch (error) {
+    const err = handleServerError(error, "renameJourneyTitle");
+    return {
+      success: false,
+      error: getUserFriendlyMessage(err.code),
+      code: err.code,
+      referenceId: err.referenceId,
+    };
+  }
+}
 
 /**
  * Persist Discovery places + selections on Journey.metadata.discovery.
@@ -623,6 +1062,12 @@ export async function saveDiscoveryState(
           : Array.isArray(prevDiscovery.wishlistPlaceIds)
             ? prevDiscovery.wishlistPlaceIds
             : [],
+      boardStatus:
+        parsedPatch.data.boardStatus !== undefined
+          ? parsedPatch.data.boardStatus
+          : prevDiscovery.boardStatus === "COMPLETE"
+            ? "COMPLETE"
+            : "PENDING",
     };
 
     await prisma.journey.update({
@@ -811,6 +1256,26 @@ export async function persistComposedItinerary(
           },
         });
       }
+
+      // New summary-first days may have empty MAE segments
+      if (
+        !segments.some((s) => s.text?.trim()) &&
+        (day as { summary?: string }).summary?.trim()
+      ) {
+        flatStops.push({
+          name: day.theme || `Day ${dayNumber}`,
+          kind: "EXPERIENCE",
+          description: (day as { summary?: string }).summary!.trim(),
+          nights: 1,
+          dayStart: dayNumber,
+          dayEnd: dayNumber,
+          googlePlaceId: null,
+          latitude: null,
+          longitude: null,
+          highlights: placeTitles.slice(0, 5),
+          metadata: { ...baseMeta, segment: "summary" },
+        });
+      }
     }
 
     if (flatStops.length === 0) {
@@ -878,12 +1343,19 @@ export async function persistComposedItinerary(
           ? (journey.metadata as Prisma.JsonObject)
           : {};
 
-      return tx.journey.update({
+      const accessExpiresAt =
+        typeof existingMetadata.accessExpiresAt === "string"
+          ? existingMetadata.accessExpiresAt
+          : accessExpiresAtFrom().toISOString();
+
+      const updated = await tx.journey.update({
         where: { id: parsedId.data },
         data: {
           status: "READY",
           title: composed.title || journey.title,
           summary: composed.summary || journey.summary,
+          durationDays: composed.days.length,
+          version: { increment: 1 },
           metadata: {
             ...existingMetadata,
             composedJourney: composed,
@@ -893,9 +1365,27 @@ export async function persistComposedItinerary(
             usage: usage ?? null,
             promptVersion: promptVersion ?? "1.0.0",
             generatedFrom: "discovery",
+            accessExpiresAt,
           } as Prisma.InputJsonValue,
         },
       });
+
+      const initialCount = await tx.journeyRefinement.count({
+        where: { journeyId: parsedId.data, type: "INITIAL" },
+      });
+      if (initialCount === 0) {
+        await tx.journeyRefinement.create({
+          data: {
+            journeyId: parsedId.data,
+            type: "INITIAL",
+            instruction: "Composed from Discovery selections",
+            fromVersion: journey.version,
+            toVersion: updated.version,
+          },
+        });
+      }
+
+      return updated;
     });
 
     revalidatePath(`/journeys/${parsedId.data}`);
@@ -972,6 +1462,29 @@ export async function saveComposedJourneyEdits(
       };
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { plan: true },
+    });
+    const refinementsUsed = await prisma.journeyRefinement.count({
+      where: {
+        journeyId: parsedId.data,
+        type: { not: "INITIAL" },
+      },
+    });
+    const gate = evaluateAccessGate({
+      accessExpiresAt: parseAccessExpiresAt(journey.metadata),
+      refinementsUsed,
+      plan: user?.plan || "FREE",
+    });
+    if (!gate.ok && gate.reason === "EXPIRED") {
+      return {
+        success: false,
+        error: gate.message,
+        code: "VALIDATION_ERROR",
+      };
+    }
+
     const flatStops: Array<{
       name: string;
       kind: "EXPERIENCE" | "MEAL";
@@ -1027,6 +1540,25 @@ export async function saveComposedJourneyEdits(
           metadata: { ...baseMeta, segment: seg.segment },
         });
       }
+
+      if (
+        !segments.some((s) => s.text?.trim()) &&
+        day.summary?.trim()
+      ) {
+        flatStops.push({
+          name: day.theme || `Day ${dayNumber}`,
+          kind: "EXPERIENCE",
+          description: day.summary.trim(),
+          nights: 1,
+          dayStart: dayNumber,
+          dayEnd: dayNumber,
+          googlePlaceId: null,
+          latitude: null,
+          longitude: null,
+          highlights: placeTitles.slice(0, 5),
+          metadata: { ...baseMeta, segment: "summary" },
+        });
+      }
     }
 
     const updatedJourney = await prisma.$transaction(async (tx) => {
@@ -1064,6 +1596,7 @@ export async function saveComposedJourneyEdits(
         data: {
           title: composed.title || journey.title,
           summary: composed.summary || journey.summary,
+          durationDays: composed.days.length,
           metadata: {
             ...existingMetadata,
             composedJourney: composed,

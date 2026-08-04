@@ -143,3 +143,20 @@ export function availableDiscoveryPlaces(
 export function findDay(journey: ComposedJourney, dayNumber: number): ComposedDay | undefined {
   return journey.days.find((d) => d.dayNumber === dayNumber);
 }
+
+/** Remove a full day and renumber remaining days 1…n. Keeps at least one day. */
+export function removeDayFromJourney(
+  journey: ComposedJourney,
+  dayNumber: number,
+): ComposedJourney {
+  if (journey.days.length <= 1) return journey;
+
+  const remaining = journey.days.filter((d) => d.dayNumber !== dayNumber);
+  return {
+    ...journey,
+    days: remaining.map((day, index) => ({
+      ...day,
+      dayNumber: index + 1,
+    })),
+  };
+}

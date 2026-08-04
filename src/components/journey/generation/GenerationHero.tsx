@@ -111,7 +111,7 @@ export function GenerationHero({ destination, state }: GenerationHeroProps) {
             style={{ color: "rgba(116,135,107,0.9)" }}
           >
             <AiOrb />
-            AI Concierge · Crafting
+            Wayheld Concierge · Crafting
           </span>
         </motion.div>
 

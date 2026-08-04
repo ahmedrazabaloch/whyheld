@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { executeAiPipeline } from "@/lib/ai/pipeline";
 import { AiError } from "@/lib/ai/errors";
 import type { DiscoveryPlacesOutput } from "@/lib/ai/schemas/discovery";
+import { parseBuilderMeta } from "@/lib/journey/trip-shape";
+import { feelingLabels } from "@/lib/journey/feelings";
 
 const BodySchema = z.object({
   count: z.union([z.literal(5), z.literal(10)]).default(10),
@@ -64,6 +66,10 @@ export async function POST(
   duration = duration || 5;
 
   try {
+    const builderMeta = parseBuilderMeta(journey.metadata);
+    const feelingText = feelingLabels(builderMeta.feelings).join(", ");
+    const mustVisitTitles = builderMeta.tripShape.mustVisit.map((p) => p.name);
+
     const result = await executeAiPipeline<DiscoveryPlacesOutput>({
       promptId: "DISCOVERY_PLACES",
       userId: session.user.id,
@@ -77,8 +83,12 @@ export async function POST(
         duration,
         count: body.count,
         excludeTitles: body.excludeTitles,
-        selectedTitles: body.selectedTitles,
+        selectedTitles: [...body.selectedTitles, ...mustVisitTitles],
         wishlistTitles: body.wishlistTitles,
+        ...(feelingText ? { feelings: feelingText } : {}),
+        ...(mustVisitTitles.length
+          ? { mustVisit: mustVisitTitles.join("; ") }
+          : {}),
         ...(journey.startDate
           ? { startDate: journey.startDate.toISOString().split("T")[0] }
           : {}),

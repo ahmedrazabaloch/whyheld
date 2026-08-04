@@ -12,6 +12,10 @@ import {
 } from "@/lib/utils/composed-journey";
 import { parseDiscoveryState } from "@/components/discovery/discovery-data";
 import { saveComposedJourneyEdits } from "@/actions/journey-actions";
+import {
+  evaluateAccessGate,
+  parseAccessExpiresAt,
+} from "@/lib/journey/access";
 
 const BodySchema = z.object({
   dayNumber: z.number().int().min(1),
@@ -55,7 +59,9 @@ export async function POST(
     );
   }
 
-  const composed = parseComposedJourney(journey.metadata);
+  const composed = parseComposedJourney(journey.metadata, {
+    fallbackCountry: journey.originQuery?.split(",")[0]?.trim() || journey.originQuery || undefined,
+  });
   if (!composed) {
     return NextResponse.json(
       { error: "No composed itinerary found on this journey." },
@@ -113,6 +119,22 @@ export async function POST(
     );
   }
 
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { plan: true },
+  });
+  const refinementsUsed = await prisma.journeyRefinement.count({
+    where: { journeyId: journey.id, type: { not: "INITIAL" } },
+  });
+  const gate = evaluateAccessGate({
+    accessExpiresAt: parseAccessExpiresAt(journey.metadata),
+    refinementsUsed,
+    plan: user?.plan || "FREE",
+  });
+  if (!gate.ok) {
+    return NextResponse.json({ error: gate.message }, { status: 403 });
+  }
+
   try {
     const result = await executeAiPipeline<RegeneratedDay>({
       promptId: "REGENERATE_JOURNEY_DAY",
@@ -137,17 +159,23 @@ export async function POST(
       },
     });
 
-    // Honour locked slots from the current day; keep user-assigned place list
-    const regenerated = normalizeComposedDay({
-      ...result,
-      dayNumber: body.dayNumber,
-      places: (currentDay.places ?? []).map((slot) => ({
-        ...slot,
-        // Prefer AI-returned lock only if matching; otherwise keep ours
-        locked: slot.locked === true,
-      })),
-      placeTitles: (currentDay.places ?? []).map((p) => p.title),
-    });
+    const destinationLabel =
+      journey.originQuery?.split(",")[0]?.trim() ||
+      journey.originQuery?.trim() ||
+      undefined;
+
+    const regenerated = normalizeComposedDay(
+      {
+        ...result,
+        dayNumber: body.dayNumber,
+        places: (currentDay.places ?? []).map((slot) => ({
+          ...slot,
+          locked: slot.locked === true,
+        })),
+        placeTitles: (currentDay.places ?? []).map((p) => p.title),
+      },
+      destinationLabel,
+    );
 
     // If AI returned places with locks, merge titles carefully
     if (Array.isArray(result.places) && result.places.length > 0) {
@@ -165,10 +193,13 @@ export async function POST(
       regenerated.placeTitles = regenerated.places.map((p) => p.title);
     }
 
-    const nextComposed = normalizeComposedJourney({
-      ...composed,
-      days: composed.days.map((d, i) => (i === dayIndex ? regenerated : d)),
-    });
+    const nextComposed = normalizeComposedJourney(
+      {
+        ...composed,
+        days: composed.days.map((d, i) => (i === dayIndex ? regenerated : d)),
+      },
+      { fallbackCountry: destinationLabel },
+    );
 
     const persist = await saveComposedJourneyEdits(journey.id, nextComposed);
     if (!persist.success) {
@@ -177,6 +208,21 @@ export async function POST(
         { status: 502 },
       );
     }
+
+    await prisma.journeyRefinement.create({
+      data: {
+        journeyId: journey.id,
+        type: "FREEFORM",
+        instruction: `Regenerated day ${body.dayNumber}`,
+        fromVersion: journey.version,
+        toVersion: journey.version + 1,
+        params: { dayNumber: body.dayNumber },
+      },
+    });
+    await prisma.journey.update({
+      where: { id: journey.id },
+      data: { version: { increment: 1 } },
+    });
 
     return NextResponse.json({
       success: true,

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/dashboard";
+import { DashboardHub } from "@/components/dashboard/DashboardHub";
 import { getCachedSession, getCachedProfile } from "@/lib/auth/session-cache";
 import { getPlanCreditLimit } from "@/lib/membership/utils";
 
@@ -26,7 +26,7 @@ export default async function DashboardPage() {
   /* ---------------------------------------------------------------- */
   /* Real data reads — parallel, profile is a React cache() hit       */
   /* ---------------------------------------------------------------- */
-  const [profile, userDb, journeyCount, savedCount, unreadCount] =
+  const [profile, userDb, journeyCount, savedCount, unreadCount, latestDraft, latestReady] =
     await Promise.all([
       // Awaits the in-flight promise started by the layout — no extra DB call.
       getCachedProfile(userId),
@@ -42,6 +42,20 @@ export default async function DashboardPage() {
       }),
       prisma.notification.count({
         where: { userId, readAt: null },
+      }),
+      prisma.journey.findFirst({
+        where: { userId, deletedAt: null, status: "DRAFT" },
+        orderBy: { updatedAt: "desc" },
+        select: { id: true, title: true },
+      }),
+      prisma.journey.findFirst({
+        where: {
+          userId,
+          deletedAt: null,
+          status: "READY",
+        },
+        orderBy: { updatedAt: "desc" },
+        select: { id: true, title: true },
       }),
     ]);
 
@@ -66,6 +80,8 @@ export default async function DashboardPage() {
         description={supportingCopy}
       />
 
+      <DashboardHub draft={latestDraft} ready={latestReady} />
+
       {/* Stats row */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <CreditsCard
@@ -84,62 +100,28 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Quick actions */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        {/* Journey prompt */}
-        <div className="rounded-2xl border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
-          <h2 className="font-display text-xl text-brand-text-primary">
-            Begin a New Journey
-          </h2>
+      {/* Notifications */}
+      <div className="rounded-2xl border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
+        <h2 className="font-display text-xl text-brand-text-primary">
+          Notifications
+        </h2>
+        {unreadCount > 0 ? (
           <p className="mt-2 text-sm leading-relaxed text-brand-text-secondary">
-            Choose a place that&apos;s been calling to you.
-            <br />
-            We&apos;ll help you uncover it slowly.
+            You have{" "}
+            <span className="font-medium text-brand-btn-primary">{unreadCount}</span>{" "}
+            unread notification{unreadCount !== 1 ? "s" : ""}.
           </p>
-          <Link
-            href="/journeys/new"
-            prefetch={false}
-            className="mt-6 inline-flex min-h-[48px] items-center gap-2 rounded-full bg-brand-btn-primary px-6 py-2.5 text-sm font-medium text-brand-bg shadow-sm transition-all duration-200 hover:-translate-y-[1px] hover:bg-brand-btn-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary"
-          >
-            Begin Exploring
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 14 14"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M1 7h12M8 2l5 5-5 5" />
-            </svg>
-          </Link>
-        </div>
-
-        {/* Notifications */}
-        <div className="rounded-2xl border border-brand-border/60 bg-brand-card p-6 sm:p-8 shadow-sm transition-shadow duration-200 hover:shadow-md">
-          <h2 className="font-display text-xl text-brand-text-primary">
-            Notifications
-          </h2>
-          {unreadCount > 0 ? (
-            <p className="mt-2 text-sm leading-relaxed text-brand-text-secondary">
-              You have{" "}
-              <span className="font-medium text-brand-btn-primary">{unreadCount}</span>{" "}
-              unread notification{unreadCount !== 1 ? "s" : ""}.
+        ) : (
+          <div className="mt-2 space-y-1.5">
+            <p className="text-sm font-medium text-brand-text-primary">
+              Nothing new today.
             </p>
-          ) : (
-            <div className="mt-2 space-y-1.5">
-              <p className="text-sm font-medium text-brand-text-primary">
-                Nothing new today.
-              </p>
-              <p className="text-sm leading-relaxed text-brand-text-secondary">
-                When something meaningful changes in one of your journeys,
-                you&apos;ll find it here.
-              </p>
-            </div>
-          )}
-        </div>
+            <p className="text-sm leading-relaxed text-brand-text-secondary">
+              When something meaningful changes in one of your journeys,
+              you&apos;ll find it here.
+            </p>
+          </div>
+        )}
       </div>
     </>
   );

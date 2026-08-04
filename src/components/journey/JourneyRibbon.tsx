@@ -4,20 +4,18 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import {
   MapPin,
   Leaf,
-  Clock,
   CalendarDays,
-  Compass,
   CircleCheck,
   Check,
+  Route,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type SetupStageId =
   | "destination"
   | "journey-feel"
-  | "journey-length"
-  | "travel-dates"
-  | "travel-style"
+  | "along-the-way"
+  | "when"
   | "review";
 
 export const SETUP_STAGES: {
@@ -27,31 +25,38 @@ export const SETUP_STAGES: {
 }[] = [
   { id: "destination", label: "Destination", Icon: MapPin },
   { id: "journey-feel", label: "Journey Feel", Icon: Leaf },
-  { id: "journey-length", label: "Journey Length", Icon: Clock },
-  { id: "travel-dates", label: "Travel Dates", Icon: CalendarDays },
-  { id: "travel-style", label: "Travel Style", Icon: Compass },
+  { id: "along-the-way", label: "Along the Way", Icon: Route },
+  { id: "when", label: "When", Icon: CalendarDays },
   { id: "review", label: "Review", Icon: CircleCheck },
 ];
 
-/** Matches MobileHeader sticky height (py-3 + row content). */
-const MOBILE_HEADER_OFFSET_PX = 56;
+/** Shorter path for Explore-a-Place intent. */
+export const EXPLORE_STAGES: typeof SETUP_STAGES = [
+  { id: "destination", label: "Destination", Icon: MapPin },
+  { id: "journey-feel", label: "Journey Feel", Icon: Leaf },
+  { id: "along-the-way", label: "Along the Way", Icon: Route },
+  { id: "review", label: "Review", Icon: CircleCheck },
+];
 
 interface JourneyRibbonProps {
   activeId: SetupStageId;
   completed: Record<SetupStageId, boolean>;
-  /** stickyTop + ribbonHeight + padding — used as section scroll-margin-top. */
-  onScrollMarginChange?: (px: number) => void;
+  /** Furthest stage the traveller may open (current + completed). */
+  reachableIds: SetupStageId[];
+  onSelect: (id: SetupStageId) => void;
+  stages?: typeof SETUP_STAGES;
 }
 
 export function JourneyRibbon({
   activeId,
   completed,
-  onScrollMarginChange,
+  reachableIds,
+  onSelect,
+  stages = SETUP_STAGES,
 }: JourneyRibbonProps) {
-  const navRef = useRef<HTMLElement>(null);
-
+  const reachable = new Set(reachableIds);
   const [checkVisible, setCheckVisible] = useState<Set<SetupStageId>>(
-    () => new Set(SETUP_STAGES.filter((s) => completed[s.id]).map((s) => s.id)),
+    () => new Set(stages.filter((s) => completed[s.id]).map((s) => s.id)),
   );
   const prevCompleted = useRef(completed);
   const didMount = useRef(false);
@@ -64,7 +69,7 @@ export function JourneyRibbon({
     }
 
     const fresh: SetupStageId[] = [];
-    for (const stage of SETUP_STAGES) {
+    for (const stage of stages) {
       if (completed[stage.id] && !prevCompleted.current[stage.id]) {
         fresh.push(stage.id);
       }
@@ -88,61 +93,26 @@ export function JourneyRibbon({
       });
     });
     return () => cancelAnimationFrame(frame);
-  }, [completed]);
-
-  useEffect(() => {
-    const nav = navRef.current;
-    if (!nav || !onScrollMarginChange) return;
-
-    const publish = () => {
-      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
-      const stickyTop = isDesktop ? 0 : MOBILE_HEADER_OFFSET_PX;
-      const height = Math.ceil(nav.getBoundingClientRect().height);
-      onScrollMarginChange(stickyTop + height + 16);
-    };
-
-    publish();
-    const observer = new ResizeObserver(publish);
-    observer.observe(nav);
-    window.addEventListener("resize", publish);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", publish);
-    };
-  }, [onScrollMarginChange]);
-
-  const scrollTo = (id: SetupStageId) => {
-    const el = document.getElementById(`setup-${id}`);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
+  }, [completed, stages]);
 
   return (
     <nav
-      ref={navRef}
       aria-label="Journey setup progress"
-      className={[
-        "sticky z-20 top-14 lg:top-0",
-        "border-b border-brand-border/25",
-        "bg-brand-bg/95 backdrop-blur-md",
-        "shadow-[0_1px_0_0_rgba(51,51,47,0.04)]",
-      ].join(" ")}
+      className="border-b border-brand-border/25 pb-1"
     >
       <ol
         className={[
           "flex w-full items-center",
-          // Mobile: scrollable row with comfortable gaps
-          "gap-3 overflow-x-auto py-3.5",
+          "gap-2 overflow-x-auto py-2",
           "scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-          // md+: single row, no wrap — connectors (flex-1) space stages evenly
           "md:gap-0 md:overflow-visible",
         ].join(" ")}
       >
-        {SETUP_STAGES.map((stage, index) => {
-          const isLast = index === SETUP_STAGES.length - 1;
+        {stages.map((stage, index) => {
+          const isLast = index === stages.length - 1;
           const isDone = completed[stage.id];
           const isCurrent = activeId === stage.id;
+          const canOpen = reachable.has(stage.id);
           const showCheck = isDone && checkVisible.has(stage.id);
 
           return (
@@ -150,13 +120,15 @@ export function JourneyRibbon({
               <li className="shrink-0">
                 <button
                   type="button"
-                  onClick={() => scrollTo(stage.id)}
+                  onClick={() => canOpen && onSelect(stage.id)}
+                  disabled={!canOpen}
                   aria-current={isCurrent ? "step" : undefined}
                   aria-label={`${stage.label}, ${isDone ? "completed" : isCurrent ? "current" : "upcoming"}`}
                   className={[
-                    "flex min-h-[44px] items-center gap-2.5 rounded-full px-2.5 py-1.5 sm:px-3",
+                    "flex min-h-[44px] items-center gap-2 rounded-full px-2 py-1.5 sm:gap-2.5 sm:px-2.5",
                     "transition-colors duration-300 ease-out",
                     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary",
+                    canOpen ? "cursor-pointer" : "cursor-not-allowed opacity-45",
                   ].join(" ")}
                 >
                   <span

@@ -3,6 +3,11 @@ import type { AiPipelineInput, AiStreamEvent } from "./types";
 import { getAiProvider } from "./client";
 import { getPrompt } from "./prompts/registry";
 import { ParsingError } from "./errors";
+import {
+  coerceComposedDayAiOutput,
+  coerceComposedJourneyAiOutput,
+} from "./coerce-composed-journey";
+import { coerceDiscoveryPlacesAiOutput } from "./coerce-discovery";
 
 /**
  * Standardized AI execution pipeline.
@@ -35,24 +40,41 @@ export async function executeAiPipeline<T>(input: AiPipelineInput): Promise<T> {
     else maxTokens = 16000;
   } else if (promptId === "DISCOVERY_PLACES") {
     const c = variables.count ? Number(variables.count) : 10;
-    maxTokens = c <= 5 ? 3500 : 5500;
+    maxTokens = c <= 5 ? 4500 : 7000;
   } else if (promptId === "JOURNEY_FROM_DISCOVERY") {
+    // Sonnet 5 tokenizer is ~30% denser; leave headroom for rich day narratives.
     const d = variables.duration ? Number(variables.duration) : 7;
-    if (d <= 5) maxTokens = 6000;
-    else if (d <= 10) maxTokens = 10000;
-    else maxTokens = 14000;
+    if (d <= 5) maxTokens = 8000;
+    else if (d <= 10) maxTokens = 14000;
+    else maxTokens = 16000;
   } else if (promptId === "REGENERATE_JOURNEY_DAY") {
     maxTokens = 3500;
   }
 
   // 4. Execute — P1#4: forward cancellation signal to the provider
-  const rawOutput = await provider.generateObject<T>(
+  let rawOutput: unknown = await provider.generateObject<T>(
     promptDef.systemPrompt,
     userPrompt,
     promptDef.schema,
     signal,
     { maxTokens }
   );
+
+  // 4b. Coerce known AI shape drift before strict validation
+  if (promptId === "DISCOVERY_PLACES") {
+    rawOutput = coerceDiscoveryPlacesAiOutput(rawOutput);
+  } else if (promptId === "JOURNEY_FROM_DISCOVERY") {
+    rawOutput = coerceComposedJourneyAiOutput(
+      rawOutput,
+      variables.destination ? String(variables.destination) : undefined,
+    );
+  } else if (promptId === "REGENERATE_JOURNEY_DAY") {
+    rawOutput = coerceComposedDayAiOutput(
+      rawOutput,
+      variables.dayNumber ? Number(variables.dayNumber) : 1,
+      variables.destination ? String(variables.destination) : undefined,
+    );
+  }
 
   // 5. Strict Output Validation
   const validation = promptDef.schema.safeParse(rawOutput);

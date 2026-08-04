@@ -1,49 +1,71 @@
 "use client";
 
-import { OptionCard } from "@/components/onboarding/primitives";
-import { PACES } from "@/components/onboarding/onboarding.config";
+import { ChoiceCard } from "@/components/journey/ChoiceCard";
+import {
+  JOURNEY_FEELINGS,
+  MAX_JOURNEY_FEELINGS,
+} from "@/lib/journey/feelings";
 import type { useJourneyBuilder } from "@/hooks/useJourneyBuilder";
 
-// Map onboarding UI IDs to Prisma enums
-const PACE_MAP: Record<string, "ONE_PLACE_DEEPLY" | "SLOW_UNHURRIED" | "GENTLY_BALANCED"> = {
-  "very-slow": "ONE_PLACE_DEEPLY",
-  "slow": "SLOW_UNHURRIED",
-  "balanced": "GENTLY_BALANCED",
-};
-
-const REVERSE_PACE_MAP = {
-  ONE_PLACE_DEEPLY: "very-slow",
-  SLOW_UNHURRIED: "slow",
-  GENTLY_BALANCED: "balanced",
-};
-
-export function StepStyle({ controller }: { controller: ReturnType<typeof useJourneyBuilder> }) {
+/**
+ * Journey Feel — client App Overview list only, ChoiceCard styling.
+ * Pace is defaulted quietly for AI (not a separate setup step).
+ */
+export function StepStyle({
+  controller,
+}: {
+  controller: ReturnType<typeof useJourneyBuilder>;
+}) {
   const { data, update } = controller;
+  const selectedFeelings = data.feelings ?? [];
 
-  const currentUiPace = data.pace ? REVERSE_PACE_MAP[data.pace] : null;
+  const toggleFeeling = (id: string) => {
+    const next = selectedFeelings.includes(id)
+      ? selectedFeelings.filter((f) => f !== id)
+      : selectedFeelings.length >= MAX_JOURNEY_FEELINGS
+        ? selectedFeelings
+        : [...selectedFeelings, id];
+    update("feelings", next);
+
+    // Ensure AI always has a pace even though this step is feelings-only.
+    if (!data.pace) {
+      update("pace", "GENTLY_BALANCED");
+    }
+  };
 
   return (
     <section
       id="setup-journey-feel"
-      className="scroll-mt-[var(--setup-scroll-margin,7.5rem)] space-y-5"
+      className="space-y-5"
+      aria-labelledby="setup-feel-title"
     >
-      <h2 className="font-display text-2xl font-light tracking-tight text-brand-text-primary sm:text-[1.75rem]">
-        How would you like this journey to feel?
-      </h2>
+      <div>
+        <h2
+          id="setup-feel-title"
+          className="font-display text-2xl font-light tracking-tight text-brand-text-primary sm:text-[1.75rem]"
+        >
+          How would you like this journey to feel?
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-brand-text-secondary">
+          Choose up to {MAX_JOURNEY_FEELINGS}. This shapes how Discovery finds
+          places worth lingering with.
+        </p>
+      </div>
 
       <div
-        role="radiogroup"
-        aria-label="Journey feel"
-        className="grid gap-3 sm:grid-cols-1"
+        role="group"
+        aria-label="Journey feelings"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
       >
-        {PACES.map((option, index) => (
-          <OptionCard
-            key={option.id}
-            option={option}
-            role="radio"
-            index={index}
-            selected={currentUiPace === option.id}
-            onToggle={() => update("pace", PACE_MAP[option.id])}
+        {JOURNEY_FEELINGS.map((feeling) => (
+          <ChoiceCard
+            key={feeling.id}
+            multi
+            label={feeling.label}
+            description={feeling.description}
+            Icon={feeling.Icon}
+            selected={selectedFeelings.includes(feeling.id)}
+            onSelect={() => toggleFeeling(feeling.id)}
           />
         ))}
       </div>

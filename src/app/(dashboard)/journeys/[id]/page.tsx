@@ -14,8 +14,13 @@ import { parseComposedJourney } from "@/lib/utils/composed-journey";
 import {
   destinationDisplayName,
   parseDiscoveryState,
+  buildDestinationIntroduction,
 } from "@/components/discovery/discovery-data";
 import { getWishlistKeysForJourney } from "@/actions/place-actions";
+import { loadJourneyAccessInfo } from "@/lib/journey/load-access";
+import { buildMapsEmbedUrl } from "@/components/journey/JourneyRouteMap";
+import { getCachedSession } from "@/lib/auth/session-cache";
+import { parseBuilderMeta } from "@/lib/journey/trip-shape";
 
 export default async function JourneyDetailPage({
   params,
@@ -38,15 +43,31 @@ export default async function JourneyDetailPage({
       ? (journey.metadata as Record<string, unknown>)
       : {};
 
+  const destination = destinationDisplayName(journey.originQuery);
+  const countryName =
+    journey.primaryCountry?.trim() ||
+    journey.originQuery?.split(",").map((p) => p.trim()).filter(Boolean).at(-1) ||
+    destination;
+
+  const composed = parseComposedJourney(journey.metadata, {
+    fallbackCountry: countryName,
+  });
+
+  const displayDurationDays =
+    composed && composed.days.length > 0
+      ? composed.days.length
+      : journey.durationDays;
+
   const normalizedDuration = formatJourneyDuration(
-    journey.durationDays,
+    displayDurationDays,
     journey.startDate,
     journey.endDate,
   );
 
   const normalizedDate = formatJourneyDate(journey.createdAt);
 
-  const composed = parseComposedJourney(journey.metadata);
+  const countryBlurb = buildDestinationIntroduction(countryName).culturalIdentity;
+
   const discovery = parseDiscoveryState(journey.metadata);
   const discoveryPlaces =
     discovery?.places.filter((p) => discovery.journeyPlaceIds.includes(p.id)) ??
@@ -74,8 +95,20 @@ export default async function JourneyDetailPage({
     budget: journey.budget,
   });
 
-  const destination = destinationDisplayName(journey.originQuery);
   const initialEditMode = edit === "1" || edit === "true";
+
+  const session = await getCachedSession();
+  const accessInfo =
+    composed && session?.user?.id
+      ? await loadJourneyAccessInfo(journey.id, session.user.id)
+      : null;
+
+  const tripShape = parseBuilderMeta(journey.metadata).tripShape;
+  const mapQuery =
+    tripShape.startPoint?.name ||
+    composed?.days.find((d) => d.city)?.city ||
+    destination;
+  const mapsEmbedUrl = buildMapsEmbedUrl(mapQuery);
 
   return (
     <>
@@ -84,6 +117,8 @@ export default async function JourneyDetailPage({
         duration={normalizedDuration}
         status={journey.status}
         createdDate={normalizedDate}
+        country={countryName}
+        countryBlurb={countryBlurb}
       />
 
       <JourneySummary
@@ -103,6 +138,8 @@ export default async function JourneyDetailPage({
           journeyId={journey.id}
           initialWishlistIds={initialWishlistIds}
           initialEditMode={initialEditMode}
+          mapsEmbedUrl={mapsEmbedUrl}
+          accessInfo={accessInfo}
         />
       ) : (
         <JourneyTimeline stops={journey.stops || []} />

@@ -109,7 +109,7 @@ export function JourneyComposeView({ journeyId }: Props) {
       />
 
       <p className="mb-6 text-[0.65rem] font-medium uppercase tracking-[0.28em] text-brand-text-secondary/80">
-        Journey Generation
+        Preparing your journey
       </p>
 
       <h1 className="font-display text-3xl leading-snug text-brand-text-primary transition-opacity duration-500 sm:text-4xl">
@@ -117,8 +117,8 @@ export function JourneyComposeView({ journeyId }: Props) {
       </h1>
 
       <p className="mt-6 max-w-md text-sm leading-relaxed text-brand-text-secondary">
-        Your selected places are being shaped into quiet days — morning, afternoon,
-        and evening — with room to breathe.
+        Your selected places are being shaped into unhurried days — with space
+        between them, and room to breathe.
       </p>
 
       <div className="mt-12 flex flex-col items-center gap-3">

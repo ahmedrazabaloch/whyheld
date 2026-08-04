@@ -7,11 +7,11 @@ export function StepDestination({ controller }: { controller: ReturnType<typeof 
   const { data, update } = controller;
 
   return (
-    <section
-      id="setup-destination"
-      className="scroll-mt-[var(--setup-scroll-margin,7.5rem)] space-y-5"
-    >
-      <h2 className="font-display text-2xl font-light tracking-tight text-brand-text-primary sm:text-[1.75rem]">
+    <section id="setup-destination" className="space-y-5" aria-labelledby="setup-destination-title">
+      <h2
+        id="setup-destination-title"
+        className="font-display text-2xl font-light tracking-tight text-brand-text-primary sm:text-[1.75rem]"
+      >
         Where are you feeling called?
       </h2>
 

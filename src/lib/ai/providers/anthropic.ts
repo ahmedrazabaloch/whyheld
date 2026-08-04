@@ -3,12 +3,43 @@ import { z } from "zod";
 import type { AiProvider, AiStreamEvent, AiUsage } from "../types";
 import { ParsingError, ProviderUnavailableError, RateLimitError } from "../errors";
 import { AI_CONFIG } from "../config";
+import { parseAiJson } from "../parse-json";
 
 // API key presence is validated by client.ts before this module is used.
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
   maxRetries: 0, // Disable SDK auto-retries. AnthropicProvider manual loop is the sole owner.
 });
+
+/**
+ * Claude Sonnet 5+ enables adaptive thinking by default. Thinking tokens count
+ * toward max_tokens — without disabling, long compose calls can burn the entire
+ * budget on thinking and return no text (stop_reason: max_tokens).
+ */
+function thinkingParamForModel(
+  model: string,
+): { thinking: Anthropic.ThinkingConfigDisabled } | Record<string, never> {
+  const id = model.toLowerCase();
+  const needsExplicitOff =
+    id.includes("sonnet-5") ||
+    id.includes("opus-5") ||
+    id.includes("claude-sonnet-5") ||
+    id.includes("claude-opus-5");
+
+  if (!needsExplicitOff) return {};
+  return { thinking: { type: "disabled" } };
+}
+
+function modelSupportsTemperature(model: string): boolean {
+  const id = model.toLowerCase();
+  // Sonnet 5 / Opus 5 reject non-default sampling params with 400.
+  return !(
+    id.includes("sonnet-5") ||
+    id.includes("opus-5") ||
+    id.includes("fable-5") ||
+    id.includes("mythos")
+  );
+}
 
 export class AnthropicProvider implements AiProvider {
   public readonly id = "anthropic";
@@ -60,10 +91,10 @@ export class AnthropicProvider implements AiProvider {
       if (error.status && error.status >= 500) {
         throw new ProviderUnavailableError("The AI service is temporarily unavailable.");
       }
-      
+
       throw new ProviderUnavailableError("Something went wrong while generating your journey.");
     }
-    
+
     if (error instanceof Error && error.name === "AbortError") {
       throw new ProviderUnavailableError("The AI took too long to respond. Please try again.");
     }
@@ -106,6 +137,33 @@ export class AnthropicProvider implements AiProvider {
     return false;
   }
 
+  private summarizeResponseForLog(response: Anthropic.Message): string {
+    const slim = {
+      ...response,
+      content: response.content.map((block) => {
+        if (block.type === "thinking") {
+          return {
+            type: "thinking",
+            thinking: `[omitted ${block.thinking?.length ?? 0} chars]`,
+            signature: block.signature ? "[omitted]" : undefined,
+          };
+        }
+        if (block.type === "text") {
+          const text = block.text;
+          return {
+            type: "text",
+            text:
+              text.length > 2000
+                ? `${text.slice(0, 2000)}… [truncated ${text.length} chars]`
+                : text,
+          };
+        }
+        return { type: block.type };
+      }),
+    };
+    return JSON.stringify(slim, null, 2);
+  }
+
   // -------------------------------------------------------------------------
   // generateObject  (P2#9: uses strictTemperature)
   // -------------------------------------------------------------------------
@@ -134,13 +192,17 @@ export class AnthropicProvider implements AiProvider {
         : abortController.signal;
 
       try {
-        const supportsTemperature = !model.toLowerCase().includes("sonnet-5");
+        const maxTokens =
+          options?.maxTokens ?? AI_CONFIG.generation.maxTokens.journeyPlan;
 
         const response = await client.messages.create(
           {
             model,
-            max_tokens: options?.maxTokens ?? AI_CONFIG.generation.maxTokens.journeyPlan,
-            ...(supportsTemperature ? { temperature: AI_CONFIG.generation.strictTemperature } : {}),
+            max_tokens: maxTokens,
+            ...(modelSupportsTemperature(model)
+              ? { temperature: AI_CONFIG.generation.strictTemperature }
+              : {}),
+            ...thinkingParamForModel(model),
             system,
             messages: [{ role: "user", content: prompt }],
           },
@@ -149,10 +211,9 @@ export class AnthropicProvider implements AiProvider {
 
         clearTimeout(timeout);
 
-        // Always log the full provider payload before any content assumptions.
         console.info(
           "[AnthropicProvider] Raw messages.create response:",
-          JSON.stringify(response, null, 2),
+          this.summarizeResponseForLog(response),
         );
 
         const contentBlocks = Array.isArray(response.content) ? response.content : [];
@@ -163,11 +224,19 @@ export class AnthropicProvider implements AiProvider {
 
         if (!textBlock) {
           const stopReason = response.stop_reason ?? "unknown";
+          const thinkingOnly =
+            blockTypes.length > 0 &&
+            blockTypes.every(
+              (t) => t === "thinking" || t === "redacted_thinking",
+            );
           throw new ParsingError(
-            `Unexpected non-text response from Anthropic. ` +
-              `Expected a content block with type "text". ` +
-              `Received block types: [${blockTypes.map((t) => `"${t}"`).join(", ") || "none"}]. ` +
-              `stop_reason: ${stopReason}.`,
+            thinkingOnly && stopReason === "max_tokens"
+              ? `AI used its full token budget on thinking and returned no itinerary text. ` +
+                  `Thinking should be disabled for structured compose calls.`
+              : `Unexpected non-text response from Anthropic. ` +
+                  `Expected a content block with type "text". ` +
+                  `Received block types: [${blockTypes.map((t) => `"${t}"`).join(", ") || "none"}]. ` +
+                  `stop_reason: ${stopReason}.`,
             response,
           );
         }
@@ -176,19 +245,9 @@ export class AnthropicProvider implements AiProvider {
 
         let parsed: unknown;
         try {
-          parsed = JSON.parse(rawText);
+          parsed = parseAiJson(rawText);
         } catch {
-          // Attempt to extract JSON if there's markdown wrapping
-          const jsonMatch = rawText.match(/```json\s*([\s\S]*?)\s*```/);
-          if (jsonMatch) {
-            try {
-              parsed = JSON.parse(jsonMatch[1]);
-            } catch {
-              throw new ParsingError("Invalid JSON in Markdown block", rawText);
-            }
-          } else {
-            throw new ParsingError("Could not parse JSON from response", rawText);
-          }
+          throw new ParsingError("Could not parse JSON from response", rawText);
         }
 
         return parsed as T;
@@ -245,15 +304,19 @@ export class AnthropicProvider implements AiProvider {
         : activeAbortController.signal;
 
       try {
-        const supportsTemperature = !model.toLowerCase().includes("sonnet-5");
+        const maxTokens =
+          options?.maxTokens ?? AI_CONFIG.generation.maxTokens.journeyPlan;
 
         // Awaiting create() establishes the HTTP connection (this is the retryable boundary).
         // P0#2: system prompt is passed as-is — the provider does NOT append NDJSON instructions.
         stream = await client.messages.create(
           {
             model,
-            max_tokens: options?.maxTokens ?? AI_CONFIG.generation.maxTokens.journeyPlan,
-            ...(supportsTemperature ? { temperature: AI_CONFIG.generation.strictTemperature } : {}),
+            max_tokens: maxTokens,
+            ...(modelSupportsTemperature(model)
+              ? { temperature: AI_CONFIG.generation.strictTemperature }
+              : {}),
+            ...thinkingParamForModel(model),
             system,
             messages: [{ role: "user", content: prompt }],
             stream: true,

@@ -33,10 +33,22 @@ function NavIconJourneys() {
   );
 }
 
+function NavIconExplore() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="9" cy="9" r="6.5" />
+      <path d="M9 2.5v13" />
+      <path d="M2.5 9h13" />
+      <path d="M4.2 5.2c1.6 1 3.2 1.5 4.8 1.5s3.2-.5 4.8-1.5" />
+      <path d="M4.2 12.8c1.6-1 3.2-1.5 4.8-1.5s3.2.5 4.8 1.5" />
+    </svg>
+  );
+}
+
 function NavIconWishlist() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M13.5 2.5H4.5a1 1 0 0 0-1 1v12l5.5-3 5.5 3v-12a1 1 0 0 0-1-1z" />
+      <path d="M9 15.25s-5.5-3.35-5.5-7.1A3.15 3.15 0 0 1 9 5.35a3.15 3.15 0 0 1 5.5 2.8c0 3.75-5.5 7.1-5.5 7.1z" />
     </svg>
   );
 }
@@ -64,7 +76,8 @@ function NavIconSettings() {
 export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
   { label: "Dashboard", href: "/dashboard", Icon: NavIconDashboard },
   { label: "Journeys", href: "/journeys", Icon: NavIconJourneys },
-  { label: "Wishlist", href: "/saved", Icon: NavIconWishlist },
+  { label: "Explore", href: "/explore", Icon: NavIconExplore },
+  { label: "Wishlist", href: "/wishlist", Icon: NavIconWishlist },
   { label: "Billing", href: "/billing", Icon: NavIconBilling },
   { label: "Settings", href: "/settings", Icon: NavIconSettings },
 ];
