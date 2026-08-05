@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -24,7 +25,6 @@ import {
 } from "./JourneyRibbon";
 
 const STEP_BRIDGES: Partial<Record<SetupStageId, string>> = {
-  destination: "Every place has its own rhythm.",
   "journey-feel": "Some paths ask for a beginning and an end.",
   "along-the-way": "Time changes everything.",
   when: "Some journeys unfold slowly.",
@@ -72,7 +72,12 @@ export function JourneyBuilder({
       !!data.durationDays || (!!data.startDate && !!data.endDate);
     const destinationOk = !!data.originQuery && data.originQuery.length > 2;
     const feelOk = (data.feelings?.length ?? 0) > 0;
-    const alongOk = true; // optional step
+    const tripShape = data.tripShape;
+    const alongOk = !!(
+      tripShape?.startPoint?.name ||
+      tripShape?.endPoint?.name ||
+      (tripShape?.mustVisit?.length ?? 0) > 0
+    );
 
     if (isExplore) {
       const canBegin = destinationOk && feelOk;
@@ -207,37 +212,66 @@ export function JourneyBuilder({
   const feelingLine = feelingLabels(data.feelings).join(", ");
 
   return (
-    <div className="mx-auto w-full max-w-3xl pb-16">
-      <header className="mb-8 flex items-start justify-between gap-6 sm:mb-10">
-        <div className="max-w-xl space-y-4">
-          <h1 className="font-display text-3xl font-light tracking-tight text-brand-text-primary sm:text-4xl">
-            {isExplore ? "Explore a Place" : "Begin a New Journey"}
-          </h1>
-          <div className="space-y-1 text-base leading-relaxed text-brand-text-secondary sm:text-lg">
-            {isExplore ? (
-              <>
-                <p>Explore with intention.</p>
-                <p>Enter a town, region, or route that has been calling.</p>
-              </>
-            ) : (
-              <>
-                <p>Every meaningful journey begins with a place.</p>
-                <p>Tell us where you&apos;re feeling called.</p>
-              </>
-            )}
-          </div>
-          {feelingLine ? (
-            <p className="text-xs tracking-wide text-brand-text-secondary/80">
-              Feeling — {feelingLine}
-            </p>
-          ) : null}
-        </div>
-        <p
-          className="shrink-0 pt-2 text-xs text-brand-text-secondary"
-          aria-live="polite"
+    <div className="w-full pb-16">
+      <header className="relative mb-6 min-h-[10.5rem] overflow-hidden sm:mb-8 sm:min-h-[12.5rem]">
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 z-0 hidden w-[52%] sm:block"
+          aria-hidden
         >
-          {isSaving ? "Saving…" : ""}
-        </p>
+          <div
+            className="relative h-full min-h-[11rem] w-full"
+            style={{
+              maskImage:
+                "linear-gradient(to right, transparent 0%, black 18%, black 92%, transparent 100%), linear-gradient(to bottom, transparent 0%, black 6%, black 94%, transparent 100%)",
+              WebkitMaskImage:
+                "linear-gradient(to right, transparent 0%, black 18%, black 92%, transparent 100%), linear-gradient(to bottom, transparent 0%, black 6%, black 94%, transparent 100%)",
+              maskComposite: "intersect",
+              WebkitMaskComposite: "source-in",
+            }}
+          >
+            <div className="absolute inset-x-0 top-[-18%] h-[130%]">
+              <Image
+                src="/illustrations/landscape.png"
+                alt=""
+                fill
+                className="object-contain object-right"
+                sizes="(min-width: 640px) 42vw, 0px"
+                priority
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 flex items-start justify-between gap-6">
+          <div className="max-w-xl space-y-3.5 pb-2 sm:pb-4">
+            <p className="flex items-center gap-2.5 text-[0.68rem] font-medium uppercase tracking-[0.22em] text-brand-text-muted">
+              <span
+                className="h-px w-4 shrink-0 bg-brand-text-muted/70"
+                aria-hidden
+              />
+              {isExplore ? "Explore" : "New Journey"}
+            </p>
+            <h1 className="font-display text-3xl font-medium tracking-tight text-brand-text-primary sm:text-[2.5rem] sm:leading-[1.15]">
+              {isExplore ? "Explore a Place" : "Begin a New Journey"}
+            </h1>
+            <p className="max-w-md text-base leading-relaxed text-brand-text-secondary sm:text-[1.05rem]">
+              {isExplore
+                ? "Explore with intention. Enter a town, region, or route that has been calling."
+                : "Every meaningful journey begins with a place. Tell us where you\u2019re feeling called."}
+            </p>
+            {feelingLine ? (
+              <p className="text-xs tracking-wide text-brand-text-secondary/80">
+                Feeling — {feelingLine}
+              </p>
+            ) : null}
+          </div>
+          <p
+            className="relative z-10 shrink-0 pt-1 text-xs text-brand-text-secondary"
+            aria-live="polite"
+          >
+            {isSaving ? "Saving…" : ""}
+          </p>
+        </div>
       </header>
 
       <JourneyRibbon
@@ -308,6 +342,9 @@ export function JourneyBuilder({
                     className={buttonStyles.primary}
                   >
                     Begin Exploring
+                    <span aria-hidden className="text-base leading-none">
+                      →
+                    </span>
                   </button>
                 )
               ) : (
@@ -318,6 +355,9 @@ export function JourneyBuilder({
                   className={buttonStyles.primary}
                 >
                   Continue
+                  <span aria-hidden className="text-base leading-none">
+                    →
+                  </span>
                 </button>
               )}
             </div>

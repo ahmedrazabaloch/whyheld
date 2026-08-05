@@ -18,6 +18,8 @@ interface LocationAutocompleteProps {
   inputClassName?: string;
   disabled?: boolean;
   showDetectButton?: boolean;
+  /** Leading magnifying-glass icon (e.g. destination search). */
+  showSearchIcon?: boolean;
 }
 
 function debounce<T extends (...args: any[]) => any>(fn: T, delay: number) {
@@ -39,6 +41,7 @@ export function LocationAutocomplete({
   inputClassName = "",
   disabled = false,
   showDetectButton = true,
+  showSearchIcon = false,
 }: LocationAutocompleteProps) {
   const [query, setQuery] = useState(value);
   const [predictions, setPredictions] = useState<AutocompletePrediction[]>([]);
@@ -267,9 +270,28 @@ export function LocationAutocomplete({
     <div className={`relative flex flex-col gap-2 ${className}`} ref={wrapperRef}>
       {label && <label className={formStyles.label}>{label}</label>}
       <div className="relative">
+        {showSearchIcon ? (
+          <span
+            className="pointer-events-none absolute left-3.5 top-1/2 z-10 -translate-y-1/2 text-brand-text-muted"
+            aria-hidden
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              className="h-4 w-4"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+          </span>
+        ) : null}
         <input
           type="text"
-          className={`${formStyles.input} pr-11 ${inputClassName}`}
+          className={`${formStyles.input} ${showSearchIcon ? "pl-11" : ""} ${showDetectButton || isLoading || isDetecting ? "pr-11" : ""} ${inputClassName}`}
           placeholder={placeholder}
           value={query}
           onChange={handleInputChange}

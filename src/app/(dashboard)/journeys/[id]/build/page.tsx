@@ -28,12 +28,10 @@ export default async function JourneyBuilderPage({ params }: { params: Promise<{
   const draft = response.data;
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
       <JourneyBuilder
         draft={draft}
         userCredits={user?.creditWallet?.balance ?? 0}
         userPlan={user?.plan ?? "FREE"}
       />
-    </div>
   );
 }

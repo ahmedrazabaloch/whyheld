@@ -8,7 +8,7 @@ export default function ProfileLoading() {
         <div className="h-3.5 w-72 rounded-full bg-brand-border/20" />
       </div>
 
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="space-y-6">
         {/* Personal Details card */}
         <div className="rounded-2xl border border-brand-border/20 bg-brand-card p-6 sm:p-8">
           <div className="h-5 w-36 rounded-lg bg-brand-border/30 mb-8" />

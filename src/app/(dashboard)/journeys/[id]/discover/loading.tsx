@@ -3,7 +3,7 @@ import { DiscoveryPlaceSkeleton } from "@/components/discovery/DiscoveryPlaceCar
 export default function DiscoveryLoading() {
   return (
     <div
-      className="mx-auto w-full max-w-3xl animate-pulse"
+      className="w-full animate-pulse"
       aria-busy="true"
       aria-label="Opening discovery"
     >

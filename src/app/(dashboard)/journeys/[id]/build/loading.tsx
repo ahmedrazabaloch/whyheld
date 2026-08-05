@@ -1,6 +1,6 @@
 export default function BuilderLoading() {
   return (
-    <div className="mx-auto w-full max-w-3xl animate-pulse" aria-label="Loading workspace…" aria-busy="true">
+    <div className="w-full animate-pulse" aria-label="Loading workspace…" aria-busy="true">
       <div className="flex items-center justify-between mb-8">
         <div className="space-y-3 pb-6">
           <div className="h-3 w-20 rounded-full bg-brand-border/30" />

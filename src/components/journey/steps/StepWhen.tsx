@@ -8,9 +8,9 @@ import type { useJourneyBuilder } from "@/hooks/useJourneyBuilder";
 
 const DURATION_CHIPS = [3, 5, 7, 10, 14, 21, 30] as const;
 
-type TimingMode = "days" | "dates";
-
-function isPresetDuration(days: number | null): days is (typeof DURATION_CHIPS)[number] {
+function isPresetDuration(
+  days: number | null,
+): days is (typeof DURATION_CHIPS)[number] {
   return days !== null && (DURATION_CHIPS as readonly number[]).includes(days);
 }
 
@@ -31,7 +31,8 @@ function seasonalNote(start: Date, end: Date): string {
 }
 
 /**
- * Single setup step: choose either a day count or a date range (not both).
+ * Timing step: day count and date range shown together.
+ * Choosing one clears the other so the journey has a single timing source.
  */
 export function StepWhen({
   controller,
@@ -40,14 +41,6 @@ export function StepWhen({
 }) {
   const { data, update } = controller;
 
-  const inferredMode: TimingMode =
-    data.startDate || data.endDate
-      ? "dates"
-      : data.durationDays
-        ? "days"
-        : "days";
-
-  const [mode, setMode] = useState<TimingMode>(inferredMode);
   const [customDays, setCustomDays] = useState(
     () => data.durationDays !== null && !isPresetDuration(data.durationDays),
   );
@@ -62,26 +55,23 @@ export function StepWhen({
     return seasonalNote(data.startDate, data.endDate);
   }, [data.startDate, data.endDate]);
 
-  const chooseDaysMode = () => {
-    setMode("days");
+  const clearDates = () => {
     if (data.startDate !== null) update("startDate", null);
     if (data.endDate !== null) update("endDate", null);
   };
 
-  const chooseDatesMode = () => {
-    setMode("dates");
-    setCustomDays(false);
+  const clearDuration = () => {
     if (data.durationDays !== null) update("durationDays", null);
   };
 
   const selectPreset = (days: number) => {
-    chooseDaysMode();
+    clearDates();
     setCustomDays(false);
     update("durationDays", days);
   };
 
   const selectCustom = () => {
-    chooseDaysMode();
+    clearDates();
     setCustomDays(true);
     if (isPresetDuration(data.durationDays)) {
       update("durationDays", null);
@@ -89,7 +79,11 @@ export function StepWhen({
   };
 
   return (
-    <section id="setup-when" className="space-y-6" aria-labelledby="setup-when-title">
+    <section
+      id="setup-when"
+      className="space-y-6"
+      aria-labelledby="setup-when-title"
+    >
       <div className="space-y-2">
         <h2
           id="setup-when-title"
@@ -102,49 +96,11 @@ export function StepWhen({
         </p>
       </div>
 
-      {/* Single quiet line: days · or · specific dates */}
-      <div
-        role="radiogroup"
-        aria-label="How to set timing"
-        className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm"
-      >
-        <button
-          type="button"
-          role="radio"
-          aria-checked={mode === "days"}
-          onClick={chooseDaysMode}
-          className={[
-            "font-medium underline-offset-4 transition-colors",
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary",
-            mode === "days"
-              ? "text-brand-text-primary underline decoration-brand-btn-primary/60"
-              : "text-brand-text-secondary hover:text-brand-text-primary",
-          ].join(" ")}
-        >
-          Number of days
-        </button>
-        <span className="text-brand-text-secondary/55" aria-hidden>
-          or
-        </span>
-        <button
-          type="button"
-          role="radio"
-          aria-checked={mode === "dates"}
-          onClick={chooseDatesMode}
-          className={[
-            "font-medium underline-offset-4 transition-colors",
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary",
-            mode === "dates"
-              ? "text-brand-text-primary underline decoration-brand-btn-primary/60"
-              : "text-brand-text-secondary hover:text-brand-text-primary",
-          ].join(" ")}
-        >
-          specific dates
-        </button>
-      </div>
+      <div className="grid gap-8 md:grid-cols-[1fr_auto_1fr] md:gap-0">
+        {/* Number of days */}
+        <div className="space-y-4 md:pr-8 lg:pr-10">
+          <h3 className={formStyles.label}>Number of days</h3>
 
-      {mode === "days" ? (
-        <div className="space-y-4">
           <div
             role="radiogroup"
             aria-label="Journey length in days"
@@ -203,6 +159,7 @@ export function StepWhen({
                 placeholder="e.g. 9"
                 value={data.durationDays ?? ""}
                 onChange={(e) => {
+                  clearDates();
                   const val = parseInt(e.target.value, 10);
                   update("durationDays", val > 0 ? val : null);
                 }}
@@ -222,21 +179,39 @@ export function StepWhen({
             </p>
           )}
         </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="max-w-sm">
-            <DateRangePicker
-              startDate={data.startDate}
-              endDate={data.endDate}
-              onUpdate={(start, end) => {
-                if (start !== data.startDate) update("startDate", start);
-                if (end !== data.endDate) update("endDate", end);
-                if ((start || end) && data.durationDays !== null) {
-                  update("durationDays", null);
-                }
-              }}
-            />
-          </div>
+
+        {/* Divider */}
+        <div
+          className="hidden w-px self-stretch bg-brand-border/80 md:block"
+          aria-hidden
+        />
+        <div
+          className="flex items-center gap-3 md:hidden"
+          aria-hidden
+        >
+          <span className="h-px flex-1 bg-brand-border/80" />
+          <span className="text-[0.65rem] font-medium uppercase tracking-[0.18em] text-brand-text-muted">
+            or
+          </span>
+          <span className="h-px flex-1 bg-brand-border/80" />
+        </div>
+
+        {/* Specific dates */}
+        <div className="space-y-4 md:pl-8 lg:pl-10">
+          <h3 className={formStyles.label}>Specific dates</h3>
+
+          <DateRangePicker
+            startDate={data.startDate}
+            endDate={data.endDate}
+            onUpdate={(start, end) => {
+              if (start !== data.startDate) update("startDate", start);
+              if (end !== data.endDate) update("endDate", end);
+              if (start || end) {
+                clearDuration();
+                setCustomDays(false);
+              }
+            }}
+          />
 
           {rangeDays ? (
             <p className="text-sm leading-relaxed text-brand-text-secondary">
@@ -245,7 +220,8 @@ export function StepWhen({
             </p>
           ) : (
             <p className="text-sm leading-relaxed text-brand-text-secondary">
-              Pick a start and end — we&apos;ll add a seasonal note once both are set.
+              Pick a start and end — we&apos;ll add a seasonal note once both
+              are set.
             </p>
           )}
 
@@ -260,7 +236,7 @@ export function StepWhen({
             </aside>
           ) : null}
         </div>
-      )}
+      </div>
     </section>
   );
 }

@@ -459,7 +459,7 @@ export function DiscoveryView({
   ].join(" ");
 
   return (
-    <div className="mx-auto w-full max-w-6xl pb-16">
+    <div className="w-full pb-16">
       <div className="flex flex-col gap-8 lg:flex-row">
         {/* Left rail — destination hero + journey board */}
         <aside className="flex w-full shrink-0 flex-col gap-6 lg:w-[340px]">

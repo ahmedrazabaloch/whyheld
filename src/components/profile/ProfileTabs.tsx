@@ -29,7 +29,7 @@ export function ProfileTabs({
   const [activeTab, setActiveTab] = useState<TabType>("personal");
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 pb-24">
+    <div className="mx-auto max-w-none space-y-8 pb-24">
       <div className="flex gap-2 overflow-x-auto border-b border-brand-border/80 no-scrollbar sm:gap-6">
         <button
           type="button"

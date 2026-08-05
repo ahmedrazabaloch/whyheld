@@ -3,11 +3,11 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import {
   MapPin,
-  Leaf,
+  SlidersHorizontal,
   CalendarDays,
   CircleCheck,
   Check,
-  Route,
+  Mountain,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -24,8 +24,8 @@ export const SETUP_STAGES: {
   Icon: LucideIcon;
 }[] = [
   { id: "destination", label: "Destination", Icon: MapPin },
-  { id: "journey-feel", label: "Journey Feel", Icon: Leaf },
-  { id: "along-the-way", label: "Along the Way", Icon: Route },
+  { id: "journey-feel", label: "Journey Feel", Icon: SlidersHorizontal },
+  { id: "along-the-way", label: "Along the Way", Icon: Mountain },
   { id: "when", label: "When", Icon: CalendarDays },
   { id: "review", label: "Review", Icon: CircleCheck },
 ];
@@ -33,8 +33,8 @@ export const SETUP_STAGES: {
 /** Shorter path for Explore-a-Place intent. */
 export const EXPLORE_STAGES: typeof SETUP_STAGES = [
   { id: "destination", label: "Destination", Icon: MapPin },
-  { id: "journey-feel", label: "Journey Feel", Icon: Leaf },
-  { id: "along-the-way", label: "Along the Way", Icon: Route },
+  { id: "journey-feel", label: "Journey Feel", Icon: SlidersHorizontal },
+  { id: "along-the-way", label: "Along the Way", Icon: Mountain },
   { id: "review", label: "Review", Icon: CircleCheck },
 ];
 
@@ -96,14 +96,11 @@ export function JourneyRibbon({
   }, [completed, stages]);
 
   return (
-    <nav
-      aria-label="Journey setup progress"
-      className="border-b border-brand-border/25 pb-1"
-    >
+    <nav aria-label="Journey setup progress" className="pb-1">
       <ol
         className={[
           "flex w-full items-center",
-          "gap-2 overflow-x-auto py-2",
+          "gap-1 overflow-x-auto py-2",
           "scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
           "md:gap-0 md:overflow-visible",
         ].join(" ")}
@@ -114,6 +111,7 @@ export function JourneyRibbon({
           const isCurrent = activeId === stage.id;
           const canOpen = reachable.has(stage.id);
           const showCheck = isDone && checkVisible.has(stage.id);
+          const connectorDone = isDone || isCurrent;
 
           return (
             <Fragment key={stage.id}>
@@ -125,35 +123,35 @@ export function JourneyRibbon({
                   aria-current={isCurrent ? "step" : undefined}
                   aria-label={`${stage.label}, ${isDone ? "completed" : isCurrent ? "current" : "upcoming"}`}
                   className={[
-                    "flex min-h-[44px] items-center gap-2 rounded-full px-2 py-1.5 sm:gap-2.5 sm:px-2.5",
-                    "transition-colors duration-300 ease-out",
+                    "flex min-h-[44px] items-center gap-2.5 rounded-full px-1.5 py-1.5 sm:gap-3 sm:px-2",
+                    "transition-[opacity,colors] duration-300 ease-out",
                     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary",
-                    canOpen ? "cursor-pointer" : "cursor-not-allowed opacity-45",
+                    canOpen ? "cursor-pointer" : "cursor-not-allowed opacity-70",
                   ].join(" ")}
                 >
                   <span
                     className={[
-                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-[border-color,background-color,color] duration-500 ease-out",
-                      isDone
-                        ? "border-brand-btn-primary/50 bg-brand-btn-primary/15 text-brand-btn-primary"
-                        : isCurrent
-                          ? "border-brand-btn-primary bg-brand-btn-primary/10 text-brand-btn-primary"
-                          : "border-brand-border/80 bg-transparent text-brand-text-secondary/50",
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-[border-color,background-color,color,box-shadow] duration-500 ease-out",
+                      isCurrent
+                        ? "border-brand-btn-primary bg-brand-btn-primary text-white shadow-[0_1px_3px_rgba(116,135,107,0.35)]"
+                        : isDone
+                          ? "border-brand-btn-primary bg-brand-btn-primary/25 text-brand-btn-primary-hover"
+                          : "border-brand-btn-primary/65 bg-white text-brand-btn-primary-hover",
                     ].join(" ")}
                   >
-                    {isDone ? (
+                    {isDone && !isCurrent ? (
                       <Check
                         className={[
-                          "h-3 w-3 transition-opacity duration-500 ease-out",
+                          "h-3.5 w-3.5 transition-opacity duration-500 ease-out",
                           showCheck ? "opacity-100" : "opacity-0",
                         ].join(" ")}
-                        strokeWidth={2.25}
+                        strokeWidth={2.4}
                         aria-hidden
                       />
                     ) : (
                       <stage.Icon
-                        className="h-3 w-3"
-                        strokeWidth={1.75}
+                        className="h-3.5 w-3.5"
+                        strokeWidth={isCurrent ? 2.15 : 2}
                         aria-hidden
                       />
                     )}
@@ -161,13 +159,13 @@ export function JourneyRibbon({
 
                   <span
                     className={[
-                      "whitespace-nowrap text-[0.6875rem] tracking-wide md:text-[0.7rem]",
+                      "whitespace-nowrap text-[0.7rem] tracking-wide md:text-[0.75rem]",
                       "transition-colors duration-300 ease-out",
                       isCurrent
-                        ? "font-medium text-brand-text-primary"
+                        ? "font-semibold text-brand-text-primary"
                         : isDone
-                          ? "text-brand-text-primary/75"
-                          : "text-brand-text-secondary/50",
+                          ? "font-medium text-brand-btn-primary-hover"
+                          : "font-medium text-brand-text-secondary",
                     ].join(" ")}
                   >
                     {stage.label}
@@ -178,14 +176,17 @@ export function JourneyRibbon({
               {!isLast && (
                 <li
                   aria-hidden
-                  className={[
-                    "hidden h-px min-w-[1.25rem] flex-1 md:block",
-                    "transition-colors duration-500 ease-out",
-                    isDone
-                      ? "bg-brand-btn-primary/40"
-                      : "bg-brand-border/60",
-                  ].join(" ")}
-                />
+                  className="mx-1.5 hidden min-w-[1.75rem] flex-1 items-center md:flex"
+                >
+                  <span
+                    className={[
+                      "h-0 w-full border-t-2 border-dotted transition-colors duration-500 ease-out",
+                      connectorDone
+                        ? "border-brand-btn-primary"
+                        : "border-brand-btn-primary/55",
+                    ].join(" ")}
+                  />
+                </li>
               )}
             </Fragment>
           );
