@@ -463,6 +463,7 @@ export async function loadWishlistItems(): Promise<WishlistItemView[]> {
       createdAt: place.createdAt.toISOString(),
       source: meta?.source || "journey",
       journeyId: meta?.journeyId ?? null,
+      discoveryPlaceId: meta?.discoveryPlaceId ?? null,
     };
   });
 }

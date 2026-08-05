@@ -6,25 +6,11 @@ import {
   MapPin,
   CalendarDays,
   Leaf,
-  Heart,
   Compass,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { feelingLabels } from "@/lib/journey/feelings";
-import type { useJourneyBuilder, JourneyData } from "@/hooks/useJourneyBuilder";
-
-function paceLabel(pace: JourneyData["pace"]): string | null {
-  switch (pace) {
-    case "ONE_PLACE_DEEPLY":
-      return "Settle into one place deeply, with room for it to unfold completely.";
-    case "SLOW_UNHURRIED":
-      return "A slower pace with enough time to let each place unfold naturally.";
-    case "GENTLY_BALANCED":
-      return "A gently balanced rhythm — some movement, and plenty of stillness.";
-    default:
-      return null;
-  }
-}
+import type { useJourneyBuilder } from "@/hooks/useJourneyBuilder";
 
 function formatDateRange(
   start: Date | null,
@@ -138,11 +124,10 @@ export function StepReview({
     data.endDate,
     data.durationDays,
   );
-  const feel = paceLabel(data.pace) || "A considered rhythm for this place.";
-  const focusLabels = feelingLabels(data.feelings);
-  const focus =
-    focusLabels.length > 0
-      ? focusLabels.join(", ")
+  const feelLabels = feelingLabels(data.feelings);
+  const feel =
+    feelLabels.length > 0
+      ? feelLabels.join(", ")
       : "Open to whatever this place offers.";
 
   return (
@@ -189,10 +174,6 @@ export function StepReview({
 
             <ReviewRow Icon={Leaf} label="Journey Feel">
               {feel}
-            </ReviewRow>
-
-            <ReviewRow Icon={Heart} label="Journey Focus">
-              {focus}
             </ReviewRow>
           </div>
 

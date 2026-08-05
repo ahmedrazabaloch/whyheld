@@ -16,11 +16,8 @@ import {
   parseDiscoveryState,
   buildDestinationIntroduction,
 } from "@/components/discovery/discovery-data";
-import { getWishlistKeysForJourney } from "@/actions/place-actions";
 import { loadJourneyAccessInfo } from "@/lib/journey/load-access";
-import { buildMapsEmbedUrl } from "@/components/journey/JourneyRouteMap";
 import { getCachedSession } from "@/lib/auth/session-cache";
-import { parseBuilderMeta } from "@/lib/journey/trip-shape";
 
 export default async function JourneyDetailPage({
   params,
@@ -72,15 +69,6 @@ export default async function JourneyDetailPage({
   const discoveryPlaces =
     discovery?.places.filter((p) => discovery.journeyPlaceIds.includes(p.id)) ??
     [];
-  const savedPlaces = discoveryPlaces;
-
-  const wishlistFromKeys = await getWishlistKeysForJourney(journey.id);
-  const initialWishlistIds = Array.from(
-    new Set([
-      ...(discovery?.wishlistPlaceIds ?? []),
-      ...wishlistFromKeys.discoveryPlaceIds,
-    ]),
-  );
 
   const normalizedSummary = normalizeJourneySummary(
     journey.summary,
@@ -102,13 +90,6 @@ export default async function JourneyDetailPage({
     composed && session?.user?.id
       ? await loadJourneyAccessInfo(journey.id, session.user.id)
       : null;
-
-  const tripShape = parseBuilderMeta(journey.metadata).tripShape;
-  const mapQuery =
-    tripShape.startPoint?.name ||
-    composed?.days.find((d) => d.city)?.city ||
-    destination;
-  const mapsEmbedUrl = buildMapsEmbedUrl(mapQuery);
 
   return (
     <>
@@ -132,13 +113,10 @@ export default async function JourneyDetailPage({
       {composed ? (
         <ComposedJourneySections
           composed={composed}
-          savedPlaces={savedPlaces}
           discoveryPlaces={discoveryPlaces}
           destination={destination}
           journeyId={journey.id}
-          initialWishlistIds={initialWishlistIds}
           initialEditMode={initialEditMode}
-          mapsEmbedUrl={mapsEmbedUrl}
           accessInfo={accessInfo}
         />
       ) : (

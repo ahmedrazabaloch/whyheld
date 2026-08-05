@@ -6,7 +6,7 @@ import { executeAiPipeline } from "@/lib/ai/pipeline";
 import { AiError } from "@/lib/ai/errors";
 import type { DiscoveryPlacesOutput } from "@/lib/ai/schemas/discovery";
 import { parseBuilderMeta } from "@/lib/journey/trip-shape";
-import { feelingLabels } from "@/lib/journey/feelings";
+import { feelingPromptText, paceFromFeelings } from "@/lib/journey/feelings";
 
 const BodySchema = z.object({
   count: z.union([z.literal(5), z.literal(10)]).default(10),
@@ -67,7 +67,8 @@ export async function POST(
 
   try {
     const builderMeta = parseBuilderMeta(journey.metadata);
-    const feelingText = feelingLabels(builderMeta.feelings).join(", ");
+    const feelingText = feelingPromptText(builderMeta.feelings);
+    const derivedPace = paceFromFeelings(builderMeta.feelings);
     const mustVisitTitles = builderMeta.tripShape.mustVisit.map((p) => p.name);
 
     const result = await executeAiPipeline<DiscoveryPlacesOutput>({
@@ -78,7 +79,10 @@ export async function POST(
       // second Discover call succeeded. Timeouts still apply inside the provider.
       variables: {
         destination: journey.originQuery,
-        pace: journey.pace || "GENTLY_BALANCED",
+        pace:
+          builderMeta.feelings.length > 0
+            ? derivedPace
+            : journey.pace || "GENTLY_BALANCED",
         budget: journey.budget || "COMFORTABLE",
         duration,
         count: body.count,

@@ -49,6 +49,17 @@ function optionalVar(variables: Record<string, any>, name: string): string | und
   return xmlEscape(String(raw).slice(0, MAX_VAR_LENGTH));
 }
 
+/** Optional vars that carry multi-chip curation text (feelings can exceed 200 chars). */
+function optionalLongVar(
+  variables: Record<string, any>,
+  name: string,
+  maxLength = 1200,
+): string | undefined {
+  const raw = variables[name];
+  if (raw === undefined || raw === null) return undefined;
+  return xmlEscape(String(raw).slice(0, maxLength));
+}
+
 // ---------------------------------------------------------------------------
 // PromptDefinition interface
 // ---------------------------------------------------------------------------
@@ -196,21 +207,31 @@ function listVar(
 
 registerPrompt({
   id: "DISCOVERY_PLACES",
-  version: "1.0.0",
+  version: "1.1.0",
   description:
-    "Generates editorial discovery places for a journey draft, shaped by pace, style, and length.",
+    "Generates editorial discovery places for a journey draft, shaped by Journey Feel chips, pace, style, and length.",
   systemPrompt: [
     "You are an experienced slow-travel curator preparing a quiet collection of places.",
     "Write in a calm, observational, editorial voice. Lived-in. Human. Never promotional.",
     "Do not sound like a brochure, SEO page, travel blog, or chatbot.",
     "Avoid words like best, must-see, bucket list, iconic, amazing, perfect, or hidden gem as marketing.",
-    "Prefer specific neighbourhoods, cafés, markets, walks, workshops, gardens, and quiet corners over famous tourist attractions — use landmarks only when they truly fit a slow journey.",
+    "Prefer specific neighbourhoods, cafés, markets, walks, workshops, gardens, and quiet corners over famous tourist attractions — use landmarks only when they truly fit a slow journey OR when feelings explicitly ask for Famous Landmarks.",
     "Each place needs: category, title, description (2–3 calm sentences), 2–4 short highlights,",
     "plus localTips (one practical tip), guideNote (one quiet curator note), and weatherNote",
     "(one AI-estimated seasonal / weather note for the travel window — not a live forecast).",
     "Titles should feel editorial (e.g. Morning Courtyard Walk), not attraction names alone.",
     "",
-    "Respect Journey Feel (pace):",
+    "PRIMARY — Respect Journey Feel (<feelings>):",
+    "When feelings are provided, they are the traveller's stated interests. Shape the WHOLE collection around them.",
+    "Every proposed place should clearly serve at least one listed feeling.",
+    "Distribute places across the selected feelings — do not ignore any selected interest.",
+    "Examples: nature-focused → landscapes/parks/trails; cultural → ritual/food/local rhythm;",
+    "photography-focused → light, viewpoints, textured scenes; literary-rich → writers/bookish places;",
+    "famous-landmarks → iconic sights approached slowly with quiet context nearby;",
+    "urban → neighbourhoods/markets/street life; rural → countryside/villages; history-forward → heritage/craft.",
+    "If feelings conflict mildly (e.g. urban + rural), offer a thoughtful blend that still honours both.",
+    "",
+    "SECONDARY — Respect pace (day rhythm):",
     "- ONE_PLACE_DEEPLY: stay local — neighbourhoods, small cafés, markets, parks, craft streets, libraries, hidden corners; little movement.",
     "- SLOW_UNHURRIED: regional villages, nearby nature, gentle day trips, gardens, walking routes, unhurried experiences.",
     "- GENTLY_BALANCED: a mix of city, history, food, nature, culture, and one or two nearby escapes.",
@@ -237,6 +258,7 @@ registerPrompt({
     const count = Math.min(10, Math.max(1, Number(countRaw) || 10));
     const startDate = optionalVar(vars, "startDate");
     const endDate = optionalVar(vars, "endDate");
+    const feelings = optionalLongVar(vars, "feelings");
     const exclude = listVar(vars, "excludeTitles");
     const selected = listVar(vars, "selectedTitles");
     const wishlist = listVar(vars, "wishlistTitles");
@@ -249,7 +271,7 @@ registerPrompt({
   <count>${count}</count>
   ${startDate ? `<startDate>${startDate}</startDate>` : ""}
   ${endDate ? `<endDate>${endDate}</endDate>` : ""}
-  ${optionalVar(vars, "feelings") ? `<feelings>${optionalVar(vars, "feelings")}</feelings>` : ""}
+  ${feelings ? `<feelings>${feelings}</feelings>` : ""}
   ${optionalVar(vars, "exploreFilters") ? `<exploreFilters>${optionalVar(vars, "exploreFilters")}</exploreFilters>` : ""}
   ${optionalVar(vars, "mustVisit") ? `<mustVisit>${optionalVar(vars, "mustVisit")}</mustVisit>` : ""}
   <excludeTitles>${exclude || "none"}</excludeTitles>
@@ -257,7 +279,10 @@ registerPrompt({
   <wishlistTitles>${wishlist || "none"}</wishlistTitles>
 </input>
 Propose exactly ${count} new places worth discovering in or around this destination.
-Match the journey feel, travel style, length, and any stated feelings.
+${feelings
+  ? "PRIMARY: Match every place to the traveller's Journey Feel interests listed in <feelings>. Cover those interests across the set — do not drift into unrelated themes."
+  : "Match the journey feel, travel style, and length."}
+Also respect pace, travel style, and length.
 If exploreFilters are listed, lean the collection toward those kinds of places without becoming a checklist.
 If mustVisit places are listed, prefer complementary nearby places (do not duplicate them).
 Do not repeat anything in excludeTitles, selectedTitles, or wishlistTitles.`;
@@ -266,7 +291,7 @@ Do not repeat anything in excludeTitles, selectedTitles, or wishlistTitles.`;
 
 registerPrompt({
   id: "JOURNEY_FROM_DISCOVERY",
-  version: "1.0.0",
+  version: "1.1.0",
   description:
     "Composes a calm day-by-day itinerary using only places the traveller selected in Discovery.",
   systemPrompt: [
@@ -280,6 +305,7 @@ registerPrompt({
     "If duration is shorter than the number of places, choose naturally — do not force every place in.",
     "If duration is longer, allow restful days, returns, and deeper time with fewer places.",
     "Never create rushed schedules. Leave room to breathe.",
+    "When <feelings> are present, let them colour day themes, pacing language, and which selected places get prominence — still without inventing places outside selectedPlaces.",
     "ETHOS RULES (must follow):",
     "- Assign at most 3 major places (placeTitles) to any single day.",
     "- Prefer regional depth over hopping between distant sites.",
@@ -295,7 +321,7 @@ registerPrompt({
     "- localTips (optional one practical local tip)",
     "- weatherNote (optional seasonal/weather guidance for the travel window)",
     "- estimatedDriveHours (number; total estimated driving/transit hours for the day, 0 if negligible)",
-    "- pacing (how the day should feel)",
+    "- pacing (how the day should feel — echo Journey Feel when provided)",
     "- transition (short editorial bridge into the day)",
     "- notes (ONLY if truly useful to a traveller — transport timing, dress, heat, bookings).",
     "  NEVER write meta/system notes such as 'no locked places', 'intentionally settling-in', or editor commentary.",
@@ -315,6 +341,7 @@ registerPrompt({
     const duration = requireVar(vars, "duration");
     const startDate = optionalVar(vars, "startDate");
     const endDate = optionalVar(vars, "endDate");
+    const feelings = optionalLongVar(vars, "feelings");
     const d = Number(duration) || 5;
 
     const selectedRaw = vars["selectedPlaces"];
@@ -353,7 +380,7 @@ registerPrompt({
   <duration>${duration}</duration>
   ${startDate ? `<startDate>${startDate}</startDate>` : ""}
   ${endDate ? `<endDate>${endDate}</endDate>` : ""}
-  ${optionalVar(vars, "feelings") ? `<feelings>${optionalVar(vars, "feelings")}</feelings>` : ""}
+  ${feelings ? `<feelings>${feelings}</feelings>` : ""}
   ${optionalVar(vars, "startPoint") ? `<startPoint>${optionalVar(vars, "startPoint")}</startPoint>` : ""}
   ${optionalVar(vars, "endPoint") ? `<endPoint>${optionalVar(vars, "endPoint")}</endPoint>` : ""}
   ${optionalVar(vars, "mustVisit") ? `<mustVisit>${optionalVar(vars, "mustVisit")}</mustVisit>` : ""}
@@ -362,6 +389,7 @@ ${selectedPlaces}
   </selectedPlaces>
 </input>
 Compose a ${d}-day slow journey using only these selected places.
+${feelings ? "Honour Journey Feel in day themes, pacing, and which places get prominence." : ""}
 Honour mustVisit places when present — weave them in preferentially.
 Assign at most 3 major places per day. Prefer regional depth.
 Return exactly ${d} days, numbered 1 through ${d}.

@@ -4,12 +4,13 @@ import { ChoiceCard } from "@/components/journey/ChoiceCard";
 import {
   JOURNEY_FEELINGS,
   MAX_JOURNEY_FEELINGS,
+  paceFromFeelings,
 } from "@/lib/journey/feelings";
 import type { useJourneyBuilder } from "@/hooks/useJourneyBuilder";
 
 /**
  * Journey Feel — client App Overview list only, ChoiceCard styling.
- * Pace is defaulted quietly for AI (not a separate setup step).
+ * Pace is derived from rhythm chips for AI (not a separate setup step).
  */
 export function StepStyle({
   controller,
@@ -26,11 +27,7 @@ export function StepStyle({
         ? selectedFeelings
         : [...selectedFeelings, id];
     update("feelings", next);
-
-    // Ensure AI always has a pace even though this step is feelings-only.
-    if (!data.pace) {
-      update("pace", "GENTLY_BALANCED");
-    }
+    update("pace", paceFromFeelings(next));
   };
 
   return (

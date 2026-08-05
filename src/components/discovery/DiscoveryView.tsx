@@ -6,10 +6,7 @@ import { toast } from "sonner";
 import { buttonStyles } from "@/lib/design";
 import { EmptyState } from "@/components/dashboard";
 import { GenerationHero } from "@/components/journey/generation/GenerationHero";
-import {
-  addPlaceToJourneyBoard,
-  saveDiscoveryState,
-} from "@/actions/journey-actions";
+import { saveDiscoveryState } from "@/actions/journey-actions";
 import type {
   DestinationIntroduction,
   DiscoveryBoardStatus,
@@ -19,7 +16,6 @@ import type {
 import { budgetLabel, paceLabel } from "./discovery-data";
 import { DiscoveryPlaceCard, DiscoveryPlaceSkeleton } from "./DiscoveryPlaceCard";
 import { DiscoveryJourneyBoard } from "./DiscoveryJourneyBoard";
-import { JourneyPickerModal } from "./JourneyPickerModal";
 
 type DiscoveryViewProps = {
   journeyId: string;
@@ -50,46 +46,6 @@ type ApiPlace = {
  * React Strict Mode remounts would otherwise fire two Anthropic calls.
  */
 const initialDiscoverInflight = new Map<string, Promise<ApiPlace[]>>();
-
-/** Remember which journey to add places to for this Discovery browse session. */
-const DISCOVERY_ADD_TARGET_KEY = "wayheld:discovery-add-target";
-
-type PreferredAddTarget = { id: string; title: string };
-
-function readPreferredAddTarget(): PreferredAddTarget | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = sessionStorage.getItem(DISCOVERY_ADD_TARGET_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as PreferredAddTarget;
-    if (!parsed?.id?.trim()) return null;
-    return {
-      id: parsed.id.trim(),
-      title: parsed.title?.trim() || "your journey",
-    };
-  } catch {
-    return null;
-  }
-}
-
-function writePreferredAddTarget(target: PreferredAddTarget) {
-  try {
-    sessionStorage.setItem(
-      DISCOVERY_ADD_TARGET_KEY,
-      JSON.stringify({ id: target.id, title: target.title }),
-    );
-  } catch {
-    // ignore quota / private mode
-  }
-}
-
-function clearPreferredAddTarget() {
-  try {
-    sessionStorage.removeItem(DISCOVERY_ADD_TARGET_KEY);
-  } catch {
-    // ignore
-  }
-}
 
 function normalizeTitle(title: string): string {
   return title.trim().toLowerCase();
@@ -192,19 +148,6 @@ export function DiscoveryView({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [failed, setFailed] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
-  const [pickerPlace, setPickerPlace] = useState<DiscoveryPlace | null>(null);
-  const [preferredAddTarget, setPreferredAddTarget] =
-    useState<PreferredAddTarget | null>(null);
-  const [addBusyId, setAddBusyId] = useState<string | null>(null);
-
-  useEffect(() => {
-    setPreferredAddTarget(readPreferredAddTarget());
-  }, [journeyId]);
-
-  const rememberAddTarget = useCallback((target: PreferredAddTarget) => {
-    writePreferredAddTarget(target);
-    setPreferredAddTarget(target);
-  }, []);
 
   const placesRef = useRef(places);
   const journeyIdsRef = useRef(journeyIds);
@@ -255,8 +198,6 @@ export function DiscoveryView({
       setPlaces(nextPlaces);
       setJourneyIds(new Set());
       setWishlistIds(new Set());
-      clearPreferredAddTarget();
-      setPreferredAddTarget(null);
       await saveDiscoveryState(journeyId, {
         places: nextPlaces,
         journeyPlaceIds: [],
@@ -343,69 +284,18 @@ export function DiscoveryView({
     }
   };
 
-  const addToCurrentJourney = useCallback((id: string) => {
-    setJourneyIds((prev) => {
-      const next = new Set(prev);
-      next.add(id);
-      journeyIdsRef.current = next;
-      return next;
-    });
-  }, []);
-
-  const addPlaceToPreferredOrAsk = useCallback(
-    async (place: DiscoveryPlace) => {
-      const preferred = preferredAddTarget || readPreferredAddTarget();
-
-      // First pick of this generation — ask which journey
-      if (!preferred) {
-        setPickerPlace(place);
-        return;
-      }
-
-      // Same journey as this Discovery page
-      if (preferred.id === journeyId) {
-        rememberAddTarget({ id: journeyId, title: cardTitle });
-        addToCurrentJourney(place.id);
-        toast.success(`Added “${place.title}” to ${cardTitle}`);
-        return;
-      }
-
-      // Different journey remembered — add there without asking again
-      setAddBusyId(place.id);
-      try {
-        const res = await addPlaceToJourneyBoard({
-          targetJourneyId: preferred.id,
-          place: {
-            id: place.id,
-            category: place.category,
-            title: place.title,
-            description: place.description,
-            highlights: place.highlights,
-            localTips: place.localTips,
-            guideNote: place.guideNote,
-            weatherNote: place.weatherNote,
-          },
-        });
-        if (!res.success) {
-          // Preference may be stale — fall back to picker
-          clearPreferredAddTarget();
-          setPreferredAddTarget(null);
-          setPickerPlace(place);
-          return;
-        }
-        rememberAddTarget(preferred);
-        toast.success(`Added “${place.title}” to ${preferred.title}`);
-      } finally {
-        setAddBusyId(null);
-      }
+  const addToCurrentJourney = useCallback(
+    (place: DiscoveryPlace) => {
+      setJourneyIds((prev) => {
+        if (prev.has(place.id)) return prev;
+        const next = new Set(prev);
+        next.add(place.id);
+        journeyIdsRef.current = next;
+        return next;
+      });
+      toast.success(`Added “${place.title}” to ${cardTitle}`);
     },
-    [
-      preferredAddTarget,
-      journeyId,
-      cardTitle,
-      rememberAddTarget,
-      addToCurrentJourney,
-    ],
+    [cardTitle],
   );
 
   const removeFromJourney = useCallback((id: string) => {
@@ -593,9 +483,8 @@ export function DiscoveryView({
                   place={place}
                   inJourney={journeyIds.has(place.id)}
                   inWishlist={wishlistIds.has(place.id)}
-                  addBusy={addBusyId === place.id}
                   onAddToJourney={() => {
-                    void addPlaceToPreferredOrAsk(place);
+                    addToCurrentJourney(place);
                   }}
                   onRemoveFromJourney={() => removeFromJourney(place.id)}
                   onToggleWishlist={() => toggleWishlist(place.id)}
@@ -623,35 +512,6 @@ export function DiscoveryView({
           )}
         </div>
       </div>
-
-      <JourneyPickerModal
-        open={!!pickerPlace}
-        currentJourneyId={journeyId}
-        currentJourneyTitle={cardTitle}
-        place={pickerPlace}
-        onClose={() => setPickerPlace(null)}
-        onAddedToCurrent={(placeId, journeyTitle) => {
-          const placeTitle =
-            pickerPlace?.title ||
-            places.find((p) => p.id === placeId)?.title ||
-            "Place";
-          rememberAddTarget({ id: journeyId, title: journeyTitle || cardTitle });
-          addToCurrentJourney(placeId);
-          toast.success(`Added “${placeTitle}” to ${journeyTitle || cardTitle}`);
-        }}
-        onCreatedOrMoved={(targetId, journeyTitle) => {
-          const placeTitle = pickerPlace?.title || "Place";
-          rememberAddTarget({
-            id: targetId,
-            title: journeyTitle || "your journey",
-          });
-          toast.success(
-            `Added “${placeTitle}” to ${journeyTitle || "your journey"}`,
-          );
-          if (targetId === journeyId) return;
-          router.push(`/journeys/${targetId}/discover`);
-        }}
-      />
     </div>
   );
 }

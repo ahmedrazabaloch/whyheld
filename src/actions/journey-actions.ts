@@ -646,7 +646,7 @@ export async function markJourneyCompleted(id: string): Promise<ActionResponse> 
       return {
         success: false,
         error: "Only ready journeys can be marked completed.",
-        code: "INVALID_STATE",
+        code: "VALIDATION_ERROR",
       };
     }
 
@@ -785,7 +785,9 @@ const AssignPlaceSchema = z.object({
 });
 
 /**
- * Add (or upsert) a Discovery place onto another journey's discovery board.
+ * Add (or upsert) a Discovery place onto a journey board.
+ * For READY journeys with a composed itinerary, also appends the place
+ * into a day so it appears on the generated journey page.
  */
 export async function addPlaceToJourneyBoard(
   input: z.infer<typeof AssignPlaceSchema>,
@@ -809,7 +811,7 @@ export async function addPlaceToJourneyBoard(
         userId: session.user.id,
         status: { in: ["DRAFT", "GENERATING", "FAILED", "READY"] },
       },
-      select: { id: true, metadata: true },
+      select: { id: true, metadata: true, status: true },
     });
 
     if (!journey) {
@@ -849,7 +851,8 @@ export async function addPlaceToJourneyBoard(
         typeof p === "object" &&
         ((p as { id?: string }).id === place.id ||
           (typeof (p as { title?: string }).title === "string" &&
-            (p as { title: string }).title.toLowerCase() === place.title.toLowerCase())),
+            (p as { title: string }).title.toLowerCase() ===
+              place.title.toLowerCase())),
     );
 
     let placeId = place.id;
@@ -865,25 +868,76 @@ export async function addPlaceToJourneyBoard(
       ? prevIds
       : [...prevIds, placeId];
 
+    const nextMeta: Record<string, unknown> = {
+      ...prevMeta,
+      discovery: {
+        places: prevPlaces,
+        journeyPlaceIds,
+        wishlistPlaceIds: prevWishlist.filter((id) => id !== placeId),
+        boardStatus:
+          prevDiscovery.boardStatus === "COMPLETE" ? "COMPLETE" : "PENDING",
+      },
+    };
+
+    // READY journeys render from composedJourney — add the place into a day.
+    if (journey.status === "READY") {
+      const { parseComposedJourney } = await import(
+        "@/lib/utils/composed-journey"
+      );
+      const { addPlaceToDay } = await import(
+        "@/components/journey/composed-edit"
+      );
+
+      const composed = parseComposedJourney(journey.metadata);
+      if (composed && composed.days.length > 0) {
+        const alreadyIn = composed.days.some((day) =>
+          (day.places ?? []).some(
+            (p) =>
+              p.id === placeId ||
+              p.title.trim().toLowerCase() === place.title.trim().toLowerCase(),
+          ),
+        );
+
+        if (!alreadyIn) {
+          const targetDay = composed.days.reduce((best, day) => {
+            const bestCount = best.places?.length ?? 0;
+            const dayCount = day.places?.length ?? 0;
+            return dayCount < bestCount ? day : best;
+          }, composed.days[0]!);
+
+          const nextComposed = addPlaceToDay(
+            composed,
+            targetDay.dayNumber,
+            {
+              id: placeId,
+              category: place.category,
+              title: place.title,
+              description: place.description,
+              highlights: place.highlights,
+              localTips: place.localTips,
+              guideNote: place.guideNote,
+              weatherNote: place.weatherNote,
+            },
+          );
+
+          nextMeta.composedJourney = nextComposed;
+          nextMeta.aiDays = nextComposed.days;
+          nextMeta.lastEditedAt = new Date().toISOString();
+        }
+      }
+    }
+
     await prisma.journey.update({
       where: { id: journey.id, userId: session.user.id },
       data: {
-        metadata: {
-          ...prevMeta,
-          discovery: {
-            places: prevPlaces,
-            journeyPlaceIds,
-            wishlistPlaceIds: prevWishlist,
-            boardStatus:
-              prevDiscovery.boardStatus === "COMPLETE" ? "COMPLETE" : "PENDING",
-          },
-        } as Prisma.InputJsonValue,
+        metadata: nextMeta as Prisma.InputJsonValue,
       },
     });
 
     revalidatePath(`/journeys/${journey.id}`);
     revalidatePath(`/journeys/${journey.id}/discover`);
     revalidatePath("/journeys");
+    revalidatePath("/wishlist");
 
     return { success: true, data: { journeyId: journey.id } };
   } catch (error) {

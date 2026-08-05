@@ -8,7 +8,7 @@ import { parseDiscoveryState } from "@/components/discovery/discovery-data";
 import { persistComposedItinerary } from "@/actions/journey-actions";
 import { normalizeComposedJourney } from "@/lib/utils/composed-journey";
 import { parseBuilderMeta } from "@/lib/journey/trip-shape";
-import { feelingLabels } from "@/lib/journey/feelings";
+import { feelingPromptText, paceFromFeelings } from "@/lib/journey/feelings";
 
 export async function POST(
   request: NextRequest,
@@ -99,7 +99,8 @@ export async function POST(
 
   try {
     const builderMeta = parseBuilderMeta(journey.metadata);
-    const feelingText = feelingLabels(builderMeta.feelings).join(", ");
+    const feelingText = feelingPromptText(builderMeta.feelings);
+    const derivedPace = paceFromFeelings(builderMeta.feelings);
     const mustVisitText = builderMeta.tripShape.mustVisit
       .map((p) => p.name)
       .join("; ");
@@ -110,7 +111,10 @@ export async function POST(
       signal: request.signal,
       variables: {
         destination: journey.originQuery,
-        pace: journey.pace || "GENTLY_BALANCED",
+        pace:
+          builderMeta.feelings.length > 0
+            ? derivedPace
+            : journey.pace || "GENTLY_BALANCED",
         budget: journey.budget || "COMFORTABLE",
         duration,
         selectedPlaces: selectedPlaces.map((p) => ({

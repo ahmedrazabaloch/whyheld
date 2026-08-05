@@ -3,7 +3,6 @@
 import {
   useCallback,
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
@@ -14,7 +13,6 @@ import { ChevronLeft, ChevronRight, Pencil, Star, Trash2 } from "lucide-react";
 import { surfaces } from "@/lib/design";
 import type { ComposedJourney } from "@/lib/ai/schemas/composed-journey";
 import type { DiscoveryPlace } from "@/components/discovery/discovery-data";
-import { toggleWishlistPlace } from "@/actions/place-actions";
 import { saveComposedJourneyEdits } from "@/actions/journey-actions";
 import {
   dayDetailBullets,
@@ -34,20 +32,16 @@ import {
   DayPlaceEditor,
   JourneyEditToolbar,
 } from "@/components/journey/DayPlaceEditor";
-import { JourneyRouteMap } from "@/components/journey/JourneyRouteMap";
 import type { JourneyAccessInfo } from "@/lib/journey/load-access";
 import { AppDialog } from "@/components/ui/AppDialog";
 
 type Props = {
   composed: ComposedJourney;
-  savedPlaces: DiscoveryPlace[];
   /** All Discovery places selected for the journey (for Add place). */
   discoveryPlaces: DiscoveryPlace[];
   destination: string;
   journeyId: string;
-  initialWishlistIds: string[];
   initialEditMode?: boolean;
-  mapsEmbedUrl?: string | null;
   accessInfo?: JourneyAccessInfo | null;
 };
 
@@ -94,13 +88,10 @@ function dayPlaceEntries(day: {
  */
 export function ComposedJourneySections({
   composed: composedProp,
-  savedPlaces,
   discoveryPlaces,
   destination,
   journeyId,
-  initialWishlistIds,
   initialEditMode = false,
-  mapsEmbedUrl = null,
   accessInfo = null,
 }: Props) {
   const router = useRouter();
@@ -129,17 +120,6 @@ export function ComposedJourneySections({
   const days = draft.days;
   const totalDays = days.length;
   const [activeDay, setActiveDay] = useState(days[0]?.dayNumber ?? 1);
-  const [openPlace, setOpenPlace] = useState<DiscoveryPlace | null>(null);
-  const wishlistKey = initialWishlistIds.join("\0");
-  const [wishlistIds, setWishlistIds] = useState<Set<string>>(
-    () => new Set(initialWishlistIds),
-  );
-  const [wishlistKeySnapshot, setWishlistKeySnapshot] = useState(wishlistKey);
-  if (wishlistKey !== wishlistKeySnapshot) {
-    setWishlistKeySnapshot(wishlistKey);
-    setWishlistIds(new Set(initialWishlistIds));
-  }
-  const [wishlistBusyId, setWishlistBusyId] = useState<string | null>(null);
   const dayButtonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const dayNavScrollRef = useRef<HTMLDivElement>(null);
   const scrollingToRef = useRef<number | null>(null);
@@ -154,58 +134,6 @@ export function ComposedJourneySections({
   const allDayNumbers = useMemo(
     () => days.map((d) => d.dayNumber),
     [days],
-  );
-
-  const togglePlaceWishlist = useCallback(
-    async (place: DiscoveryPlace) => {
-      if (wishlistBusyId) return;
-      setWishlistBusyId(place.id);
-      const wasIn = wishlistIds.has(place.id);
-      setWishlistIds((prev) => {
-        const next = new Set(prev);
-        if (wasIn) next.delete(place.id);
-        else next.add(place.id);
-        return next;
-      });
-
-      try {
-        const res = await toggleWishlistPlace({
-          name: place.title,
-          description: place.description,
-          category: place.category,
-          kind: place.category,
-          destination,
-          journeyId,
-          discoveryPlaceId: place.id,
-          source: "discovery",
-        });
-        if (!res.success) {
-          setWishlistIds((prev) => {
-            const next = new Set(prev);
-            if (wasIn) next.add(place.id);
-            else next.delete(place.id);
-            return next;
-          });
-        } else if (res.data.saved !== !wasIn) {
-          setWishlistIds((prev) => {
-            const next = new Set(prev);
-            if (res.data.saved) next.add(place.id);
-            else next.delete(place.id);
-            return next;
-          });
-        }
-      } catch {
-        setWishlistIds((prev) => {
-          const next = new Set(prev);
-          if (wasIn) next.add(place.id);
-          else next.delete(place.id);
-          return next;
-        });
-      } finally {
-        setWishlistBusyId(null);
-      }
-    },
-    [destination, journeyId, wishlistBusyId, wishlistIds],
   );
 
   const handleSave = useCallback(async () => {
@@ -487,7 +415,7 @@ export function ComposedJourneySections({
       {/* Sticky day navigation + reading progress */}
       <nav
         aria-label="Day navigation"
-        className="sticky top-14 z-20 -mx-4 mb-10 border-b border-brand-border/50 bg-brand-bg/95 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:mb-12 sm:px-6 lg:top-0 lg:-mx-10 lg:px-10"
+        className="sticky top-14 z-20 -mx-4 mb-10 border-b border-brand-border/50 bg-brand-bg/95 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:mb-12 sm:px-6 lg:top-0 lg:-mx-8 lg:px-8"
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
           <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -822,91 +750,6 @@ export function ComposedJourneySections({
           </div>
         </section>
 
-        <div className={`${surfaces.card} p-6 sm:p-8 lg:p-10`}>
-          <JourneyRouteMap
-            destination={destination}
-            placeNames={days.flatMap((d) =>
-              d.places?.length
-                ? d.places.map((p) => p.title)
-                : d.placeTitles ?? [],
-            )}
-            embedUrl={mapsEmbedUrl}
-          />
-        </div>
-
-        {/* Saved places — open original Discovery card content */}
-        <section aria-labelledby="saved-places-heading">
-          <header className="mb-8 sm:mb-10">
-            <p className="mb-2 text-[0.65rem] font-medium uppercase tracking-[0.22em] text-brand-text-secondary/80">
-              Saved places
-            </p>
-            <h2
-              id="saved-places-heading"
-              className="font-display text-2xl text-brand-text-primary sm:text-3xl"
-            >
-              What you chose along the way
-            </h2>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-brand-text-secondary">
-              Open a place to revisit its Discovery card — and keep Wishlist in sync.
-            </p>
-          </header>
-
-          {savedPlaces.length === 0 ? (
-            <p className="text-sm text-brand-text-secondary">
-              No Discovery places were stored with this journey.
-            </p>
-          ) : (
-            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
-              {savedPlaces.map((place) => {
-                const inWishlist = wishlistIds.has(place.id);
-                return (
-                  <li key={place.id} className={`${surfaces.card} flex h-full flex-col p-5`}>
-                    <button
-                      type="button"
-                      onClick={() => setOpenPlace(place)}
-                      className={[
-                        "group flex flex-1 flex-col text-left",
-                        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary",
-                      ].join(" ")}
-                      aria-haspopup="dialog"
-                    >
-                      <p className="text-[0.65rem] font-medium uppercase tracking-[0.18em] text-brand-text-secondary/80">
-                        {place.category}
-                      </p>
-                      <h3 className="mt-1.5 font-display text-lg text-brand-text-primary">
-                        {place.title}
-                      </h3>
-                      <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-brand-text-secondary">
-                        {place.description}
-                      </p>
-                      <span className="mt-4 text-xs font-medium tracking-wide text-brand-text-secondary group-hover:text-brand-text-primary">
-                        View Discovery card →
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={wishlistBusyId === place.id}
-                      aria-pressed={inWishlist}
-                      onClick={() => void togglePlaceWishlist(place)}
-                      className={[
-                        "mt-4 inline-flex min-h-[40px] items-center justify-center rounded-full border px-3 text-xs font-medium tracking-wide transition-colors",
-                        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary",
-                        "disabled:cursor-not-allowed disabled:opacity-50",
-                        inWishlist
-                          ? "border-brand-btn-primary/40 bg-brand-btn-primary/10 text-brand-btn-primary"
-                          : "border-brand-border text-brand-text-secondary hover:border-brand-text-secondary hover:text-brand-text-primary",
-                      ].join(" ")}
-                    >
-                      {inWishlist ? "In Wishlist" : "Add to Wishlist"}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
-
         {/* Journey notes */}
         {draft.notes ? (
           <section
@@ -926,16 +769,6 @@ export function ComposedJourneySections({
           </section>
         ) : null}
       </div>
-
-      <SavedPlaceDialog
-        place={openPlace}
-        onClose={() => setOpenPlace(null)}
-        inWishlist={openPlace ? wishlistIds.has(openPlace.id) : false}
-        wishlistBusy={openPlace ? wishlistBusyId === openPlace.id : false}
-        onToggleWishlist={() => {
-          if (openPlace) void togglePlaceWishlist(openPlace);
-        }}
-      />
 
       <AppDialog
         open={dayToRemove !== null}
@@ -987,162 +820,5 @@ function TipCallout({
         {body}
       </p>
     </aside>
-  );
-}
-
-function SavedPlaceDialog({
-  place,
-  onClose,
-  inWishlist,
-  wishlistBusy,
-  onToggleWishlist,
-}: {
-  place: DiscoveryPlace | null;
-  onClose: () => void;
-  inWishlist: boolean;
-  wishlistBusy: boolean;
-  onToggleWishlist: () => void;
-}) {
-  if (!place) return null;
-
-  return (
-    <SavedPlaceDialogOpen
-      place={place}
-      onClose={onClose}
-      inWishlist={inWishlist}
-      wishlistBusy={wishlistBusy}
-      onToggleWishlist={onToggleWishlist}
-    />
-  );
-}
-
-function SavedPlaceDialogOpen({
-  place,
-  onClose,
-  inWishlist,
-  wishlistBusy,
-  onToggleWishlist,
-}: {
-  place: DiscoveryPlace;
-  onClose: () => void;
-  inWishlist: boolean;
-  wishlistBusy: boolean;
-  onToggleWishlist: () => void;
-}) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const titleId = useId();
-  const descId = useId();
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    const frame = window.requestAnimationFrame(() => {
-      if (!dialog.isConnected || dialog.open) return;
-      try {
-        dialog.showModal();
-      } catch {
-        // Hydration recovery or duplicate open — safe to ignore.
-      }
-    });
-
-    return () => {
-      window.cancelAnimationFrame(frame);
-      if (dialog.isConnected && dialog.open) {
-        try {
-          dialog.close();
-        } catch {
-          // Node may already be detached.
-        }
-      }
-    };
-  }, []);
-
-  return (
-    <dialog
-      ref={dialogRef}
-      aria-labelledby={titleId}
-      aria-describedby={descId}
-      className={[
-        "m-auto w-[calc(100%-2rem)] max-w-lg rounded-3xl border border-brand-card-border",
-        "bg-brand-card p-0 text-brand-text-primary shadow-stage",
-        "backdrop:bg-brand-text-primary/30",
-        "open:flex open:flex-col",
-      ].join(" ")}
-      onClose={onClose}
-      onClick={(e) => {
-        if (e.target === dialogRef.current) onClose();
-      }}
-    >
-      <div className="flex flex-col p-6 sm:p-8">
-        <span className={`${surfaces.chip} mb-3 inline-flex w-fit`}>
-          {place.category}
-        </span>
-
-        <h2 id={titleId} className="font-display text-2xl font-light tracking-tight">
-          {place.title}
-        </h2>
-
-        <p
-          id={descId}
-          className="mt-3 text-sm leading-relaxed text-brand-text-secondary"
-        >
-          {place.description}
-        </p>
-
-        {place.highlights.length > 0 ? (
-          <ul className="mt-5 space-y-1.5 border-t border-brand-border/40 pt-5">
-            {place.highlights.map((highlight) => (
-              <li
-                key={highlight}
-                className="text-xs leading-snug text-brand-text-secondary"
-              >
-                {highlight}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        {(place.localTips || place.guideNote || place.weatherNote) && (
-          <div className="mt-5 space-y-2.5">
-            {place.localTips ? (
-              <TipCallout label="Local tip" body={place.localTips} />
-            ) : null}
-            {place.guideNote ? (
-              <TipCallout label="Guide note" body={place.guideNote} />
-            ) : null}
-            {place.weatherNote ? (
-              <TipCallout label="Season & weather" body={place.weatherNote} />
-            ) : null}
-          </div>
-        )}
-
-        <div className="mt-8 flex flex-col gap-2 sm:flex-row">
-          <button
-            type="button"
-            disabled={wishlistBusy}
-            aria-pressed={inWishlist}
-            onClick={onToggleWishlist}
-            className={[
-              "inline-flex min-h-[44px] flex-1 items-center justify-center rounded-full border px-5 text-sm font-medium transition-colors",
-              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-              inWishlist
-                ? "border-brand-btn-primary/40 bg-brand-btn-primary/10 text-brand-btn-primary"
-                : "border-brand-border text-brand-text-primary hover:border-brand-text-secondary",
-            ].join(" ")}
-          >
-            {inWishlist ? "In Wishlist" : "Add to Wishlist"}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-full border border-brand-border px-5 text-sm font-medium text-brand-text-primary transition-colors hover:border-brand-text-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </dialog>
   );
 }

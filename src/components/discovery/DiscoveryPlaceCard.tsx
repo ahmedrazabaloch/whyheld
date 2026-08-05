@@ -15,11 +15,11 @@ type DiscoveryPlaceCardProps = {
   onToggleWishlist: () => void;
 };
 
-const actionButtonClass = [
+const actionPrimaryClass = [
   "inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-full",
-  "border border-brand-border px-3 text-[0.75rem] font-medium tracking-wide",
-  "text-brand-text-secondary transition-colors duration-200",
-  "hover:border-brand-text-secondary hover:text-brand-text-primary",
+  "border border-brand-btn-primary bg-brand-btn-primary px-3",
+  "text-[0.75rem] font-medium tracking-wide text-brand-bg shadow-sm",
+  "transition-colors duration-200 hover:bg-brand-btn-primary-hover",
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary",
   "disabled:cursor-not-allowed disabled:opacity-55",
 ].join(" ");
@@ -104,7 +104,7 @@ function CardActions({
         onClick={inJourney ? onRemoveFromJourney : onAddToJourney}
         aria-pressed={inJourney}
         disabled={addBusy}
-        className={inJourney ? actionActiveClass : actionButtonClass}
+        className={inJourney ? actionActiveClass : actionPrimaryClass}
       >
         {addBusy ? (
           "Adding…"
@@ -137,7 +137,7 @@ function CardActions({
           fill={inWishlist ? "currentColor" : "none"}
           aria-hidden
         />
-        {inWishlist ? "Saved" : "Save for later"}
+        {inWishlist ? "In Wishlist" : "Add to Wishlist"}
       </button>
     </div>
   );

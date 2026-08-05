@@ -3,15 +3,28 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { surfaces, buttonStyles, formStyles } from "@/lib/design";
 import { removeSavedPlace } from "@/actions/place-actions";
 import type { WishlistItemView } from "@/lib/wishlist/types";
+import type { DiscoveryPlace } from "@/components/discovery/discovery-data";
+import { JourneyPickerModal } from "@/components/discovery/JourneyPickerModal";
 
 type SortMode = "newest" | "oldest";
 
 type Props = {
   items: WishlistItemView[];
 };
+
+function toDiscoveryPlace(item: WishlistItemView): DiscoveryPlace {
+  return {
+    id: item.discoveryPlaceId || `wishlist-${item.id}`,
+    category: item.category,
+    title: item.title,
+    description: item.description,
+    highlights: [],
+  };
+}
 
 export function WishlistView({ items: initialItems }: Props) {
   const router = useRouter();
@@ -22,12 +35,14 @@ export function WishlistView({ items: initialItems }: Props) {
   const [category, setCategory] = useState("all");
   const [sort, setSort] = useState<SortMode>("newest");
   const [pending, startTransition] = useTransition();
-  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [pickerItem, setPickerItem] = useState<WishlistItemView | null>(null);
 
   if (initialItems !== itemsSnapshot) {
     setItemsSnapshot(initialItems);
     setItems(initialItems);
   }
+
   const destinations = useMemo(() => {
     const set = new Set(items.map((i) => i.destination).filter(Boolean));
     return Array.from(set).sort((a, b) => a.localeCompare(b));
@@ -60,15 +75,27 @@ export function WishlistView({ items: initialItems }: Props) {
   const fromDiscovery = filtered.filter((i) => i.source === "discovery");
   const fromJourneys = filtered.filter((i) => i.source === "journey");
 
-  const handleRemove = (id: string) => {
-    setRemovingId(id);
+  const finishMoveToJourney = (journeyTitle: string) => {
+    const item = pickerItem;
+    if (!item) return;
+
+    setPickerItem(null);
+    setBusyId(item.id);
     startTransition(async () => {
-      const res = await removeSavedPlace(id);
+      const res = await removeSavedPlace(item.id);
       if (res.success) {
-        setItems((prev) => prev.filter((p) => p.id !== id));
+        setItems((prev) => prev.filter((p) => p.id !== item.id));
+        toast.success(
+          `Added “${item.title}” to ${journeyTitle || "your journey"}`,
+        );
         router.refresh();
+      } else {
+        toast.error(
+          res.error ||
+            "Added to the journey, but could not remove it from Wishlist.",
+        );
       }
-      setRemovingId(null);
+      setBusyId(null);
     });
   };
 
@@ -170,9 +197,9 @@ export function WishlistView({ items: initialItems }: Props) {
             <WishlistSection
               title="Saved from Discovery"
               items={fromDiscovery}
-              removingId={removingId}
+              busyId={busyId}
               pending={pending}
-              onRemove={handleRemove}
+              onAddToJourney={setPickerItem}
             />
           ) : null}
 
@@ -180,13 +207,23 @@ export function WishlistView({ items: initialItems }: Props) {
             <WishlistSection
               title="Saved from Journeys"
               items={fromJourneys}
-              removingId={removingId}
+              busyId={busyId}
               pending={pending}
-              onRemove={handleRemove}
+              onAddToJourney={setPickerItem}
             />
           ) : null}
         </div>
       )}
+
+      <JourneyPickerModal
+        open={!!pickerItem}
+        destinationHint={pickerItem?.destination}
+        place={pickerItem ? toDiscoveryPlace(pickerItem) : null}
+        onClose={() => setPickerItem(null)}
+        onCreatedOrMoved={(_journeyId, journeyTitle) => {
+          finishMoveToJourney(journeyTitle);
+        }}
+      />
     </div>
   );
 }
@@ -194,15 +231,15 @@ export function WishlistView({ items: initialItems }: Props) {
 function WishlistSection({
   title,
   items,
-  removingId,
+  busyId,
   pending,
-  onRemove,
+  onAddToJourney,
 }: {
   title: string;
   items: WishlistItemView[];
-  removingId: string | null;
+  busyId: string | null;
   pending: boolean;
-  onRemove: (id: string) => void;
+  onAddToJourney: (item: WishlistItemView) => void;
 }) {
   return (
     <section>
@@ -216,62 +253,54 @@ function WishlistSection({
       </header>
 
       <ul className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {items.map((item) => (
-          <li key={item.id} className={`${surfaces.card} flex flex-col p-6`}>
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <span className={surfaces.chip}>{item.category}</span>
-              <span className="text-[0.65rem] text-brand-text-secondary/70">
-                {item.dateAdded}
-              </span>
-            </div>
+        {items.map((item) => {
+          const isBusy = pending && busyId === item.id;
+          return (
+            <li key={item.id} className={`${surfaces.card} flex flex-col p-6`}>
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <span className={surfaces.chip}>{item.category}</span>
+                <span className="text-[0.65rem] text-brand-text-secondary/70">
+                  {item.dateAdded}
+                </span>
+              </div>
 
-            <h3 className="font-display text-xl text-brand-text-primary">
-              {item.title}
-            </h3>
-            <p className="mt-1 text-xs uppercase tracking-[0.14em] text-brand-text-secondary/80">
-              {item.destination}
-            </p>
-            {item.description ? (
-              <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-brand-text-secondary">
-                {item.description}
+              <h3 className="font-display text-xl text-brand-text-primary">
+                {item.title}
+              </h3>
+              <p className="mt-1 text-xs uppercase tracking-[0.14em] text-brand-text-secondary/80">
+                {item.destination}
               </p>
-            ) : null}
-
-            <p className="mt-4 text-[0.65rem] font-medium uppercase tracking-[0.16em] text-brand-text-secondary/75">
-              Source · {item.source === "discovery" ? "Discovery" : "Journey"}
-            </p>
-
-            <div className="mt-5 flex flex-wrap gap-2 border-t border-brand-border/40 pt-4">
-              <button
-                type="button"
-                disabled={pending && removingId === item.id}
-                onClick={() => onRemove(item.id)}
-                className="inline-flex min-h-[40px] items-center rounded-full border border-brand-border px-3.5 text-xs font-medium text-brand-text-secondary transition-colors hover:border-brand-text-secondary hover:text-brand-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary disabled:opacity-50"
-              >
-                {removingId === item.id ? "Removing…" : "Remove from Wishlist"}
-              </button>
-
-              {item.journeyId ? (
-                <>
-                  <Link
-                    href={`/journeys/${item.journeyId}`}
-                    className="inline-flex min-h-[40px] items-center rounded-full border border-brand-border px-3.5 text-xs font-medium text-brand-text-secondary transition-colors hover:border-brand-text-secondary hover:text-brand-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary"
-                  >
-                    Open Journey
-                  </Link>
-                  {item.source === "discovery" ? (
-                    <Link
-                      href={`/journeys/${item.journeyId}/discover`}
-                      className="inline-flex min-h-[40px] items-center rounded-full border border-brand-border px-3.5 text-xs font-medium text-brand-text-secondary transition-colors hover:border-brand-text-secondary hover:text-brand-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary"
-                    >
-                      Open Discovery
-                    </Link>
-                  ) : null}
-                </>
+              {item.description ? (
+                <p className="mt-3 line-clamp-3 flex-1 text-sm leading-relaxed text-brand-text-secondary">
+                  {item.description}
+                </p>
               ) : null}
-            </div>
-          </li>
-        ))}
+
+              <p className="mt-4 text-[0.65rem] font-medium uppercase tracking-[0.16em] text-brand-text-secondary/75">
+                Source · {item.source === "discovery" ? "Discovery" : "Journey"}
+              </p>
+
+              <div className="mt-5 border-t border-brand-border/40 pt-4">
+                <button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => onAddToJourney(item)}
+                  className={[
+                    "inline-flex min-h-[40px] w-full items-center justify-center rounded-full px-4",
+                    "border border-brand-btn-primary bg-brand-btn-primary",
+                    "text-[0.75rem] font-medium tracking-wide text-brand-bg shadow-sm",
+                    "transition-colors duration-200 hover:bg-brand-btn-primary-hover",
+                    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary",
+                    "disabled:cursor-not-allowed disabled:opacity-55",
+                    "sm:w-auto",
+                  ].join(" ")}
+                >
+                  {isBusy ? "Adding…" : "Add to Journey"}
+                </button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

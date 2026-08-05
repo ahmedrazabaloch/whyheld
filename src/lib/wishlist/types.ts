@@ -23,6 +23,8 @@ export type WishlistItemView = {
   createdAt: string;
   source: WishlistSource;
   journeyId: string | null;
+  /** Original Discovery place id when saved from Discovery. */
+  discoveryPlaceId: string | null;
 };
 
 export function discoveryWishlistKey(journeyId: string, placeId: string) {
