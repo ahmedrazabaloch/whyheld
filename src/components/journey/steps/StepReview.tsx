@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { feelingLabels } from "@/lib/journey/feelings";
+import { BookSuggestionPrompt } from "@/components/journey/BookSuggestionPrompt";
 import type { useJourneyBuilder } from "@/hooks/useJourneyBuilder";
 
 function formatDateRange(
@@ -114,8 +115,11 @@ function LeafSprig({ className }: { className?: string }) {
 
 export function StepReview({
   controller,
+  showBookSuggestions = false,
 }: {
   controller: ReturnType<typeof useJourneyBuilder>;
+  /** Server-gated: true only when profile.countryCode === "US". */
+  showBookSuggestions?: boolean;
 }) {
   const { data } = controller;
   const destination = data.originQuery?.trim() || "Not chosen yet";
@@ -189,6 +193,10 @@ export function StepReview({
           </aside>
         </div>
       </div>
+
+      {showBookSuggestions && data.originQuery?.trim() ? (
+        <BookSuggestionPrompt destination={data.originQuery.trim()} />
+      ) : null}
     </section>
   );
 }

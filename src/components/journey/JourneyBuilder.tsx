@@ -54,10 +54,13 @@ export function JourneyBuilder({
   draft,
   userCredits,
   userPlan,
+  showBookSuggestions = false,
 }: {
   draft: Journey;
   userCredits: number;
   userPlan: string;
+  /** Server-gated Bookshop.org prompt — US profiles only. */
+  showBookSuggestions?: boolean;
 }) {
   const router = useRouter();
   const controller = useJourneyBuilder(draft);
@@ -303,7 +306,10 @@ export function JourneyBuilder({
             )}
             {activeId === "when" && <StepWhen controller={controller} />}
             {activeId === "review" && (
-              <StepReview controller={controller} />
+              <StepReview
+                controller={controller}
+                showBookSuggestions={showBookSuggestions}
+              />
             )}
 
             {bridge && activeId !== "review" && (
