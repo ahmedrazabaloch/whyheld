@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/db";
 import { streamAiPipeline } from "@/lib/ai/pipeline";
 import { AiError, RateLimitError, ProviderUnavailableError } from "@/lib/ai/errors";
+import { parseBuilderMeta } from "@/lib/journey/trip-shape";
+import { feelingPromptText, paceFromFeelings } from "@/lib/journey/feelings";
 
 export async function POST(
   request: NextRequest,
@@ -68,6 +70,9 @@ export async function POST(
         }
         duration = duration || 5;
 
+        const builderMeta = parseBuilderMeta(journey.metadata);
+        const feelingText = feelingPromptText(builderMeta.feelings);
+
         const aiStream = streamAiPipeline({
           promptId: "JOURNEY_PLAN",
           userId: session.user.id,
@@ -75,8 +80,10 @@ export async function POST(
           variables: {
             destination: journey.originQuery || "",
             duration,
-            pace: journey.pace || "GENTLY_BALANCED",
-            budget: journey.budget || "COMFORTABLE",
+            pace: builderMeta.feelings.length
+              ? paceFromFeelings(builderMeta.feelings)
+              : journey.pace || "GENTLY_BALANCED",
+            ...(feelingText ? { feelings: feelingText } : {}),
             ...(journey.startDate ? { startDate: journey.startDate.toISOString().split("T")[0] } : {}),
             ...(journey.endDate ? { endDate: journey.endDate.toISOString().split("T")[0] } : {}),
           },

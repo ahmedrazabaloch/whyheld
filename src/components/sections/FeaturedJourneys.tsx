@@ -9,6 +9,7 @@ import {
   sectionTitle,
   surfaces,
 } from "@/lib/design";
+import { featureHref } from "@/lib/auth/redirect";
 import {
   JOURNEYS,
   JOURNEYS_HEADLINE,
@@ -84,7 +85,7 @@ function JourneyCard({ journey, index }: { journey: Journey; index: number }) {
             Shaped by Wayheld
           </span>
           <a
-            href="/login"
+            href={featureHref("/journeys")}
             className="group/link inline-flex items-center gap-1.5 text-sm font-medium text-[#33332F] transition-colors hover:text-[#74876B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#74876B]"
             aria-label={`Explore ${journey.name}`}
           >

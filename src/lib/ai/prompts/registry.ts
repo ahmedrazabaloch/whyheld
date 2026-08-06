@@ -169,20 +169,23 @@ registerPrompt({
     const destination = requireVar(vars, "destination");
     const duration = requireVar(vars, "duration");
     const pace = requireVar(vars, "pace");
-    const budget = requireVar(vars, "budget");
     const startDate = optionalVar(vars, "startDate");
     const endDate = optionalVar(vars, "endDate");
+    const feelings = optionalLongVar(vars, "feelings");
     const d = Number(duration);
 
     return `<input>
   <destination>${destination}</destination>
   <duration>${duration}</duration>
   <pace>${pace}</pace>
-  <budget>${budget}</budget>
   ${startDate ? `<startDate>${startDate}</startDate>` : ""}
   ${endDate ? `<endDate>${endDate}</endDate>` : ""}
+  ${feelings ? `<feelings>${feelings}</feelings>` : ""}
 </input>
 Create a slow-travel journey matching these parameters.
+${feelings
+  ? "PRIMARY: <feelings> are the traveller's stated interests. Every stop should serve at least one of them, and the journey as a whole must cover all of them — do not let one interest crowd out the others."
+  : ""}
 IMPORTANT: You MUST emit exactly ${d} day objects, one for each day from Day 1 through Day ${d}. Do not stop early.${d > 7 ? " Keep each stop's metadata concise (1-2 sentences per field) to ensure all days fit in the response." : ""}`;
   },
 });
@@ -209,7 +212,7 @@ registerPrompt({
   id: "DISCOVERY_PLACES",
   version: "1.1.0",
   description:
-    "Generates editorial discovery places for a journey draft, shaped by Journey Feel chips, pace, style, and length.",
+    "Generates editorial discovery places for a journey draft, shaped by Journey Feel chips, pace, and length.",
   systemPrompt: [
     "You are an experienced slow-travel curator preparing a quiet collection of places.",
     "Write in a calm, observational, editorial voice. Lived-in. Human. Never promotional.",
@@ -236,12 +239,6 @@ registerPrompt({
     "- SLOW_UNHURRIED: regional villages, nearby nature, gentle day trips, gardens, walking routes, unhurried experiences.",
     "- GENTLY_BALANCED: a mix of city, history, food, nature, culture, and one or two nearby escapes.",
     "",
-    "Respect Travel Style (budget) without mentioning money or tiers:",
-    "- MODEST: local tables, community cafés, simple stays, everyday places.",
-    "- COMFORTABLE: balanced, thoughtful places — neither sparse nor lavish.",
-    "- PREMIUM: boutique stays, quality dining, beautiful quiet rooms, private experiences.",
-    "- LUXURY: exceptional quiet comfort, privacy, carefully chosen experiences.",
-    "",
     "Respect journey length: shorter stays → more focused discoveries; longer stays → wider variety. Do not refuse places based on length.",
     "",
     "Never repeat or closely paraphrase titles, locations, or experiences listed in exclude, selected, or wishlist.",
@@ -252,13 +249,13 @@ registerPrompt({
   buildUserPrompt: (vars) => {
     const destination = requireVar(vars, "destination");
     const pace = requireVar(vars, "pace");
-    const budget = requireVar(vars, "budget");
     const duration = requireVar(vars, "duration");
     const countRaw = vars["count"];
     const count = Math.min(10, Math.max(1, Number(countRaw) || 10));
     const startDate = optionalVar(vars, "startDate");
     const endDate = optionalVar(vars, "endDate");
     const feelings = optionalLongVar(vars, "feelings");
+    const exploreFilters = optionalLongVar(vars, "exploreFilters");
     const exclude = listVar(vars, "excludeTitles");
     const selected = listVar(vars, "selectedTitles");
     const wishlist = listVar(vars, "wishlistTitles");
@@ -266,13 +263,12 @@ registerPrompt({
     return `<input>
   <destination>${destination}</destination>
   <pace>${pace}</pace>
-  <budget>${budget}</budget>
   <duration>${duration}</duration>
   <count>${count}</count>
   ${startDate ? `<startDate>${startDate}</startDate>` : ""}
   ${endDate ? `<endDate>${endDate}</endDate>` : ""}
   ${feelings ? `<feelings>${feelings}</feelings>` : ""}
-  ${optionalVar(vars, "exploreFilters") ? `<exploreFilters>${optionalVar(vars, "exploreFilters")}</exploreFilters>` : ""}
+  ${exploreFilters ? `<exploreFilters>${exploreFilters}</exploreFilters>` : ""}
   ${optionalVar(vars, "mustVisit") ? `<mustVisit>${optionalVar(vars, "mustVisit")}</mustVisit>` : ""}
   <excludeTitles>${exclude || "none"}</excludeTitles>
   <selectedTitles>${selected || "none"}</selectedTitles>
@@ -281,9 +277,11 @@ registerPrompt({
 Propose exactly ${count} new places worth discovering in or around this destination.
 ${feelings
   ? "PRIMARY: Match every place to the traveller's Journey Feel interests listed in <feelings>. Cover those interests across the set — do not drift into unrelated themes."
-  : "Match the journey feel, travel style, and length."}
-Also respect pace, travel style, and length.
-If exploreFilters are listed, lean the collection toward those kinds of places without becoming a checklist.
+  : "Match the journey feel, pace, and length."}
+Also respect pace and length.
+${exploreFilters
+  ? "PRIMARY: <exploreFilters> are the traveller's chosen interests for this search. Every place must clearly serve at least one of them, and the set must cover all of them — spread the count across the listed interests rather than filling it with one."
+  : "If exploreFilters are listed, lean the collection toward those kinds of places without becoming a checklist."}
 If mustVisit places are listed, prefer complementary nearby places (do not duplicate them).
 Do not repeat anything in excludeTitles, selectedTitles, or wishlistTitles.`;
   },
@@ -337,7 +335,6 @@ registerPrompt({
   buildUserPrompt: (vars) => {
     const destination = requireVar(vars, "destination");
     const pace = requireVar(vars, "pace");
-    const budget = requireVar(vars, "budget");
     const duration = requireVar(vars, "duration");
     const startDate = optionalVar(vars, "startDate");
     const endDate = optionalVar(vars, "endDate");
@@ -376,7 +373,6 @@ registerPrompt({
     return `<input>
   <destination>${destination}</destination>
   <pace>${pace}</pace>
-  <budget>${budget}</budget>
   <duration>${duration}</duration>
   ${startDate ? `<startDate>${startDate}</startDate>` : ""}
   ${endDate ? `<endDate>${endDate}</endDate>` : ""}
@@ -434,7 +430,6 @@ registerPrompt({
   buildUserPrompt: (vars) => {
     const destination = requireVar(vars, "destination");
     const pace = requireVar(vars, "pace");
-    const budget = requireVar(vars, "budget");
     const duration = requireVar(vars, "duration");
     const dayNumber = requireVar(vars, "dayNumber");
     const startDate = optionalVar(vars, "startDate");
@@ -479,15 +474,16 @@ registerPrompt({
 
     const currentTheme = optionalVar(vars, "currentTheme");
     const currentTransition = optionalVar(vars, "currentTransition");
+    const feelings = optionalLongVar(vars, "feelings");
 
     return `<input>
   <destination>${destination}</destination>
   <pace>${pace}</pace>
-  <budget>${budget}</budget>
   <duration>${duration}</duration>
   <dayNumber>${dayNumber}</dayNumber>
   ${startDate ? `<startDate>${startDate}</startDate>` : ""}
   ${endDate ? `<endDate>${endDate}</endDate>` : ""}
+  ${feelings ? `<feelings>${feelings}</feelings>` : ""}
   ${currentTheme ? `<currentTheme>${currentTheme}</currentTheme>` : ""}
   ${currentTransition ? `<currentTransition>${currentTransition}</currentTransition>` : ""}
   <lockedPlaces>${lockedList || "none"}</lockedPlaces>
@@ -497,6 +493,7 @@ ${dayPlaces || "  <!-- none — write a restful day with gentle pacing -->"}
 </input>
 Rewrite only day ${dayNumber} of this slow journey.
 Honour every locked place. Use only the places listed for this day.
+${feelings ? "Let <feelings> colour the day theme, pacing language, and which places get prominence." : ""}
 Return dayNumber ${dayNumber}.`;
   },
 });

@@ -76,8 +76,8 @@ function NavIconPastJourneys() {
 export const DASHBOARD_NAV_ITEMS: DashboardNavItem[] = [
   { label: "Dashboard", href: "/dashboard", Icon: NavIconDashboard },
   { label: "Journeys", href: "/journeys", Icon: NavIconJourneys },
-  { label: "Past Journeys", href: "/past-journeys", Icon: NavIconPastJourneys },
   { label: "Explore", href: "/explore", Icon: NavIconExplore },
   { label: "Wishlist", href: "/wishlist", Icon: NavIconWishlist },
+  { label: "Past Journeys", href: "/past-journeys", Icon: NavIconPastJourneys },
   { label: "Billing", href: "/billing", Icon: NavIconBilling },
 ];

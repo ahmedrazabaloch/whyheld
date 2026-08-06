@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { Section } from "@/components/ui";
 import { EASE_EXPO, kicker, leadParagraph, sectionTitle } from "@/lib/design";
+import { featureHref } from "@/lib/auth/redirect";
 import {
   MEMBERSHIP_HEADLINE,
   MEMBERSHIP_INTRO,
@@ -32,7 +33,7 @@ function CheckMark({ accent }: { accent: boolean }) {
 
 function PlanCard({ plan, index, isAuthenticated }: { plan: Plan; index: number; isAuthenticated: boolean }) {
   const featured = plan.featured ?? false;
-  const ctaHref = isAuthenticated ? "/billing" : "/login?callbackUrl=/billing";
+  const ctaHref = featureHref("/billing", isAuthenticated);
 
   return (
     <motion.div

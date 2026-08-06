@@ -6,8 +6,8 @@ import { parseComposedJourney } from "@/lib/utils/composed-journey";
 import {
   destinationDisplayName,
   parseDiscoveryState,
-  parseJourneyMetadata,
 } from "@/components/discovery/discovery-data";
+import { parseBuilderMeta } from "@/lib/journey/trip-shape";
 import { getCachedProfile, getCachedSession } from "@/lib/auth/session-cache";
 
 export const metadata: Metadata = {
@@ -39,10 +39,7 @@ export default async function JourneyComposePage({
     ? await getCachedProfile(session.user.id)
     : null;
 
-  const meta = parseJourneyMetadata(journey.metadata);
-  const feelingIds = Array.isArray(meta.feelings)
-    ? meta.feelings.filter((f): f is string => typeof f === "string" && f.length > 0)
-    : [];
+  const feelingIds = parseBuilderMeta(journey.metadata).feelings;
 
   const discovery = parseDiscoveryState(journey.metadata);
   const selectedPlaces =

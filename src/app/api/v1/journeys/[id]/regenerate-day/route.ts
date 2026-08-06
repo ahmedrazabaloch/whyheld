@@ -11,6 +11,8 @@ import {
   parseComposedJourney,
 } from "@/lib/utils/composed-journey";
 import { parseDiscoveryState } from "@/components/discovery/discovery-data";
+import { parseBuilderMeta } from "@/lib/journey/trip-shape";
+import { feelingPromptText, paceFromFeelings } from "@/lib/journey/feelings";
 import { saveComposedJourneyEdits } from "@/actions/journey-actions";
 import {
   evaluateAccessGate,
@@ -135,6 +137,9 @@ export async function POST(
     return NextResponse.json({ error: gate.message }, { status: 403 });
   }
 
+  const builderMeta = parseBuilderMeta(journey.metadata);
+  const feelingText = feelingPromptText(builderMeta.feelings);
+
   try {
     const result = await executeAiPipeline<RegeneratedDay>({
       promptId: "REGENERATE_JOURNEY_DAY",
@@ -142,9 +147,11 @@ export async function POST(
       signal: request.signal,
       variables: {
         destination: journey.originQuery,
-        pace: journey.pace || "GENTLY_BALANCED",
-        budget: journey.budget || "COMFORTABLE",
+        pace: builderMeta.feelings.length
+          ? paceFromFeelings(builderMeta.feelings)
+          : journey.pace || "GENTLY_BALANCED",
         duration,
+        ...(feelingText ? { feelings: feelingText } : {}),
         dayNumber: body.dayNumber,
         dayPlaces,
         lockedPlaces,

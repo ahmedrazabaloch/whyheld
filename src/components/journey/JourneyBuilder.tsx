@@ -335,8 +335,9 @@ export function JourneyBuilder({
                       if (!data.budget) {
                         controller.update("budget", "COMFORTABLE");
                       }
-                      controller.flushSave();
-                      router.push(`/journeys/${draft.id}/discover`);
+                      void controller.flushSave().then(() => {
+                        router.push(`/journeys/${draft.id}/discover`);
+                      });
                     }}
                     disabled={!canBegin}
                     className={buttonStyles.primary}

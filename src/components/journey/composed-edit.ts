@@ -145,6 +145,32 @@ export function findDay(journey: ComposedJourney, dayNumber: number): ComposedDa
 }
 
 /** Remove a full day and renumber remaining days 1…n. Keeps at least one day. */
+/**
+ * Swap a day with its neighbour, then renumber so days stay 1..N in order.
+ * Moving Day 3 down makes it Day 4 and the old Day 4 becomes Day 3.
+ */
+export function moveDayInJourney(
+  journey: ComposedJourney,
+  dayNumber: number,
+  direction: "up" | "down",
+): ComposedJourney {
+  const index = journey.days.findIndex((d) => d.dayNumber === dayNumber);
+  if (index < 0) return journey;
+
+  const target = direction === "up" ? index - 1 : index + 1;
+  if (target < 0 || target >= journey.days.length) return journey;
+
+  const days = [...journey.days];
+  const moving = days[index]!;
+  days[index] = days[target]!;
+  days[target] = moving;
+
+  return {
+    ...journey,
+    days: days.map((day, i) => ({ ...day, dayNumber: i + 1 })),
+  };
+}
+
 export function removeDayFromJourney(
   journey: ComposedJourney,
   dayNumber: number,

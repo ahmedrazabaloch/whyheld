@@ -83,7 +83,6 @@ export async function POST(
           builderMeta.feelings.length > 0
             ? derivedPace
             : journey.pace || "GENTLY_BALANCED",
-        budget: journey.budget || "COMFORTABLE",
         duration,
         count: body.count,
         excludeTitles: body.excludeTitles,

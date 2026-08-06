@@ -5,6 +5,7 @@ import { PageHeader, EmptyState } from "@/components/dashboard";
 import { getCachedSession } from "@/lib/auth/session-cache";
 import { JourneyListCard } from "@/components/journey/JourneyListCard";
 import {
+  countJourneyPlaces,
   formatJourneyDuration,
   formatJourneyDate,
   normalizeJourneyMetadata,
@@ -38,11 +39,8 @@ export default async function PastJourneysPage() {
       primaryCountry: true,
       region: true,
       pace: true,
-      budget: true,
       updatedAt: true,
-      _count: {
-        select: { stops: true },
-      },
+      metadata: true,
     },
   });
 
@@ -82,7 +80,6 @@ export default async function PastJourneysPage() {
               primaryCountry: journey.primaryCountry,
               region: journey.region,
               pace: journey.pace,
-              budget: journey.budget,
             });
 
             return (
@@ -97,7 +94,7 @@ export default async function PastJourneysPage() {
                   null,
                 )}
                 status={journey.status}
-                stopCount={journey._count.stops}
+                placeCount={countJourneyPlaces(journey.metadata)}
                 updatedDate={formatJourneyDate(journey.updatedAt)}
               />
             );

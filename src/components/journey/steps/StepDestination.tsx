@@ -164,11 +164,16 @@ export function StepDestination({
       </div>
 
       <div className="space-y-3 pt-1">
-        <p className={formStyles.label}>Popular right now</p>
+        <div className="space-y-1">
+          <p className={formStyles.label}>Popular places right now</p>
+          <p className="text-xs font-medium leading-relaxed text-brand-text-primary/75">
+            Skip the search — tap a suggestion below to fill in your destination.
+          </p>
+        </div>
         <div
           className="flex flex-wrap gap-2.5"
           role="list"
-          aria-label="Popular destinations"
+          aria-label="Popular place suggestions — pick one to set your destination"
         >
           {POPULAR_DESTINATIONS.map((place) => {
             const selected =

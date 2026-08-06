@@ -49,10 +49,15 @@ export function useJourneyBuilder(draft: Journey) {
   const [isSaving, setIsSaving] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const pendingDataRef = useRef<SavePayload>({});
+  // Saves run one at a time so a slow earlier write can never land after —
+  // and overwrite — a newer one.
+  const saveChainRef = useRef<Promise<void>>(Promise.resolve());
 
-  const saveToDb = useCallback(
-    async (payload: SavePayload) => {
-      if (Object.keys(payload).length === 0) return;
+  const saveToDb = useCallback(() => {
+    saveChainRef.current = saveChainRef.current.then(async () => {
+      const payload = { ...pendingDataRef.current };
+      const keys = Object.keys(payload) as (keyof SavePayload)[];
+      if (keys.length === 0) return;
 
       setIsSaving(true);
       try {
@@ -70,15 +75,24 @@ export function useJourneyBuilder(draft: Journey) {
           ...(intent !== undefined ? { intent } : {}),
           ...(lastCompletedStep !== undefined ? { lastCompletedStep } : {}),
         });
-        pendingDataRef.current = {};
+        // Retire only the values this request actually carried. Anything the
+        // traveller changed while it was in flight stays queued instead of
+        // being silently dropped.
+        const pending = pendingDataRef.current as Record<string, unknown>;
+        for (const key of keys) {
+          if (pending[key] === (payload as Record<string, unknown>)[key]) {
+            delete pending[key];
+          }
+        }
       } catch (error) {
         console.error("Failed to save draft:", error);
       } finally {
         setIsSaving(false);
       }
-    },
-    [draft.id],
-  );
+    });
+
+    return saveChainRef.current;
+  }, [draft.id]);
 
   useEffect(() => {
     return () => {
@@ -112,12 +126,13 @@ export function useJourneyBuilder(draft: Journey) {
       if (debounceRef.current) clearTimeout(debounceRef.current);
 
       if (immediate) {
-        saveToDb({ ...pendingDataRef.current });
-      } else {
-        debounceRef.current = setTimeout(() => {
-          saveToDb({ ...pendingDataRef.current });
-        }, 1000);
+        return saveToDb();
       }
+
+      debounceRef.current = setTimeout(() => {
+        void saveToDb();
+      }, 1000);
+      return Promise.resolve();
     },
     [saveToDb],
   );
@@ -130,10 +145,12 @@ export function useJourneyBuilder(draft: Journey) {
     [queueSave],
   );
 
+  /** Awaitable so callers can persist before navigating away. */
   const flushSave = useCallback(() => {
-    if (Object.keys(pendingDataRef.current).length > 0) {
-      queueSave({}, true);
+    if (Object.keys(pendingDataRef.current).length === 0) {
+      return saveChainRef.current;
     }
+    return queueSave({}, true);
   }, [queueSave]);
 
   return {

@@ -75,7 +75,7 @@ export function WishlistView({ items: initialItems }: Props) {
   const fromDiscovery = filtered.filter((i) => i.source === "discovery");
   const fromJourneys = filtered.filter((i) => i.source === "journey");
 
-  const finishMoveToJourney = (journeyTitle: string) => {
+  const finishMoveToJourney = (journeyTitle: string, dayNumber?: number) => {
     const item = pickerItem;
     if (!item) return;
 
@@ -85,9 +85,10 @@ export function WishlistView({ items: initialItems }: Props) {
       const res = await removeSavedPlace(item.id);
       if (res.success) {
         setItems((prev) => prev.filter((p) => p.id !== item.id));
-        toast.success(
-          `Added “${item.title}” to ${journeyTitle || "your journey"}`,
-        );
+        const destinationLabel = dayNumber
+          ? `Day ${dayNumber} of ${journeyTitle || "your journey"}`
+          : journeyTitle || "your journey";
+        toast.success(`Added “${item.title}” to ${destinationLabel}`);
         router.refresh();
       } else {
         toast.error(
@@ -220,8 +221,8 @@ export function WishlistView({ items: initialItems }: Props) {
         destinationHint={pickerItem?.destination}
         place={pickerItem ? toDiscoveryPlace(pickerItem) : null}
         onClose={() => setPickerItem(null)}
-        onCreatedOrMoved={(_journeyId, journeyTitle) => {
-          finishMoveToJourney(journeyTitle);
+        onCreatedOrMoved={(_journeyId, journeyTitle, dayNumber) => {
+          finishMoveToJourney(journeyTitle, dayNumber);
         }}
       />
     </div>

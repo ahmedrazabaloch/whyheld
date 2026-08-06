@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { safeRedirectPath } from "@/lib/auth/redirect";
 
 /**
  * Route protection middleware.
  *
  * Edge-safe: it checks only for the presence of a NextAuth session cookie (it
  * does not hit the database or run the full auth config, which uses Prisma).
- * Fine-grained checks (email verified, onboarding complete, ownership) happen
- * in server components / route handlers where the DB is available.
+ * Fine-grained checks (email verified, ownership) happen in server components
+ * / route handlers where the DB is available.
  *
  *  - Unauthenticated users hitting an app route → redirected to /login?callbackUrl
- *  - Authenticated users hitting an auth route (login/signup) → sent to /start
+ *  - Authenticated users hitting an auth route → sent to their callbackUrl, or
+ *    /start when none was requested
  */
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
@@ -19,7 +21,6 @@ const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
 // but the guard is in place now per Phase 1 scope.)
 const PROTECTED_PREFIXES = [
   "/dashboard",
-  "/onboarding",
   "/journeys",
   "/past-journeys",
   "/wishlist",
@@ -56,8 +57,12 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Already signed in: honour the destination the CTA asked for so the visitor
+  // lands on the feature they clicked instead of a generic start screen.
   if (isAuthRoute && authed) {
-    return NextResponse.redirect(new URL("/start", request.url));
+    const requested = request.nextUrl.searchParams.get("callbackUrl");
+    const target = safeRedirectPath(requested, "/start");
+    return NextResponse.redirect(new URL(target, request.url));
   }
 
   return NextResponse.next();

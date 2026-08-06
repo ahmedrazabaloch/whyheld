@@ -1,17 +1,18 @@
 "use client";
 
 import { motion } from "motion/react";
+import { featureHref } from "@/lib/auth/redirect";
 import { riseVariants } from "./motion";
 
 /** Primary + secondary call-to-action pairing with clear hierarchy. */
-export function HeroCtas() {
+export function HeroCtas({ isAuthenticated }: { isAuthenticated?: boolean }) {
   return (
     <motion.div
       variants={riseVariants}
       className="flex flex-col gap-3 sm:flex-row sm:items-center"
     >
       <a
-        href="/login"
+        href={featureHref("/dashboard", isAuthenticated)}
         className="group inline-flex h-13 items-center justify-center gap-2 rounded-full border-2 border-white/90 bg-[#F4EFE6] px-7 py-3.5 text-sm font-bold text-[#33332F] shadow-[0_4px_20px_rgba(0,0,0,0.12)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:border-white hover:shadow-[0_6px_25px_rgba(0,0,0,0.2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F4EFE6]"
       >
         Plan a slower journey

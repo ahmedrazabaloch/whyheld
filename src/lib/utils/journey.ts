@@ -43,12 +43,57 @@ export function normalizeJourneySummary(summary?: string | null, aiSummary?: str
   return "No summary available";
 }
 
+/**
+ * How many distinct places a journey actually holds.
+ *
+ * JourneyStop rows are narrative segments (morning / afternoon / evening), so
+ * counting them reports the wrong number. Read the composed itinerary instead,
+ * falling back to the Discovery board for journeys that were never composed.
+ */
+export function countJourneyPlaces(metadata: unknown): number {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return 0;
+  }
+  const meta = metadata as Record<string, unknown>;
+
+  const composed = meta.composedJourney as { days?: unknown } | undefined;
+  if (composed && Array.isArray(composed.days)) {
+    const titles = new Set<string>();
+    for (const rawDay of composed.days) {
+      if (!rawDay || typeof rawDay !== "object") continue;
+      const day = rawDay as { places?: unknown; placeTitles?: unknown };
+
+      if (Array.isArray(day.places)) {
+        for (const place of day.places) {
+          const title = (place as { title?: unknown })?.title;
+          if (typeof title === "string" && title.trim()) {
+            titles.add(title.trim().toLowerCase());
+          }
+        }
+      } else if (Array.isArray(day.placeTitles)) {
+        for (const title of day.placeTitles) {
+          if (typeof title === "string" && title.trim()) {
+            titles.add(title.trim().toLowerCase());
+          }
+        }
+      }
+    }
+    return titles.size;
+  }
+
+  const discovery = meta.discovery as { journeyPlaceIds?: unknown } | undefined;
+  if (discovery && Array.isArray(discovery.journeyPlaceIds)) {
+    return discovery.journeyPlaceIds.filter((id) => typeof id === "string").length;
+  }
+
+  return 0;
+}
+
 export function normalizeJourneyMetadata(metadata: {
   originQuery?: string | null;
   primaryCountry?: string | null;
   region?: string | null;
   pace?: string | null;
-  budget?: string | null;
 }) {
   const destination = metadata.originQuery || metadata.region || metadata.primaryCountry || "Unknown";
   
@@ -59,17 +104,8 @@ export function normalizeJourneyMetadata(metadata: {
     case "GENTLY_BALANCED": pace = "Gently balanced"; break;
   }
 
-  let budget = "Not specified";
-  switch (metadata.budget) {
-    case "MODEST": budget = "Modest"; break;
-    case "COMFORTABLE": budget = "Comfortable"; break;
-    case "PREMIUM": budget = "Premium"; break;
-    case "LUXURY": budget = "Luxury"; break;
-  }
-
   return {
     destination,
     pace,
-    budget
   };
 }

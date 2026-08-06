@@ -9,10 +9,16 @@ import {
   type KeyboardEvent,
 } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Pencil, Star, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronLeft,
+  ChevronRight,
+  Star,
+  Trash2,
+} from "lucide-react";
 import { surfaces } from "@/lib/design";
 import type { ComposedJourney } from "@/lib/ai/schemas/composed-journey";
-import type { DiscoveryPlace } from "@/components/discovery/discovery-data";
 import { saveComposedJourneyEdits } from "@/actions/journey-actions";
 import {
   dayDetailBullets,
@@ -20,28 +26,16 @@ import {
   normalizeComposedJourney,
 } from "@/lib/utils/composed-journey";
 import {
-  addPlaceToDay,
-  availableDiscoveryPlaces,
-  movePlaceToDay,
+  moveDayInJourney,
   removeDayFromJourney,
-  removePlaceFromDay,
-  reorderPlaceInDay,
-  togglePlaceLock,
 } from "@/components/journey/composed-edit";
-import {
-  DayPlaceEditor,
-  JourneyEditToolbar,
-} from "@/components/journey/DayPlaceEditor";
 import type { JourneyAccessInfo } from "@/lib/journey/load-access";
 import { AppDialog } from "@/components/ui/AppDialog";
 
 type Props = {
   composed: ComposedJourney;
-  /** All Discovery places selected for the journey (for Add place). */
-  discoveryPlaces: DiscoveryPlace[];
   destination: string;
   journeyId: string;
-  initialEditMode?: boolean;
   accessInfo?: JourneyAccessInfo | null;
 };
 
@@ -56,6 +50,17 @@ const PACING_TAG_TONES = [
   "border-stone-400/40 bg-stone-100 text-stone-700",
   "border-teal-700/20 bg-teal-50 text-teal-900/75",
 ] as const;
+
+/** Circular icon button, matching the day-navigation chevrons. */
+const dayMoveButtonClass = [
+  "inline-flex h-9 w-9 items-center justify-center rounded-full",
+  "border border-brand-border bg-brand-bg/50 text-brand-text-secondary",
+  "transition-colors duration-200",
+  "hover:border-brand-btn-primary/50 hover:bg-brand-btn-primary/10 hover:text-brand-btn-primary",
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary",
+  "disabled:cursor-not-allowed disabled:opacity-35",
+  "disabled:hover:border-brand-border disabled:hover:bg-brand-bg/50 disabled:hover:text-brand-text-secondary",
+].join(" ");
 
 /** Split pacing copy into short visual tags. */
 function pacingTags(pacing: string): string[] {
@@ -84,14 +89,12 @@ function dayPlaceEntries(day: {
 
 /**
  * Premium reading layout for a composed itinerary,
- * with an optional Edit Mode for place-level control.
+ * with per-day reordering and removal.
  */
 export function ComposedJourneySections({
   composed: composedProp,
-  discoveryPlaces,
   destination,
   journeyId,
-  initialEditMode = false,
   accessInfo = null,
 }: Props) {
   const router = useRouter();
@@ -103,17 +106,21 @@ export function ComposedJourneySections({
     [composedProp, destination],
   );
   const [draft, setDraft] = useState<ComposedJourney>(baseline);
-  const [baselineSnapshot, setBaselineSnapshot] = useState(baseline);
-  const [editMode, setEditMode] = useState(initialEditMode);
-  const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [regeneratingDay, setRegeneratingDay] = useState<number | null>(null);
+  const [movingDay, setMovingDay] = useState<number | null>(null);
+  const [removingDay, setRemovingDay] = useState<number | null>(null);
 
-  // Sync from server when props change and there are no local edits (React-approved render adjustment).
-  const dirty =
-    JSON.stringify(draft) !== JSON.stringify(baselineSnapshot);
-  if (baseline !== baselineSnapshot && !dirty) {
-    setBaselineSnapshot(baseline);
+  /** One day-level mutation at a time — reorder and remove both rewrite days. */
+  const busyDay = movingDay ?? removingDay;
+
+  // Adopt server state only when the journey prop itself changes. Tracking a
+  // locally built snapshot instead would undo an optimistic edit the instant it
+  // saved, because `baseline` still holds the pre-save props at that moment.
+  // While a mutation is in flight the sync is deferred rather than skipped —
+  // the condition stays true until it runs.
+  const [syncedFrom, setSyncedFrom] = useState(composedProp);
+  if (composedProp !== syncedFrom && busyDay === null) {
+    setSyncedFrom(composedProp);
     setDraft(baseline);
   }
 
@@ -123,86 +130,39 @@ export function ComposedJourneySections({
   const dayButtonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const dayNavScrollRef = useRef<HTMLDivElement>(null);
   const scrollingToRef = useRef<number | null>(null);
-  const [removingDay, setRemovingDay] = useState<number | null>(null);
   const [dayToRemove, setDayToRemove] = useState<number | null>(null);
 
-  const availablePlaces = useMemo(
-    () => availableDiscoveryPlaces(draft, discoveryPlaces),
-    [draft, discoveryPlaces],
-  );
+  /**
+   * Swap a day with its neighbour and persist immediately — the page has no
+   * explicit save step, so the reorder must stand on its own.
+   */
+  const handleMoveDay = useCallback(
+    async (dayNumber: number, direction: "up" | "down") => {
+      const previous = draft;
+      const next = moveDayInJourney(draft, dayNumber, direction);
+      if (next === draft) return;
 
-  const allDayNumbers = useMemo(
-    () => days.map((d) => d.dayNumber),
-    [days],
-  );
-
-  const handleSave = useCallback(async () => {
-    setSaving(true);
-    setSaveError(null);
-    try {
-      const res = await saveComposedJourneyEdits(journeyId, draft);
-      if (!res.success) {
-        setSaveError(res.error || "Could not save changes.");
-        return;
-      }
-      setBaselineSnapshot(draft);
-      router.refresh();
-    } catch {
-      setSaveError("Could not save changes.");
-    } finally {
-      setSaving(false);
-    }
-  }, [draft, journeyId, router]);
-
-  const handleRegenerateDay = useCallback(
-    async (dayNumber: number) => {
-      if (accessInfo && !accessInfo.canRegenerate) {
-        setSaveError(
-          accessInfo.gateMessage ||
-            "This journey cannot be regenerated right now.",
-        );
-        return;
-      }
-      // Persist current draft first so the API regenerates from latest places
-      setRegeneratingDay(dayNumber);
+      const landedOn = direction === "up" ? dayNumber - 1 : dayNumber + 1;
+      setDraft(next);
+      setMovingDay(dayNumber);
       setSaveError(null);
       try {
-        if (dirty) {
-          const saved = await saveComposedJourneyEdits(journeyId, draft);
-          if (!saved.success) {
-            setSaveError(saved.error || "Save failed before regenerate.");
-            return;
-          }
-        }
-
-        const res = await fetch(`/api/v1/journeys/${journeyId}/regenerate-day`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dayNumber }),
-        });
-        const data = (await res.json().catch(() => ({}))) as {
-          error?: string;
-          composed?: ComposedJourney;
-        };
-        if (!res.ok) {
-          setSaveError(data.error || "Could not regenerate this day.");
+        const res = await saveComposedJourneyEdits(journeyId, next);
+        if (!res.success) {
+          setSaveError(res.error || "Could not reorder these days.");
+          setDraft(previous);
           return;
         }
-        if (data.composed) {
-          const next = normalizeComposedJourney(data.composed, {
-            fallbackCountry: destination,
-          });
-          setDraft(next);
-          setBaselineSnapshot(next);
-        }
+        setActiveDay(landedOn);
         router.refresh();
       } catch {
-        setSaveError("Could not regenerate this day.");
+        setSaveError("Could not reorder these days.");
+        setDraft(previous);
       } finally {
-        setRegeneratingDay(null);
+        setMovingDay(null);
       }
     },
-    [accessInfo, destination, dirty, draft, journeyId, router],
+    [draft, journeyId, router],
   );
 
   const handleRemoveDay = useCallback(
@@ -215,7 +175,6 @@ export function ComposedJourneySections({
       const previous = draft;
       const next = removeDayFromJourney(draft, dayNumber);
       setDraft(next);
-      setEditMode(true);
       setRemovingDay(dayNumber);
       setSaveError(null);
       try {
@@ -225,7 +184,6 @@ export function ComposedJourneySections({
           setDraft(previous);
           return;
         }
-        setBaselineSnapshot(next);
         setActiveDay(next.days[0]?.dayNumber ?? 1);
         router.refresh();
       } catch {
@@ -316,15 +274,6 @@ export function ComposedJourneySections({
     }, 900);
   }, []);
 
-  const handleEditDay = useCallback(
-    (dayNumber: number) => {
-      setEditMode(true);
-      setSaveError(null);
-      window.requestAnimationFrame(() => scrollToDay(dayNumber));
-    },
-    [scrollToDay],
-  );
-
   const onDayNavKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>, dayNumber: number) => {
       const index = days.findIndex((d) => d.dayNumber === dayNumber);
@@ -357,42 +306,7 @@ export function ComposedJourneySections({
 
   return (
     <div className="mt-10 sm:mt-12">
-      {editMode ? (
-        <JourneyEditToolbar
-          dirty={dirty}
-          saving={saving || regeneratingDay !== null || removingDay !== null}
-          onSave={() => void handleSave()}
-          onCancel={() => {
-            setDraft(baselineSnapshot);
-            setSaveError(null);
-          }}
-          onExitEdit={() => {
-            setEditMode(false);
-            setSaveError(null);
-            router.replace(`/journeys/${journeyId}`);
-          }}
-          accessLabel={
-            accessInfo
-              ? accessInfo.plan === "PREMIUM"
-                ? accessInfo.accessExpiresLabel
-                  ? `Adjust until ${accessInfo.accessExpiresLabel}`
-                  : "Premium refinements"
-                : `${accessInfo.refinementsRemaining} of ${accessInfo.maxRefinements} refinements left${
-                    accessInfo.accessExpiresLabel
-                      ? ` · until ${accessInfo.accessExpiresLabel}`
-                      : ""
-                  }`
-              : null
-          }
-          accessBlockedMessage={
-            accessInfo && !accessInfo.canRegenerate
-              ? accessInfo.gateMessage
-              : null
-          }
-        />
-      ) : null}
-
-      {!editMode && accessInfo ? (
+      {accessInfo ? (
         <p className="mb-6 text-xs tracking-wide text-brand-text-secondary">
           {accessInfo.plan === "PREMIUM"
             ? accessInfo.accessExpiresLabel
@@ -510,7 +424,7 @@ export function ComposedJourneySections({
           </header>
 
           <div className="space-y-14 sm:space-y-16">
-            {days.map((day) => (
+            {days.map((day, dayIndex) => (
               <article
                 key={day.dayNumber}
                 id={dayAnchorId(day.dayNumber)}
@@ -541,17 +455,31 @@ export function ComposedJourneySections({
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          disabled={dayIndex === 0 || busyDay !== null}
+                          onClick={() => void handleMoveDay(day.dayNumber, "up")}
+                          aria-label={`Move day ${day.dayNumber} earlier`}
+                          title="Move this day earlier"
+                          className={dayMoveButtonClass}
+                        >
+                          <ArrowUp className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={dayIndex === days.length - 1 || busyDay !== null}
+                          onClick={() => void handleMoveDay(day.dayNumber, "down")}
+                          aria-label={`Move day ${day.dayNumber} later`}
+                          title="Move this day later"
+                          className={dayMoveButtonClass}
+                        >
+                          <ArrowDown className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                        </button>
+                      </div>
                       <button
                         type="button"
-                        onClick={() => handleEditDay(day.dayNumber)}
-                        className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-brand-border bg-brand-bg/50 px-3 text-xs font-medium text-brand-text-secondary transition-colors hover:border-brand-text-secondary hover:text-brand-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary"
-                      >
-                        <Pencil className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        disabled={days.length <= 1 || removingDay === day.dayNumber}
+                        disabled={days.length <= 1 || busyDay !== null}
                         onClick={() => requestRemoveDay(day.dayNumber)}
                         className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-brand-border bg-brand-bg/50 px-3 text-xs font-medium text-brand-text-secondary transition-colors hover:border-red-700/40 hover:text-red-800/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary disabled:cursor-not-allowed disabled:opacity-45"
                       >
@@ -696,39 +624,7 @@ export function ComposedJourneySections({
                   />
                 ) : null}
 
-                {editMode ? (
-                  <DayPlaceEditor
-                    day={day}
-                    allDayNumbers={allDayNumbers}
-                    availablePlaces={availablePlaces}
-                    regenerating={regeneratingDay === day.dayNumber}
-                    discoverHref={`/journeys/${journeyId}/discover?from=edit`}
-                    onRemove={(placeId) =>
-                      setDraft((prev) =>
-                        removePlaceFromDay(prev, day.dayNumber, placeId),
-                      )
-                    }
-                    onToggleLock={(placeId) =>
-                      setDraft((prev) =>
-                        togglePlaceLock(prev, day.dayNumber, placeId),
-                      )
-                    }
-                    onReorder={(placeId, direction) =>
-                      setDraft((prev) =>
-                        reorderPlaceInDay(prev, day.dayNumber, placeId, direction),
-                      )
-                    }
-                    onMove={(placeId, toDay) =>
-                      setDraft((prev) =>
-                        movePlaceToDay(prev, day.dayNumber, placeId, toDay),
-                      )
-                    }
-                    onAdd={(place) =>
-                      setDraft((prev) => addPlaceToDay(prev, day.dayNumber, place))
-                    }
-                    onRegenerateDay={() => void handleRegenerateDay(day.dayNumber)}
-                  />
-                ) : day.placeTitles && day.placeTitles.length > 0 ? (
+                {day.placeTitles && day.placeTitles.length > 0 ? (
                   <div className="mt-6 border-t border-brand-border/40 pt-5">
                     <p className="mb-3 text-[0.62rem] font-semibold uppercase tracking-[0.2em] text-brand-text-secondary/80">
                       Places this day

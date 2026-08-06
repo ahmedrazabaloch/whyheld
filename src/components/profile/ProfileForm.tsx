@@ -13,7 +13,6 @@ interface ProfileFormProps {
   phone: string;
   email: string;
   initialLocation: string;
-  onboardingComplete: boolean;
 }
 
 // Map location strings to 2-letter ISO country codes
@@ -59,7 +58,7 @@ function validatePhone(value: string, country?: CountryCode): string | null {
 
 import { useRouter } from "next/navigation";
 
-export function ProfileForm({ firstName, lastName, phone: initialPhone, email, initialLocation, onboardingComplete }: ProfileFormProps) {
+export function ProfileForm({ firstName, lastName, phone: initialPhone, email, initialLocation }: ProfileFormProps) {
   const router = useRouter();
   const fullName = [firstName, lastName].filter(Boolean).join(" ");
   const [name, setName] = useState(fullName);

@@ -101,8 +101,8 @@ export const formStyles = {
 } as const;
 
 /**
- * Selectable option card (used in onboarding for travel style, interests,
- * pace, preferences). Pass `selected` to toggle the active styling.
+ * Selectable option card for pickable lists. Pass `selected` to toggle the
+ * active styling.
  */
 export function optionCard(selected: boolean): string {
   return [

@@ -127,6 +127,30 @@ export type JourneyPace =
   | "SLOW_UNHURRIED"
   | "GENTLY_BALANCED";
 
+export const JOURNEY_FEELING_IDS: string[] = JOURNEY_FEELINGS.map((f) => f.id);
+
+export function isJourneyFeelingId(value: unknown): value is string {
+  return typeof value === "string" && JOURNEY_FEELING_IDS.includes(value);
+}
+
+/**
+ * Keep only real chip ids, drop duplicates, and cap at the selection limit.
+ * Guards every read/write so a stale or malformed metadata value can never
+ * surface as a chip the traveller did not choose.
+ */
+export function normalizeFeelingIds(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const value of raw) {
+    if (!isJourneyFeelingId(value) || seen.has(value)) continue;
+    seen.add(value);
+    out.push(value);
+    if (out.length >= MAX_JOURNEY_FEELINGS) break;
+  }
+  return out;
+}
+
 export function feelingLabels(ids: string[] | undefined | null): string[] {
   if (!ids?.length) return [];
   const map = new Map(JOURNEY_FEELINGS.map((f) => [f.id, f.label]));

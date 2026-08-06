@@ -11,7 +11,6 @@ interface ProfileTabsProps {
   phone: string;
   email: string;
   initialLocation: string;
-  onboardingComplete: boolean;
   fullName: string;
 }
 
@@ -23,7 +22,6 @@ export function ProfileTabs({
   phone,
   email,
   initialLocation,
-  onboardingComplete,
   fullName,
 }: ProfileTabsProps) {
   const [activeTab, setActiveTab] = useState<TabType>("personal");
@@ -87,7 +85,6 @@ export function ProfileTabs({
                 phone={phone}
                 email={email}
                 initialLocation={initialLocation}
-                onboardingComplete={onboardingComplete}
               />
             </div>
           </div>

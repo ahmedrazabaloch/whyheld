@@ -181,9 +181,23 @@ export function DiscoveryJourneyBoard({
                 <button
                   type="button"
                   onClick={() => onRemovePlace(place.id)}
-                  className="shrink-0 text-[0.7rem] text-brand-text-secondary underline-offset-2 hover:text-brand-text-primary hover:underline"
+                  aria-label={`Remove ${place.title}`}
+                  title="Remove"
+                  className="shrink-0 rounded-full p-1.5 text-brand-text-secondary transition-colors hover:bg-brand-border/40 hover:text-brand-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary"
                 >
-                  Remove
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
                 </button>
               </li>
             ))}

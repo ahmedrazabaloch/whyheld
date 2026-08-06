@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth/auth";
 import { executeAiPipeline } from "@/lib/ai/pipeline";
 import { AiError } from "@/lib/ai/errors";
 import type { DiscoveryPlacesOutput } from "@/lib/ai/schemas/discovery";
-import { exploreFilterLabels } from "@/lib/explore/filters";
+import { exploreFilterPromptText } from "@/lib/explore/filters";
 
 const BodySchema = z.object({
   destination: z.string().trim().min(2).max(120),
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const filterText = exploreFilterLabels(body.filters).join(", ");
+    const filterText = exploreFilterPromptText(body.filters);
 
     const result = await executeAiPipeline<DiscoveryPlacesOutput>({
       promptId: "DISCOVERY_PLACES",
@@ -49,7 +49,6 @@ export async function POST(request: NextRequest) {
       variables: {
         destination: body.destination,
         pace: "GENTLY_BALANCED",
-        budget: "COMFORTABLE",
         duration: 5,
         count: body.count,
         excludeTitles: body.excludeTitles,

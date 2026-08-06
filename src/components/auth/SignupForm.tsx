@@ -32,7 +32,8 @@ function scorePassword(pw: string): { score: number; label: string } {
 
 /**
  * Signup form. Creates the account via the signup API, then signs the user in
- * with the Credentials provider and routes them into onboarding.
+ * with the Credentials provider and hands off to /start, which routes them to
+ * their profile (if incomplete) or the dashboard.
  */
 export function SignupForm() {
   const router = useRouter();
@@ -95,7 +96,11 @@ export function SignupForm() {
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         if (res.status === 409) {
-          setErrors({ email: "An account with this email already exists." });
+          const message: string =
+            data?.error?.message ??
+            "An account with this email already exists.";
+          setErrors({ email: message });
+          toast.error(message);
         } else if (data?.error?.fields) {
           const f = data.error.fields as Record<string, string[]>;
           setErrors({
@@ -111,7 +116,7 @@ export function SignupForm() {
         return;
       }
 
-      // Auto sign-in, then continue to onboarding.
+      // Auto sign-in, then let /start pick the landing page.
       const result = await signIn("credentials", {
         email,
         password,

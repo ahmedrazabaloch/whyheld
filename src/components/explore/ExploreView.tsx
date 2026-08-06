@@ -8,15 +8,12 @@ import {
   DiscoveryPlaceCard,
   DiscoveryPlaceSkeleton,
 } from "@/components/discovery/DiscoveryPlaceCard";
-import { JourneyPickerModal } from "@/components/discovery/JourneyPickerModal";
 import type { DiscoveryPlace } from "@/components/discovery/discovery-data";
-import { addPlaceToJourneyBoard } from "@/actions/journey-actions";
+import { createJourneyBoardWithPlace } from "@/actions/journey-actions";
 import { toggleWishlistPlace } from "@/actions/place-actions";
 import { LocationAutocomplete } from "@/components/location/LocationAutocomplete";
-import {
-  EXPLORE_FILTERS,
-  exploreFilterLabels,
-} from "@/lib/explore/filters";
+import { ExploreIntentionModal } from "@/components/explore/ExploreIntentionModal";
+import { exploreFilterLabels } from "@/lib/explore/filters";
 import {
   TRENDING_DESTINATIONS,
   pushRecentSearch,
@@ -33,12 +30,21 @@ type ApiPlace = {
   weatherNote?: string;
 };
 
-type PreferredAddTarget = { id: string; title: string };
+/**
+ * The journey card that Explore adds land on. Scoped to the destination that
+ * was searched: without this, a target remembered for one place kept absorbing
+ * results from every later search into the same unrelated journey.
+ */
+type PreferredAddTarget = { id: string; title: string; destination: string };
 
 const EXPLORE_ADD_TARGET_KEY = "wayheld:explore-add-target";
 
 function normalizeTitle(title: string): string {
   return title.trim().toLowerCase();
+}
+
+function sameDestination(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
 }
 
 function toDiscoveryPlaces(
@@ -64,17 +70,25 @@ function toDiscoveryPlaces(
   return out;
 }
 
-function readPreferredAddTarget(): PreferredAddTarget | null {
+function readPreferredAddTarget(
+  destination?: string,
+): PreferredAddTarget | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = sessionStorage.getItem(EXPLORE_ADD_TARGET_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PreferredAddTarget;
     if (!parsed?.id?.trim()) return null;
-    return {
+    const stored = {
       id: parsed.id.trim(),
       title: parsed.title?.trim() || "your journey",
+      destination: parsed.destination?.trim() || "",
     };
+    // A target only counts for the destination it was created under.
+    if (destination && !sameDestination(stored.destination, destination)) {
+      return null;
+    }
+    return stored;
   } catch {
     return null;
   }
@@ -94,6 +108,48 @@ function clearPreferredAddTarget() {
   } catch {
     // ignore
   }
+}
+
+type AddPlaceOutcome =
+  | { ok: true }
+  | { ok: false; status: number; message: string };
+
+/**
+ * Adds a place through the route handler rather than the server action, so
+ * rapid taps are not queued behind one another and navigation stays responsive.
+ */
+async function addPlaceViaApi(
+  targetJourneyId: string,
+  place: DiscoveryPlace,
+): Promise<AddPlaceOutcome> {
+  const res = await fetch("/api/v1/journeys/add-place", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      targetJourneyId,
+      place: {
+        id: place.id,
+        category: place.category,
+        title: place.title,
+        description: place.description,
+        highlights: place.highlights,
+        localTips: place.localTips,
+        guideNote: place.guideNote,
+        weatherNote: place.weatherNote,
+      },
+    }),
+  });
+
+  if (res.ok) return { ok: true };
+
+  const data = (await res.json().catch(() => ({}))) as {
+    error?: { message?: string };
+  };
+  return {
+    ok: false,
+    status: res.status,
+    message: data.error?.message || "Could not add this place.",
+  };
 }
 
 async function requestPlaces(input: {
@@ -133,7 +189,9 @@ async function requestPlaces(input: {
 export function ExploreView() {
   const [query, setQuery] = useState("");
   const [activeDestination, setActiveDestination] = useState("");
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  // Filters behind the results currently on screen; also seed the intention step.
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [intentionOpen, setIntentionOpen] = useState(false);
   const [places, setPlaces] = useState<DiscoveryPlace[]>([]);
   const [journeyIds, setJourneyIds] = useState<Set<string>>(new Set());
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
@@ -141,15 +199,14 @@ export function ExploreView() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [failed, setFailed] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [pickerPlace, setPickerPlace] = useState<DiscoveryPlace | null>(null);
   const [preferredAddTarget, setPreferredAddTarget] =
     useState<PreferredAddTarget | null>(null);
-  const [addBusyId, setAddBusyId] = useState<string | null>(null);
+  // A set, not a single id — several places can be saving at once.
+  const [addBusyIds, setAddBusyIds] = useState<Set<string>>(new Set());
   const [wishlistBusyId, setWishlistBusyId] = useState<string | null>(null);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   useEffect(() => {
-    setPreferredAddTarget(readPreferredAddTarget());
     setRecentSearches(readRecentSearches());
   }, []);
 
@@ -166,27 +223,40 @@ export function ExploreView() {
     });
   }, []);
 
-  const toggleFilter = (id: string) => {
-    setSelectedFilters((prev) =>
-      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id],
-    );
-  };
+  const unmarkAdded = useCallback((placeId: string) => {
+    setJourneyIds((prev) => {
+      const next = new Set(prev);
+      next.delete(placeId);
+      return next;
+    });
+  }, []);
+
+  const setAddBusy = useCallback((placeId: string, busy: boolean) => {
+    setAddBusyIds((prev) => {
+      const next = new Set(prev);
+      if (busy) next.add(placeId);
+      else next.delete(placeId);
+      return next;
+    });
+  }, []);
 
   const runSearch = useCallback(
-    async (rawDestination: string) => {
+    async (rawDestination: string, filters: string[]) => {
       const destination = rawDestination.trim();
       if (destination.length < 2 || isLoading) return;
 
       setQuery(destination);
+      setIntentionOpen(false);
       setIsLoading(true);
       setFailed(false);
       setErrorMessage(null);
       setPlaces([]);
       setJourneyIds(new Set());
       setWishlistIds(new Set());
-      clearPreferredAddTarget();
-      setPreferredAddTarget(null);
       setActiveDestination(destination);
+      setActiveFilters(filters);
+      // Reuse the card built for this destination; ignore other destinations'.
+      setPreferredAddTarget(readPreferredAddTarget(destination));
 
       try {
         const raw = await requestPlaces({
@@ -195,7 +265,7 @@ export function ExploreView() {
           excludeTitles: [],
           selectedTitles: [],
           wishlistTitles: [],
-          filters: selectedFilters,
+          filters,
         });
         const next = toDiscoveryPlaces(raw, new Set());
         if (next.length === 0) {
@@ -214,12 +284,14 @@ export function ExploreView() {
         setIsLoading(false);
       }
     },
-    [isLoading, selectedFilters],
+    [isLoading],
   );
 
-  const handleSearch = async (event?: FormEvent) => {
+  // Explore does not search straight away — it opens the intention step first.
+  const handleSearch = (event?: FormEvent) => {
     event?.preventDefault();
-    await runSearch(query);
+    if (query.trim().length < 2 || isLoading) return;
+    setIntentionOpen(true);
   };
 
   const handleExploreMore = async () => {
@@ -237,7 +309,7 @@ export function ExploreView() {
         wishlistTitles: places
           .filter((p) => wishlistIds.has(p.id))
           .map((p) => p.title),
-        filters: selectedFilters,
+        filters: activeFilters,
       });
       const used = new Set(places.map((p) => normalizeTitle(p.title)));
       const next = toDiscoveryPlaces(raw, used);
@@ -255,44 +327,79 @@ export function ExploreView() {
     }
   };
 
-  const addPlaceToPreferredOrAsk = useCallback(
+  /**
+   * Adds a place to the journey card for the destination being explored,
+   * creating that card on the first add. Places from one search can no longer
+   * land on a card belonging to a different destination.
+   */
+  const addPlaceToDestinationCard = useCallback(
     async (place: DiscoveryPlace) => {
-      const preferred = preferredAddTarget || readPreferredAddTarget();
+      const destination = activeDestination.trim();
+      if (!destination) return;
 
-      if (!preferred) {
-        setPickerPlace(place);
-        return;
-      }
+      const preferred =
+        preferredAddTarget || readPreferredAddTarget(destination);
 
-      setAddBusyId(place.id);
+      // Show it as added straight away; each request runs on its own so a slow
+      // one never holds up the next tap.
+      markAdded(place.id);
+      setAddBusy(place.id, true);
       try {
-        const res = await addPlaceToJourneyBoard({
-          targetJourneyId: preferred.id,
-          place: {
-            id: place.id,
-            category: place.category,
-            title: place.title,
-            description: place.description,
-            highlights: place.highlights,
-            localTips: place.localTips,
-            guideNote: place.guideNote,
-            weatherNote: place.weatherNote,
-          },
-        });
-        if (!res.success) {
-          clearPreferredAddTarget();
-          setPreferredAddTarget(null);
-          setPickerPlace(place);
+        if (!preferred) {
+          const created = await createJourneyBoardWithPlace({
+            destination,
+            place: {
+              id: place.id,
+              category: place.category,
+              title: place.title,
+              description: place.description,
+              highlights: place.highlights,
+              localTips: place.localTips,
+              guideNote: place.guideNote,
+              weatherNote: place.weatherNote,
+            },
+          });
+          if (!created.success) {
+            unmarkAdded(place.id);
+            toast.error(created.error || "Could not start a journey card.");
+            return;
+          }
+          rememberAddTarget({
+            id: created.data.journeyId,
+            title: created.data.title,
+            destination,
+          });
+          toast.success(`Started “${created.data.title}” with this place`);
+          return;
+        }
+
+        const res = await addPlaceViaApi(preferred.id, place);
+        if (!res.ok) {
+          unmarkAdded(place.id);
+          if (res.status === 404) {
+            clearPreferredAddTarget();
+            setPreferredAddTarget(null);
+          }
+          toast.error(res.message);
           return;
         }
         rememberAddTarget(preferred);
-        markAdded(place.id);
         toast.success(`Added “${place.title}” to ${preferred.title}`);
+      } catch {
+        unmarkAdded(place.id);
+        toast.error("Could not add this place.");
       } finally {
-        setAddBusyId(null);
+        setAddBusy(place.id, false);
       }
     },
-    [preferredAddTarget, rememberAddTarget, markAdded],
+    [
+      activeDestination,
+      preferredAddTarget,
+      rememberAddTarget,
+      markAdded,
+      unmarkAdded,
+      setAddBusy,
+    ],
   );
 
   const handleToggleWishlist = useCallback(
@@ -346,26 +453,26 @@ export function ExploreView() {
     [wishlistBusyId, wishlistIds, activeDestination, query],
   );
 
-  const chipClass = (selected?: boolean) =>
+  const chipClass = () =>
     [
       "rounded-full border px-3.5 py-2 text-xs font-medium tracking-wide transition-colors",
       "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-btn-primary",
-      selected
-        ? "border-brand-btn-primary bg-brand-btn-primary/15 text-brand-text-primary"
-        : "border-brand-border/80 bg-brand-card text-brand-text-secondary hover:border-brand-text-secondary hover:text-brand-text-primary",
+      "border-brand-border/80 bg-brand-card text-brand-text-secondary hover:border-brand-text-secondary hover:text-brand-text-primary",
     ].join(" ");
 
   return (
     <div className="w-full pb-16">
       <form
-        onSubmit={(e) => {
-          void handleSearch(e);
-        }}
+        onSubmit={handleSearch}
         className="mb-10 rounded-2xl border border-brand-btn-primary/25 bg-brand-btn-primary/[0.08] p-6 shadow-sm sm:p-8"
       >
         <h2 className="font-display text-2xl font-light tracking-tight text-brand-text-primary sm:text-3xl">
           Where would you like to wander?
         </h2>
+        <p className="mt-2 text-sm leading-relaxed text-brand-text-secondary">
+          Enter a town, region, or route. You&apos;ll choose what you&apos;re
+          seeking next.
+        </p>
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-stretch">
           <LocationAutocomplete
@@ -386,6 +493,10 @@ export function ExploreView() {
             {isLoading ? "Exploring…" : "Explore"}
           </button>
         </div>
+        <p className={`${formStyles.hint} mt-2.5`}>
+          Choosing a place opens a short step where you can focus the kinds of
+          places we gather — or continue open.
+        </p>
 
         <div className="mt-7 grid grid-cols-1 gap-6 border-t border-brand-border/50 pt-6 md:grid-cols-2 md:gap-8">
           <div>
@@ -437,37 +548,6 @@ export function ExploreView() {
           </div>
         </div>
 
-        <div className="mt-7 border-t border-brand-border/50 pt-6">
-          <p className={formStyles.label}>Refine suggestions</p>
-          <p className={`${formStyles.hint} mt-1.5`}>
-            Tap chips to focus the kinds of places we gather for this search.
-          </p>
-          <div
-            role="group"
-            aria-label="Explore filters"
-            className="mt-3 flex flex-wrap gap-2"
-          >
-            {EXPLORE_FILTERS.map((filter) => {
-              const selected = selectedFilters.includes(filter.id);
-              return (
-                <button
-                  key={filter.id}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => toggleFilter(filter.id)}
-                  className={chipClass(selected)}
-                >
-                  {filter.label}
-                </button>
-              );
-            })}
-          </div>
-          {selectedFilters.length > 0 ? (
-            <p className={`${formStyles.hint} mt-3`}>
-              Looking toward {exploreFilterLabels(selectedFilters).join(" · ")}.
-            </p>
-          ) : null}
-        </div>
       </form>
 
       {isLoading ? (
@@ -509,7 +589,7 @@ export function ExploreView() {
               type="button"
               className={buttonStyles.secondary}
               onClick={() => {
-                void handleSearch();
+                void runSearch(query, activeFilters);
               }}
             >
               Try again
@@ -526,6 +606,51 @@ export function ExploreView() {
             <span className="h-px flex-1 bg-brand-border/60" aria-hidden />
           </div>
 
+          <div className="mb-8 space-y-2 rounded-2xl border border-brand-border/50 bg-brand-card/50 px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs leading-relaxed text-brand-text-secondary">
+                {activeFilters.length > 0
+                  ? `Looking toward ${exploreFilterLabels(activeFilters).join(" · ")}.`
+                  : "Gathered openly — nothing narrowed."}
+              </p>
+              <button
+                type="button"
+                className="shrink-0 text-xs font-medium text-brand-btn-primary underline-offset-4 transition-colors hover:text-brand-btn-primary-hover hover:underline"
+                onClick={() => setIntentionOpen(true)}
+              >
+                Adjust intention
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-brand-border/40 pt-2">
+              <p className="text-xs leading-relaxed text-brand-text-secondary">
+                {preferredAddTarget ? (
+                  <>
+                    Saving to{" "}
+                    <span className="text-brand-text-primary">
+                      {preferredAddTarget.title}
+                    </span>
+                    .
+                  </>
+                ) : (
+                  `Places you add will start a new journey card for ${activeDestination}.`
+                )}
+              </p>
+              {preferredAddTarget ? (
+                <button
+                  type="button"
+                  className="shrink-0 text-xs font-medium text-brand-btn-primary underline-offset-4 transition-colors hover:text-brand-btn-primary-hover hover:underline"
+                  onClick={() => {
+                    clearPreferredAddTarget();
+                    setPreferredAddTarget(null);
+                  }}
+                >
+                  Use a different card
+                </button>
+              ) : null}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 gap-5">
             {places.map((place) => (
               <DiscoveryPlaceCard
@@ -533,9 +658,9 @@ export function ExploreView() {
                 place={place}
                 inJourney={journeyIds.has(place.id)}
                 inWishlist={wishlistIds.has(place.id)}
-                addBusy={addBusyId === place.id}
+                addBusy={addBusyIds.has(place.id)}
                 onAddToJourney={() => {
-                  void addPlaceToPreferredOrAsk(place);
+                  void addPlaceToDestinationCard(place);
                 }}
                 onRemoveFromJourney={() => {
                   setJourneyIds((prev) => {
@@ -580,21 +705,16 @@ export function ExploreView() {
         </div>
       )}
 
-      <JourneyPickerModal
-        open={!!pickerPlace}
-        destinationHint={activeDestination || query}
-        place={pickerPlace}
-        onClose={() => setPickerPlace(null)}
-        onCreatedOrMoved={(targetId, journeyTitle) => {
-          const placeTitle = pickerPlace?.title || "Place";
-          rememberAddTarget({
-            id: targetId,
-            title: journeyTitle || "your journey",
-          });
-          if (pickerPlace) markAdded(pickerPlace.id);
-          toast.success(
-            `Added “${placeTitle}” to ${journeyTitle || "your journey"}`,
-          );
+      <ExploreIntentionModal
+        open={intentionOpen}
+        destination={query.trim()}
+        initialFilters={activeFilters}
+        onClose={() => setIntentionOpen(false)}
+        onExplore={(filters) => {
+          void runSearch(query, filters);
+        }}
+        onExploreOpen={() => {
+          void runSearch(query, []);
         }}
       />
     </div>

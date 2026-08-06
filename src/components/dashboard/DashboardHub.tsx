@@ -13,8 +13,8 @@ type HubJourney = {
 } | null;
 
 type Props = {
+  /** Most recently updated incomplete (DRAFT) journey, if any. */
   draft: HubJourney;
-  ready: HubJourney;
 };
 
 function resolveDestination(journey: NonNullable<HubJourney>): string | null {
@@ -24,29 +24,24 @@ function resolveDestination(journey: NonNullable<HubJourney>): string | null {
   return journey.region?.trim() || journey.primaryCountry?.trim() || null;
 }
 
-export function DashboardHub({ draft, ready }: Props) {
-  const continueHref = draft
-    ? `/journeys/${draft.id}/build`
-    : ready
-      ? `/journeys/${ready.id}`
-      : null;
+/**
+ * Continue is enabled only when an incomplete draft exists. If several drafts
+ * are open, the page passes the most recently updated one so Continue resumes
+ * that journey; otherwise the CTA is disabled.
+ */
+export function DashboardHub({ draft }: Props) {
+  const continueHref = draft ? `/journeys/${draft.id}/build` : null;
+  const destination = draft ? resolveDestination(draft) : null;
 
-  const active = draft ?? ready;
-  const destination = active ? resolveDestination(active) : null;
-
-  const continueLabel = active
+  const continueLabel = draft
     ? destination
       ? `Continue Journey to ${destination}`
-      : draft
-        ? "Continue your draft"
-        : "Continue your journey"
+      : "Continue your draft"
     : "No journey in progress";
 
   const continueHelper = draft
     ? "Pick up where you left the builder."
-    : ready
-      ? "Return to a journey that is ready to read."
-      : "Begin a journey or explore a place first — then it will wait for you here.";
+    : "Begin a journey first — then it will wait for you here.";
 
   return (
     <section aria-labelledby="dashboard-hub-title" className="mb-8">

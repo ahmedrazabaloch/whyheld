@@ -20,7 +20,12 @@ type JourneyPickerModalProps = {
   place: DiscoveryPlace | null;
   onClose: () => void;
   onAddedToCurrent?: (placeId: string, journeyTitle: string) => void;
-  onCreatedOrMoved: (journeyId: string, journeyTitle: string) => void;
+  /** dayNumber is set when the place landed on a day of a generated journey. */
+  onCreatedOrMoved: (
+    journeyId: string,
+    journeyTitle: string,
+    dayNumber?: number,
+  ) => void;
 };
 
 export function JourneyPickerModal({
@@ -34,12 +39,18 @@ export function JourneyPickerModal({
   onCreatedOrMoved,
 }: JourneyPickerModalProps) {
   const [options, setOptions] = useState<JourneyPickerOption[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) return;
+    // Reset on close so the next open starts in the loading state rather than
+    // briefly showing the previous journey list as ready.
+    if (!open) {
+      setLoading(true);
+      setOptions([]);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -89,7 +100,7 @@ export function JourneyPickerModal({
       setError(res.error || "Could not add place.");
       return;
     }
-    onCreatedOrMoved(res.data.journeyId, opt.title);
+    onCreatedOrMoved(res.data.journeyId, opt.title, res.data.dayNumber);
     onClose();
   };
 
@@ -193,12 +204,18 @@ export function JourneyPickerModal({
           <button
             type="button"
             className={buttonStyles.primary}
-            disabled={busyId !== null || (!currentJourneyId && !destinationHint)}
+            disabled={
+              loading || busyId !== null || (!currentJourneyId && !destinationHint)
+            }
             onClick={() => {
               void chooseNew();
             }}
           >
-            {busyId === "__new__" ? "Creating…" : "Create new journey"}
+            {loading
+              ? "Loading…"
+              : busyId === "__new__"
+                ? "Creating…"
+                : "Create new journey"}
           </button>
         </div>
       </div>

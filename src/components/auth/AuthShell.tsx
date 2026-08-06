@@ -82,9 +82,9 @@ export function AuthShell({
         </Link>
         <Link
           href="/"
-          className="text-sm text-brand-text-secondary transition-colors hover:text-brand-text-primary"
+          className="rounded-full border border-brand-card-border bg-brand-card/70 px-4 py-2 text-sm text-brand-text-secondary shadow-[0_10px_30px_-24px_rgba(51,51,47,0.5)] backdrop-blur-md transition-colors hover:border-brand-btn-primary/40 hover:bg-brand-card hover:text-brand-text-primary"
         >
-          Back to site
+          Back to Home
         </Link>
       </header>
 

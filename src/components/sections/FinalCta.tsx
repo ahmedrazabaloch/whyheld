@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { GrainOverlay, SectionDivider } from "@/components/ui";
 import { buttonStyles, EASE_EXPO } from "@/lib/design";
+import { featureHref } from "@/lib/auth/redirect";
 
 /**
  * Headline alternatives considered (active first). Kept here so the team can
@@ -114,7 +115,7 @@ export function FinalCta({
           className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
         >
           <a
-            href="/login"
+            href={featureHref("/dashboard")}
             className={`${buttonStyles.primary} h-14 px-8 text-sm`}
           >
             {buttonText}

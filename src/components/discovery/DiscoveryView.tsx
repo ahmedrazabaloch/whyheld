@@ -13,7 +13,8 @@ import type {
   DiscoveryDraftState,
   DiscoveryPlace,
 } from "./discovery-data";
-import { budgetLabel, paceLabel } from "./discovery-data";
+import { paceLabel } from "./discovery-data";
+import { feelingLabels } from "@/lib/journey/feelings";
 import { DiscoveryPlaceCard, DiscoveryPlaceSkeleton } from "./DiscoveryPlaceCard";
 import { DiscoveryJourneyBoard } from "./DiscoveryJourneyBoard";
 
@@ -22,7 +23,8 @@ type DiscoveryViewProps = {
   destination: string;
   journeyTitle: string;
   pace: string | null;
-  budget: string | null;
+  /** Journey Feel chips chosen in the builder — these steer generation. */
+  feelings?: string[];
   introduction: DestinationIntroduction;
   /** Server-hydrated discovery state (source of truth). */
   initialDiscovery: DiscoveryDraftState | null;
@@ -121,7 +123,7 @@ export function DiscoveryView({
   destination,
   journeyTitle,
   pace,
-  budget,
+  feelings = [],
   introduction,
   initialDiscovery,
   mode = "setup",
@@ -332,7 +334,7 @@ export function DiscoveryView({
         boardStatus: boardStatusRef.current,
       });
       if (mode === "edit") {
-        router.push(returnHref || `/journeys/${journeyId}?edit=1`);
+        router.push(returnHref || `/journeys/${journeyId}`);
       } else {
         router.push(`/journeys/${journeyId}/compose`);
       }
@@ -400,28 +402,35 @@ export function DiscoveryView({
               {summaryText}
             </p>
 
-            <dl className="mt-6 grid grid-cols-1 gap-4 border-t border-brand-border/50 pt-5 sm:grid-cols-3">
+            <dl className="mt-6 grid grid-cols-1 gap-4 border-t border-brand-border/50 pt-5 sm:grid-cols-2">
               <div>
                 <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-brand-text-secondary">
-                  Travel style
+                  Journey feel
                 </dt>
-                <dd className="mt-1 text-sm text-brand-text-primary">
-                  {paceLabel(pace)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-brand-text-secondary">
-                  Budget
-                </dt>
-                <dd className="mt-1 text-sm text-brand-text-primary">
-                  {budgetLabel(budget)}
+                <dd className="mt-1.5">
+                  {feelings.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {feelingLabels(feelings).map((label) => (
+                        <span
+                          key={label}
+                          className="rounded-full border border-brand-btn-primary/40 bg-brand-btn-primary/10 px-2.5 py-1 text-xs font-medium text-brand-text-primary"
+                        >
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-sm text-brand-text-primary">
+                      {paceLabel(pace)}
+                    </span>
+                  )}
                 </dd>
               </div>
               <div>
                 <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-brand-text-secondary">
                   Destination
                 </dt>
-                <dd className="mt-1 text-sm text-brand-text-primary">{destination}</dd>
+                <dd className="mt-1.5 text-sm text-brand-text-primary">{destination}</dd>
               </div>
             </dl>
           </header>

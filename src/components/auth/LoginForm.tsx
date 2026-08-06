@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useState, useEffect, type FormEvent } from "react";
 import { buttonStyles } from "@/lib/design";
+import { safeRedirectPath } from "@/lib/auth/redirect";
 import { OrDivider, PasswordField, SocialButtons, TextField } from "./fields";
 
 interface Errors {
@@ -22,13 +23,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rawCallbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-  const callbackUrl = 
-    rawCallbackUrl.startsWith("/") && 
-    !rawCallbackUrl.startsWith("//") && 
-    !rawCallbackUrl.startsWith("/\\") 
-      ? rawCallbackUrl 
-      : "/dashboard";
+  const callbackUrl = safeRedirectPath(searchParams.get("callbackUrl"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

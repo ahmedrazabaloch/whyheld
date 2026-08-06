@@ -21,13 +21,10 @@ import { getCachedSession } from "@/lib/auth/session-cache";
 
 export default async function JourneyDetailPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ edit?: string }>;
 }) {
   const { id } = await params;
-  const { edit } = await searchParams;
 
   const journey = await loadJourney(id);
 
@@ -65,11 +62,6 @@ export default async function JourneyDetailPage({
 
   const countryBlurb = buildDestinationIntroduction(countryName).culturalIdentity;
 
-  const discovery = parseDiscoveryState(journey.metadata);
-  const discoveryPlaces =
-    discovery?.places.filter((p) => discovery.journeyPlaceIds.includes(p.id)) ??
-    [];
-
   const normalizedSummary = normalizeJourneySummary(
     journey.summary,
     typeof rawMetadata.aiSummary === "string" ? rawMetadata.aiSummary : null,
@@ -80,10 +72,7 @@ export default async function JourneyDetailPage({
     primaryCountry: journey.primaryCountry,
     region: journey.region,
     pace: journey.pace,
-    budget: journey.budget,
   });
-
-  const initialEditMode = edit === "1" || edit === "true";
 
   const session = await getCachedSession();
   const accessInfo =
@@ -106,17 +95,14 @@ export default async function JourneyDetailPage({
         summary={normalizedSummary}
         destination={normalizedMetadata.destination}
         pace={normalizedMetadata.pace}
-        budget={normalizedMetadata.budget}
         heading={composed ? "Overview" : "Journey Summary"}
       />
 
       {composed ? (
         <ComposedJourneySections
           composed={composed}
-          discoveryPlaces={discoveryPlaces}
           destination={destination}
           journeyId={journey.id}
-          initialEditMode={initialEditMode}
           accessInfo={accessInfo}
         />
       ) : (

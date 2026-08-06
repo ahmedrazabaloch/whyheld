@@ -124,18 +124,3 @@ export function paceLabel(pace: string | null | undefined): string {
       return "—";
   }
 }
-
-export function budgetLabel(budget: string | null | undefined): string {
-  switch (budget) {
-    case "MODEST":
-      return "Modest";
-    case "COMFORTABLE":
-      return "Comfortable";
-    case "PREMIUM":
-      return "Premium";
-    case "LUXURY":
-      return "Luxury";
-    default:
-      return "—";
-  }
-}

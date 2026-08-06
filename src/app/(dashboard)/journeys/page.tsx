@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { buttonStyles } from "@/lib/design";
 import { PageHeader, EmptyState } from "@/components/dashboard";
 import { getCachedSession } from "@/lib/auth/session-cache";
 import { Prisma, JourneyStatus } from "@prisma/client";
@@ -9,6 +11,7 @@ import { JourneyDraftCard } from "@/components/journey/JourneyDraftCard";
 import { JourneySearchInput } from "@/components/journey/JourneySearchInput";
 import { JourneyFilters } from "@/components/journey/JourneyFilters";
 import {
+  countJourneyPlaces,
   formatJourneyDuration,
   formatJourneyDate,
   normalizeJourneyMetadata,
@@ -71,11 +74,12 @@ export default async function JourneysPage({
 
   // 4. Data Layer execution (Single Transaction + _count)
   const [drafts, totalCount, journeys] = await prisma.$transaction([
-    // First-class drafts section (Limited to latest 3)
+    // First-class drafts section. Explore builds a card per destination, so
+    // this needs headroom beyond a couple of hand-started drafts.
     prisma.journey.findMany({
       where: { userId, status: "DRAFT", deletedAt: null },
       orderBy: { updatedAt: "desc" },
-      take: 3,
+      take: 8,
       select: {
         id: true,
         title: true,
@@ -101,12 +105,9 @@ export default async function JourneysPage({
         primaryCountry: true,
         region: true,
         pace: true,
-        budget: true,
         createdAt: true,
         updatedAt: true,
-        _count: {
-          select: { stops: true }
-        }
+        metadata: true,
       }
     })
   ]);
@@ -121,6 +122,14 @@ export default async function JourneysPage({
         eyebrow="Journeys"
         title="Your journeys"
         description="Every slow-travel itinerary you've created lives here."
+        actions={
+          <Link href="/journeys/new" className={buttonStyles.primary}>
+            Begin a New Journey
+            <span aria-hidden className="text-base leading-none">
+              →
+            </span>
+          </Link>
+        }
       />
       
       {/* 1. Continue Journey — unfinished drafts */}
@@ -211,7 +220,6 @@ export default async function JourneysPage({
                 primaryCountry: journey.primaryCountry,
                 region: journey.region,
                 pace: journey.pace,
-                budget: journey.budget,
               });
 
               return (
@@ -222,7 +230,7 @@ export default async function JourneysPage({
                   destination={meta.destination}
                   duration={formatJourneyDuration(journey.durationDays, null, null)}
                   status={journey.status}
-                  stopCount={journey._count.stops}
+                  placeCount={countJourneyPlaces(journey.metadata)}
                   updatedDate={formatJourneyDate(journey.updatedAt)}
                 />
               )

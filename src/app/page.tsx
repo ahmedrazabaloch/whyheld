@@ -23,7 +23,7 @@ export default async function Home() {
   return (
     <MarketingLayout>
       <main className="flex flex-1 flex-col">
-        <Hero />
+        <Hero isAuthenticated={isAuthenticated} />
         <StatisticsSection />
         <ProcessSection />
         <WhyTravelBroken />

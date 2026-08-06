@@ -13,11 +13,18 @@ import {
   getUserFriendlyMessage 
 } from "@/lib/utils/errors";
 import { syncDiscoveryWishlistToSavedPlaces } from "@/actions/place-actions";
+import { normalizeFeelingIds } from "@/lib/journey/feelings";
 import {
   accessExpiresAtFrom,
   evaluateAccessGate,
   parseAccessExpiresAt,
 } from "@/lib/journey/access";
+import {
+  addPlaceToJourney,
+  hasDiscoveryPlaces,
+  DiscoveryPlacePersistSchema,
+  type AssignPlaceInput,
+} from "@/lib/journey/add-place";
 
 // Zod schemas for input validation
 const IdSchema = z.string().cuid();
@@ -40,7 +47,11 @@ const UpdateDraftSchema = z.object({
   pace: z.enum(["ONE_PLACE_DEEPLY", "SLOW_UNHURRIED", "GENTLY_BALANCED"]).nullable().optional(),
   budget: z.enum(["MODEST", "COMFORTABLE", "PREMIUM", "LUXURY"]).nullable().optional(),
   lastCompletedStep: z.number().int().min(0).max(8).optional(),
-  feelings: z.array(z.string().min(1).max(40)).max(5).optional(),
+  feelings: z
+    .array(z.string().min(1).max(40))
+    .max(5)
+    .transform((v) => normalizeFeelingIds(v))
+    .optional(),
   intent: z.enum(["journey", "explore"]).optional(),
   tripShape: z
     .object({
@@ -65,17 +76,23 @@ export async function createDraft(
     // Prevent duplicate draft creation for the same intent:
     // If the user already has an empty DRAFT created that hasn't been advanced,
     // just return that one instead of spamming rows.
+    //
+    // "Empty" means untouched: no destination and nothing on the discovery
+    // board. A draft that already collected places (e.g. from Explore) must
+    // never be handed back here, or the next journey inherits those places.
     const existingEmptyDraft = await prisma.journey.findFirst({
       where: {
         userId: session.user.id,
         status: "DRAFT",
         title: "Untitled Journey",
+        originQuery: null,
+        primaryCountry: null,
       },
       orderBy: { createdAt: "desc" },
       select: { id: true, metadata: true },
     });
 
-    if (existingEmptyDraft) {
+    if (existingEmptyDraft && !hasDiscoveryPlaces(existingEmptyDraft.metadata)) {
       const meta =
         existingEmptyDraft.metadata &&
         typeof existingEmptyDraft.metadata === "object" &&
@@ -672,17 +689,6 @@ export async function markJourneyCompleted(id: string): Promise<ActionResponse> 
   }
 }
 
-const DiscoveryPlacePersistSchema = z.object({
-  id: z.string().min(1),
-  category: z.string(),
-  title: z.string(),
-  description: z.string(),
-  highlights: z.array(z.string()),
-  localTips: z.string().optional(),
-  guideNote: z.string().optional(),
-  weatherNote: z.string().optional(),
-});
-
 const SaveDiscoveryStateSchema = z.object({
   places: z.array(DiscoveryPlacePersistSchema).optional(),
   journeyPlaceIds: z.array(z.string()).optional(),
@@ -779,167 +785,39 @@ export async function listJourneyPickerOptions(
   }
 }
 
-const AssignPlaceSchema = z.object({
-  targetJourneyId: z.string().cuid(),
-  place: DiscoveryPlacePersistSchema,
-});
-
 /**
  * Add (or upsert) a Discovery place onto a journey board.
  * For READY journeys with a composed itinerary, also appends the place
  * into a day so it appears on the generated journey page.
  */
 export async function addPlaceToJourneyBoard(
-  input: z.infer<typeof AssignPlaceSchema>,
-): Promise<ActionResponse<{ journeyId: string }>> {
+  input: AssignPlaceInput,
+): Promise<ActionResponse<{ journeyId: string; dayNumber?: number }>> {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return { success: false, error: "Unauthorized", code: "UNAUTHORIZED" };
     }
 
-    const parsed = AssignPlaceSchema.safeParse(input);
-    if (!parsed.success) {
-      return { success: false, error: "Invalid payload", code: "VALIDATION_ERROR" };
+    const result = await addPlaceToJourney(session.user.id, input);
+    if (!result.ok) {
+      return result.reason === "NOT_FOUND"
+        ? { success: false, error: "Journey not found", code: "NOT_FOUND" }
+        : { success: false, error: "Invalid payload", code: "VALIDATION_ERROR" };
     }
 
-    const { targetJourneyId, place } = parsed.data;
-
-    const journey = await prisma.journey.findUnique({
-      where: {
-        id: targetJourneyId,
-        userId: session.user.id,
-        status: { in: ["DRAFT", "GENERATING", "FAILED", "READY"] },
-      },
-      select: { id: true, metadata: true, status: true },
-    });
-
-    if (!journey) {
-      return { success: false, error: "Journey not found", code: "NOT_FOUND" };
-    }
-
-    const prevMeta =
-      journey.metadata &&
-      typeof journey.metadata === "object" &&
-      !Array.isArray(journey.metadata)
-        ? (journey.metadata as Record<string, unknown>)
-        : {};
-    const prevDiscovery =
-      prevMeta.discovery &&
-      typeof prevMeta.discovery === "object" &&
-      !Array.isArray(prevMeta.discovery)
-        ? (prevMeta.discovery as Record<string, unknown>)
-        : {};
-
-    const prevPlaces = Array.isArray(prevDiscovery.places)
-      ? [...(prevDiscovery.places as unknown[])]
-      : [];
-    const prevIds = Array.isArray(prevDiscovery.journeyPlaceIds)
-      ? (prevDiscovery.journeyPlaceIds as unknown[]).filter(
-          (id): id is string => typeof id === "string",
-        )
-      : [];
-    const prevWishlist = Array.isArray(prevDiscovery.wishlistPlaceIds)
-      ? (prevDiscovery.wishlistPlaceIds as unknown[]).filter(
-          (id): id is string => typeof id === "string",
-        )
-      : [];
-
-    const existingIdx = prevPlaces.findIndex(
-      (p) =>
-        !!p &&
-        typeof p === "object" &&
-        ((p as { id?: string }).id === place.id ||
-          (typeof (p as { title?: string }).title === "string" &&
-            (p as { title: string }).title.toLowerCase() ===
-              place.title.toLowerCase())),
-    );
-
-    let placeId = place.id;
-    if (existingIdx >= 0) {
-      const existing = prevPlaces[existingIdx] as { id?: string };
-      placeId = existing.id || place.id;
-      prevPlaces[existingIdx] = { ...place, id: placeId };
-    } else {
-      prevPlaces.push(place);
-    }
-
-    const journeyPlaceIds = prevIds.includes(placeId)
-      ? prevIds
-      : [...prevIds, placeId];
-
-    const nextMeta: Record<string, unknown> = {
-      ...prevMeta,
-      discovery: {
-        places: prevPlaces,
-        journeyPlaceIds,
-        wishlistPlaceIds: prevWishlist.filter((id) => id !== placeId),
-        boardStatus:
-          prevDiscovery.boardStatus === "COMPLETE" ? "COMPLETE" : "PENDING",
-      },
-    };
-
-    // READY journeys render from composedJourney — add the place into a day.
-    if (journey.status === "READY") {
-      const { parseComposedJourney } = await import(
-        "@/lib/utils/composed-journey"
-      );
-      const { addPlaceToDay } = await import(
-        "@/components/journey/composed-edit"
-      );
-
-      const composed = parseComposedJourney(journey.metadata);
-      if (composed && composed.days.length > 0) {
-        const alreadyIn = composed.days.some((day) =>
-          (day.places ?? []).some(
-            (p) =>
-              p.id === placeId ||
-              p.title.trim().toLowerCase() === place.title.trim().toLowerCase(),
-          ),
-        );
-
-        if (!alreadyIn) {
-          const targetDay = composed.days.reduce((best, day) => {
-            const bestCount = best.places?.length ?? 0;
-            const dayCount = day.places?.length ?? 0;
-            return dayCount < bestCount ? day : best;
-          }, composed.days[0]!);
-
-          const nextComposed = addPlaceToDay(
-            composed,
-            targetDay.dayNumber,
-            {
-              id: placeId,
-              category: place.category,
-              title: place.title,
-              description: place.description,
-              highlights: place.highlights,
-              localTips: place.localTips,
-              guideNote: place.guideNote,
-              weatherNote: place.weatherNote,
-            },
-          );
-
-          nextMeta.composedJourney = nextComposed;
-          nextMeta.aiDays = nextComposed.days;
-          nextMeta.lastEditedAt = new Date().toISOString();
-        }
-      }
-    }
-
-    await prisma.journey.update({
-      where: { id: journey.id, userId: session.user.id },
-      data: {
-        metadata: nextMeta as Prisma.InputJsonValue,
-      },
-    });
-
-    revalidatePath(`/journeys/${journey.id}`);
-    revalidatePath(`/journeys/${journey.id}/discover`);
+    revalidatePath(`/journeys/${result.journeyId}`);
+    revalidatePath(`/journeys/${result.journeyId}/discover`);
     revalidatePath("/journeys");
     revalidatePath("/wishlist");
 
-    return { success: true, data: { journeyId: journey.id } };
+    return {
+      success: true,
+      data: {
+        journeyId: result.journeyId,
+        ...(result.dayNumber !== undefined ? { dayNumber: result.dayNumber } : {}),
+      },
+    };
   } catch (error) {
     const err = handleServerError(error, "addPlaceToJourneyBoard");
     return {

@@ -27,8 +27,7 @@ export const getCachedSession = cache(auth);
  *   - dashboard/page    → firstName
  *   - settings/page     → firstName, lastName, homeCity, homeCountry, locale
  *   - profile/page      → firstName, lastName, avatarUrl
- *   - journeys/new page → onboardingCompletedAt
- *   - onboarding/page   → onboardingCompletedAt
+ *   - start/page        → firstName, phone, city/country/homeCity
  *
  * Travel preferences are in getCachedPreferences() so pages that do not need
  * them do not pay for a second SQL round-trip.
@@ -44,7 +43,6 @@ export const getCachedProfile = cache(async (userId: string) => {
       homeCity: true,
       homeCountry: true,
       locale: true,
-      onboardingCompletedAt: true,
       city: true,
       state: true,
       country: true,

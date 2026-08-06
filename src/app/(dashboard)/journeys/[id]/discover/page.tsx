@@ -8,6 +8,7 @@ import {
   parseDiscoveryState,
 } from "@/components/discovery/discovery-data";
 import { parseComposedJourney } from "@/lib/utils/composed-journey";
+import { parseBuilderMeta } from "@/lib/journey/trip-shape";
 
 export const metadata: Metadata = {
   title: "Discovery — Wayheld",
@@ -41,7 +42,7 @@ export default async function JourneyDiscoverPage({
         destination={destination}
         journeyTitle={journeyTitle}
         pace={draft.pace}
-        budget={draft.budget}
+        feelings={parseBuilderMeta(draft.metadata).feelings}
         introduction={introduction}
         initialDiscovery={initialDiscovery}
         mode="setup"
@@ -73,13 +74,11 @@ export default async function JourneyDiscoverPage({
       destination={destination}
       journeyTitle={journeyTitle}
       pace={journey.pace}
-      budget={journey.budget}
+      feelings={parseBuilderMeta(journey.metadata).feelings}
       introduction={introduction}
       initialDiscovery={initialDiscovery}
       mode="edit"
-      returnHref={
-        from === "edit" ? `/journeys/${id}?edit=1` : `/journeys/${id}?edit=1`
-      }
+      returnHref={`/journeys/${id}`}
     />
   );
 }

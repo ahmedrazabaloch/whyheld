@@ -115,7 +115,6 @@ export async function POST(
           builderMeta.feelings.length > 0
             ? derivedPace
             : journey.pace || "GENTLY_BALANCED",
-        budget: journey.budget || "COMFORTABLE",
         duration,
         selectedPlaces: selectedPlaces.map((p) => ({
           title: p.title,

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { surfaces, buttonStyles, formStyles } from "@/lib/design";
 import {
   renameJourney,
-  archiveJourney,
   deleteJourney,
   markJourneyCompleted,
 } from "@/actions/journey-actions";
@@ -16,11 +15,19 @@ export interface JourneyListCardProps {
   destination: string;
   duration: string;
   status: string;
-  stopCount: number;
+  /** Distinct places on the itinerary, not narrative stop rows. */
+  placeCount: number;
   updatedDate: string;
 }
 
-type DialogKind = "rename" | "archive" | "delete" | "complete" | null;
+type DialogKind = "rename" | "delete" | "complete" | null;
+
+/** A generated journey stays "in progress" until the traveller completes it. */
+function statusLabel(status: string): string {
+  if (status === "READY") return "In progress";
+  if (status === "COMPLETED") return "Completed";
+  return status;
+}
 
 export function JourneyListCard({
   id,
@@ -28,7 +35,7 @@ export function JourneyListCard({
   destination,
   duration,
   status,
-  stopCount,
+  placeCount,
   updatedDate,
 }: JourneyListCardProps) {
   const [activeDialog, setActiveDialog] = useState<DialogKind>(null);
@@ -49,8 +56,6 @@ export function JourneyListCard({
       let res;
       if (action === "rename") {
         res = await renameJourney(id, newTitle);
-      } else if (action === "archive") {
-        res = await archiveJourney(id);
       } else if (action === "delete") {
         res = await deleteJourney(id);
       } else {
@@ -82,15 +87,16 @@ export function JourneyListCard({
 
         <div className="relative z-10 min-w-0 flex-1 pointer-events-none">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className={`${surfaces.chip} inline-flex items-center gap-1.5`}>
-              {status === "READY" || status === "COMPLETED" ? "READY" : status}
-            </span>
             {isCompleted ? (
               <span className="inline-flex items-center gap-1 rounded-full border border-brand-btn-primary/30 bg-brand-btn-primary/10 px-2.5 py-1 text-[0.65rem] font-medium uppercase tracking-[0.14em] text-brand-btn-primary">
                 <CheckIcon />
                 Completed
               </span>
-            ) : null}
+            ) : (
+              <span className={`${surfaces.chip} inline-flex items-center gap-1.5`}>
+                {statusLabel(status)}
+              </span>
+            )}
           </div>
 
           <h3 className="font-display text-xl tracking-tight text-brand-text-primary sm:text-2xl">
@@ -101,8 +107,8 @@ export function JourneyListCard({
             <Meta label="Destination" value={destination} />
             <Meta label="Duration" value={duration} />
             <Meta
-              label="Stops"
-              value={`${stopCount} ${stopCount === 1 ? "stop" : "stops"}`}
+              label="Places"
+              value={`${placeCount} ${placeCount === 1 ? "place" : "places"}`}
             />
             <Meta label="Updated" value={updatedDate} />
           </div>
@@ -121,20 +127,11 @@ export function JourneyListCard({
           <button
             type="button"
             className={iconBtn}
-            disabled={isPending}
-            onClick={() => openDialog("archive")}
-          >
-            <ArchiveIcon />
-            Archive
-          </button>
-          <button
-            type="button"
-            className={iconBtn}
             disabled={isPending || (status !== "READY" && status !== "COMPLETED")}
             onClick={() => openDialog("complete")}
           >
             <CheckIcon />
-            {isCompleted ? "Mark ready" : "Mark completed"}
+            {isCompleted ? "Mark in progress" : "Mark completed"}
           </button>
           <button
             type="button"
@@ -174,27 +171,15 @@ export function JourneyListCard({
               </>
             ) : null}
 
-            {activeDialog === "archive" ? (
-              <>
-                <h3 className="mb-2 font-display text-2xl font-light text-brand-text-primary">
-                  Archive Journey
-                </h3>
-                <p className="mb-8 text-sm text-brand-text-secondary">
-                  This will hide the journey from your active list. You can still
-                  find it by filtering for archived journeys.
-                </p>
-              </>
-            ) : null}
-
             {activeDialog === "complete" ? (
               <>
                 <h3 className="mb-2 font-display text-2xl font-light text-brand-text-primary">
-                  {isCompleted ? "Return to Ready" : "Mark as Completed"}
+                  {isCompleted ? "Return to In Progress" : "Mark as Completed"}
                 </h3>
                 <p className="mb-8 text-sm text-brand-text-secondary">
                   {isCompleted
-                    ? "This journey will move back to your ready list."
-                    : "Mark this journey as past — it will leave your ready list and live with your completed journeys."}
+                    ? "This journey will move back to your active list."
+                    : "Mark this journey as past — it will leave your active list and live with your completed journeys."}
                 </p>
               </>
             ) : null}
@@ -267,16 +252,6 @@ function RenameIcon() {
     <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
-    </svg>
-  );
-}
-
-function ArchiveIcon() {
-  return (
-    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M21 8v13H3V8" />
-      <path d="M1 3h22v5H1z" />
-      <path d="M10 12h4" />
     </svg>
   );
 }

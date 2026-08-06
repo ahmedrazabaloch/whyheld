@@ -53,14 +53,26 @@ export async function POST(request: Request) {
 
   const existing = await prisma.user.findUnique({
     where: { email: normalizedEmail },
-    select: { id: true },
+    select: {
+      id: true,
+      passwordHash: true,
+      accounts: { select: { provider: true } },
+    },
   });
   if (existing) {
+    // If the account was created via a social provider and has no password,
+    // signing up with credentials can never work — steer them to that provider.
+    const oauthOnly =
+      !existing.passwordHash && existing.accounts.length > 0;
+    const providers = existing.accounts.map((a) => a.provider);
     return NextResponse.json(
       {
         error: {
-          code: "EMAIL_TAKEN",
-          message: "An account with this email already exists.",
+          code: oauthOnly ? "OAUTH_ACCOUNT" : "EMAIL_TAKEN",
+          message: oauthOnly
+            ? `This email is registered with ${formatProviders(providers)}. Please sign in with ${formatProviders(providers)} instead.`
+            : "An account with this email already exists.",
+          providers,
         },
       },
       { status: 409 },
@@ -132,4 +144,13 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ user }, { status: 201 });
+}
+
+/** Turns provider enum values (e.g. "GOOGLE") into readable, joined labels. */
+function formatProviders(providers: string[]): string {
+  const labels = providers.map(
+    (p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase(),
+  );
+  if (labels.length <= 1) return labels[0] ?? "another provider";
+  return `${labels.slice(0, -1).join(", ")} or ${labels[labels.length - 1]}`;
 }

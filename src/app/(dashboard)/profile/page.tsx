@@ -44,7 +44,6 @@ export default async function ProfilePage() {
         phone={profile?.phone || ""}
         email={user.email || ""}
         initialLocation={initialLocation}
-        onboardingComplete={!!profile?.onboardingCompletedAt}
         fullName={fullName}
       />
     </>

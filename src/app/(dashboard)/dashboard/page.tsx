@@ -35,7 +35,7 @@ export default async function DashboardPage() {
   /* ---------------------------------------------------------------- */
   /* Real data reads — parallel, profile is a React cache() hit       */
   /* ---------------------------------------------------------------- */
-  const [profile, userDb, journeyCount, savedCount, unreadCount, latestDraft, latestReady] =
+  const [profile, userDb, journeyCount, savedCount, unreadCount, latestDraft] =
     await Promise.all([
       // Awaits the in-flight promise started by the layout — no extra DB call.
       getCachedProfile(userId),
@@ -52,17 +52,9 @@ export default async function DashboardPage() {
       prisma.notification.count({
         where: { userId, readAt: null },
       }),
+      // Most recently updated incomplete draft — Continue resumes this one.
       prisma.journey.findFirst({
         where: { userId, deletedAt: null, status: "DRAFT" },
-        orderBy: { updatedAt: "desc" },
-        select: journeySelect,
-      }),
-      prisma.journey.findFirst({
-        where: {
-          userId,
-          deletedAt: null,
-          status: "READY",
-        },
         orderBy: { updatedAt: "desc" },
         select: journeySelect,
       }),
@@ -137,7 +129,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <DashboardHub draft={latestDraft} ready={latestReady} />
+      <DashboardHub draft={latestDraft} />
 
       {/* Stats row */}
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -269,7 +261,7 @@ function CreditsCard({ credits, plan }: { credits: number; plan: string }) {
             ? "∞ Credits"
             : isExhausted
               ? "No Credits Remaining"
-              : `${credits} / ${limit} Credits`}
+              : `${credits} / ${limit} Journey`}
         </p>
         <p className="mt-1.5 text-xs leading-relaxed text-brand-text-secondary/80">
           {creditsHelper(credits, plan)}

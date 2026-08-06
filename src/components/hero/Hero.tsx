@@ -32,7 +32,7 @@ import { useShowcaseRotation } from "./useShowcaseRotation";
  *  - Mobile: copy → featured stage → selector → AI panel, cleanly stacked
  *    with no overlap and no horizontal scroll.
  */
-export function Hero() {
+export function Hero({ isAuthenticated }: { isAuthenticated?: boolean }) {
   const sectionRef = useRef<HTMLElement>(null);
   const reduceMotion = useReducedMotion();
 
@@ -91,7 +91,7 @@ export function Hero() {
             {HERO_SUBHEAD}
           </motion.p>
 
-          <HeroCtas />
+          <HeroCtas isAuthenticated={isAuthenticated} />
 
           {/* Trust Signal */}
           <motion.div

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { normalizeFeelingIds } from "@/lib/journey/feelings";
 
 export const TripPointSchema = z.object({
   name: z.string().min(1).max(200),
@@ -31,10 +32,7 @@ export function parseTripShape(raw: unknown): TripShape {
 }
 
 export function parseFeelings(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
-    .slice(0, 5);
+  return normalizeFeelingIds(raw);
 }
 
 export function parseJourneyIntent(raw: unknown): "journey" | "explore" {
