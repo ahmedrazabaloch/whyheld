@@ -99,15 +99,15 @@ export function JourneyComposeView({
 
   if (error) {
     return (
-      <div className="relative mx-auto flex min-h-[70vh] w-full max-w-xl flex-col items-center justify-center px-4 text-center">
+      <div className="relative flex min-h-[calc(100dvh-8rem)] w-full flex-col items-center justify-center overflow-hidden px-4 text-center">
         <ComposeAtmosphere />
-        <p className="relative font-display text-3xl text-brand-text-primary sm:text-4xl">
+        <p className="relative z-10 font-display text-3xl text-brand-text-primary sm:text-4xl">
           Something paused.
         </p>
-        <p className="relative mt-4 max-w-md text-sm leading-relaxed text-brand-text-secondary">
+        <p className="relative z-10 mt-4 max-w-md text-sm leading-relaxed text-brand-text-secondary">
           {error}
         </p>
-        <div className="relative mt-10 flex flex-col items-center gap-3 sm:flex-row">
+        <div className="relative z-10 mt-8 flex flex-col items-center gap-3 sm:flex-row">
           <button
             type="button"
             className={buttonStyles.primary}
@@ -128,55 +128,33 @@ export function JourneyComposeView({
 
   return (
     <div
-      className="relative -mx-4 flex min-h-[78vh] w-[calc(100%+2rem)] flex-col items-center overflow-hidden px-4 py-10 text-center sm:-mx-6 sm:w-[calc(100%+3rem)] sm:px-6 sm:py-12 lg:-mx-8 lg:w-[calc(100%+4rem)] lg:px-8"
+      className="relative -mx-4 flex min-h-[calc(100dvh-7.5rem)] w-[calc(100%+2rem)] flex-col items-center justify-center overflow-hidden px-4 py-6 text-center sm:-mx-6 sm:w-[calc(100%+3rem)] sm:px-6 sm:py-8 lg:-mx-8 lg:w-[calc(100%+4rem)] lg:px-8"
       aria-busy="true"
       aria-live="polite"
     >
       <ComposeAtmosphere />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center">
-        {/* Hero illustration — matches the reference composition */}
-        <div className="relative mb-8 w-full max-w-2xl sm:mb-10">
-          <div
-            className="relative mx-auto aspect-[16/9] w-full max-w-xl sm:aspect-[2/1] sm:max-w-2xl"
-            style={{
-              maskImage:
-                "radial-gradient(ellipse 72% 78% at 50% 42%, black 42%, transparent 78%)",
-              WebkitMaskImage:
-                "radial-gradient(ellipse 72% 78% at 50% 42%, black 42%, transparent 78%)",
-            }}
-          >
-            <Image
-              src="/illustrations/sunrise.png"
-              alt=""
-              fill
-              priority
-              sizes="(min-width: 768px) 42rem, 90vw"
-              className="object-contain object-center"
-            />
-          </div>
-        </div>
-
-        <p className="mb-4 text-[0.68rem] font-medium uppercase tracking-[0.28em] text-brand-text-muted sm:mb-5">
+      <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-col items-center">
+        <p className="mb-3 text-[0.65rem] font-medium uppercase tracking-[0.28em] text-brand-text-muted sm:mb-4">
           Preparing your journey
         </p>
 
-        <h1 className="font-display text-[clamp(1.85rem,4.5vw,2.85rem)] font-light leading-[1.15] tracking-[-0.02em] text-brand-text-primary">
+        <h1 className="font-display text-[clamp(1.65rem,3.8vw,2.45rem)] font-light leading-[1.15] tracking-[-0.02em] text-brand-text-primary">
           Crafting something beautiful for your{" "}
           <span className="text-brand-btn-primary">{destination}</span> escape.
         </h1>
 
-        <p className="mt-5 max-w-xl text-base font-light leading-relaxed text-brand-text-secondary sm:text-lg">
+        <p className="mt-3 max-w-xl text-sm font-light leading-relaxed text-brand-text-secondary sm:mt-4 sm:text-base">
           {subtitle}
         </p>
 
         {chips.length > 0 ? (
-          <ul className="mt-8 flex flex-wrap items-center justify-center gap-2.5 sm:mt-9">
+          <ul className="mt-5 flex flex-wrap items-center justify-center gap-2 sm:mt-6 sm:gap-2.5">
             {chips.map((chip) => {
               const Icon = chip.Icon;
               return (
                 <li key={chip.id}>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-brand-border/80 bg-brand-card/75 px-3.5 py-2 text-sm text-brand-text-primary shadow-sm backdrop-blur-sm">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-border/80 bg-brand-card/80 px-3 py-1.5 text-xs text-brand-text-primary shadow-sm backdrop-blur-sm sm:gap-2 sm:px-3.5 sm:py-2 sm:text-sm">
                     <Icon
                       className="h-3.5 w-3.5 shrink-0 text-brand-btn-primary"
                       strokeWidth={1.75}
@@ -190,7 +168,7 @@ export function JourneyComposeView({
           </ul>
         ) : null}
 
-        <div className="mt-10 flex min-h-[5.5rem] flex-col items-center justify-start gap-3 sm:mt-12">
+        <div className="mt-7 flex min-h-[4.75rem] flex-col items-center justify-start gap-2.5 sm:mt-8">
           <div
             className="flex h-2.5 items-center justify-center gap-2.5"
             aria-hidden="true"
@@ -216,21 +194,21 @@ export function JourneyComposeView({
         </div>
 
         <aside
-          className="mt-10 w-full max-w-xl rounded-2xl border border-brand-border/60 bg-brand-card/80 px-5 py-5 text-left shadow-sm backdrop-blur-md sm:mt-12 sm:px-6"
+          className="mt-6 w-full max-w-xl rounded-2xl border border-brand-border/60 bg-brand-card/85 px-4 py-4 text-left shadow-sm backdrop-blur-md sm:mt-7 sm:px-5"
           aria-label="Personal note"
         >
-          <div className="flex gap-3.5">
+          <div className="flex gap-3">
             <span
-              className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-btn-primary/12 text-brand-btn-primary"
+              className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-btn-primary/12 text-brand-btn-primary"
               aria-hidden
             >
-              <Sparkles className="h-4 w-4" strokeWidth={1.75} />
+              <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} />
             </span>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-brand-text-primary">
                 {affirmation.greeting}
               </p>
-              <p className="mt-1.5 text-sm leading-relaxed text-brand-text-secondary">
+              <p className="mt-1 text-sm leading-relaxed text-brand-text-secondary">
                 {affirmation.body}
               </p>
             </div>
@@ -241,35 +219,24 @@ export function JourneyComposeView({
   );
 }
 
-/** Soft sunrise wash behind the preparing screen. */
+/** Low-opacity sunrise behind the preparing content. */
 function ComposeAtmosphere() {
   return (
-    <div className="pointer-events-none absolute inset-0 -z-0 overflow-hidden" aria-hidden>
-      <div
-        className="absolute inset-x-[-8%] top-[-6%] h-[58%] opacity-[0.42] sm:opacity-[0.5]"
-        style={{
-          maskImage:
-            "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
-          WebkitMaskImage:
-            "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
-        }}
-      >
+    <div
+      className="pointer-events-none absolute inset-0 -z-0 overflow-hidden"
+      aria-hidden
+    >
+      <div className="absolute inset-0 opacity-[0.18] sm:opacity-[0.22]">
         <Image
           src="/illustrations/sunrise.png"
           alt=""
           fill
           priority
           sizes="100vw"
-          className="object-cover object-[center_18%] blur-[1px] scale-105"
+          className="object-cover object-center"
         />
       </div>
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(to bottom, color-mix(in srgb, var(--color-brand-bg) 35%, transparent) 0%, var(--color-brand-bg) 62%, var(--color-brand-bg) 100%)",
-        }}
-      />
+      <div className="absolute inset-0 bg-brand-bg/55" />
     </div>
   );
 }
