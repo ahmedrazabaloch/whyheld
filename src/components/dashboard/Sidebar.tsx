@@ -124,46 +124,20 @@ export function Sidebar({}: { user?: User }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Mobile header (visible < lg)                                       */
+/* Mobile header (visible < lg) — brand only; nav is bottom bar       */
 /* ------------------------------------------------------------------ */
 
 export function MobileHeader({}: { user?: User }) {
-  const pathname = usePathname();
-
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-brand-border/10 bg-brand-sidebar px-4 py-3 lg:hidden">
+    <header className="sticky top-0 z-30 flex items-center border-b border-[#D8D2C8]/80 bg-[#F4EFE6]/95 px-4 py-3 backdrop-blur-md lg:hidden">
       <Link
-        href="/"
+        href="/dashboard"
         prefetch={false}
-        className="font-display text-lg tracking-tight text-[#F4EFE6] transition-colors hover:text-[#FFFFFF]"
-        aria-label="Wayheld home"
+        className="font-display text-lg tracking-tight text-[#33332F] transition-colors hover:text-[#74876B]"
+        aria-label="Wayheld dashboard"
       >
         Wayheld
       </Link>
-
-      <nav className="flex items-center gap-1" aria-label="Mobile navigation">
-        {DASHBOARD_NAV_ITEMS.map(({ label, href, Icon }) => {
-          const active = isNavActive(pathname, href);
-
-          return (
-            <Link
-              key={href}
-              href={href}
-              prefetch={false}
-              className={[
-                "flex items-center justify-center rounded-lg p-2 transition-colors duration-200",
-                active
-                  ? "text-[#F4EFE6]"
-                  : "text-[rgba(244,239,230,0.82)] hover:bg-[rgba(244,239,230,0.08)] hover:text-[#F4EFE6]",
-              ].join(" ")}
-              aria-label={label}
-              title={label}
-            >
-              <Icon />
-            </Link>
-          );
-        })}
-      </nav>
     </header>
   );
 }

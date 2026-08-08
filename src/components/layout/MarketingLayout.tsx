@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/db";
 import { Navbar } from "@/components/hero";
 import { SiteFooter, ScrollToTop } from "@/components/sections";
+import { MarketingMobileNav } from "./MarketingMobileNav";
 import { PageTransition } from "./PageTransition";
 
 export async function MarketingLayout({ children }: { children: React.ReactNode }) {
@@ -21,8 +22,11 @@ export async function MarketingLayout({ children }: { children: React.ReactNode 
   return (
     <>
       <Navbar user={userWithName} />
-      <PageTransition>{children}</PageTransition>
-      <SiteFooter />
+      <div className="pb-24 md:pb-0">
+        <PageTransition>{children}</PageTransition>
+        <SiteFooter />
+      </div>
+      <MarketingMobileNav user={userWithName} />
       <ScrollToTop />
     </>
   );

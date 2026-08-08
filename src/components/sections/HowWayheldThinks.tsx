@@ -85,8 +85,8 @@ function VoiceMark({ voice }: { voice: ThinkingStage["voice"] }) {
 }
 
 /**
- * Exact copy of the original premium collage layout, extracted into a reusable component.
- * It strictly maintains the same overlapping images, quote cards, shadows, and spacing.
+ * Editorial collage — mobile matches a single white card (image + meta + nested quote);
+ * lg+ keeps the original overlapping desktop composition.
  */
 const EditorialCollage = memo(function EditorialCollage({
   mainImg,
@@ -110,63 +110,121 @@ const EditorialCollage = memo(function EditorialCollage({
   detail: string;
 }) {
   return (
-    <div className="relative h-[550px] w-full lg:h-[680px]">
-      {/* Main large image */}
-      <div className="absolute right-0 top-0 h-[360px] w-[90%] overflow-hidden rounded-[2rem] shadow-[0_30px_60px_-15px_rgba(51,51,47,0.3)] lg:h-[460px] lg:w-[85%] lg:rounded-[2.5rem] transform-gpu will-change-transform">
-        <Image
-          src={mainImg}
-          alt={mainTitle}
-          fill
-          quality={85}
-          sizes="(max-width: 1024px) 90vw, 55vw"
-          className="object-cover transition-transform duration-[2s] hover:scale-105 will-change-transform"
-        />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-        <div className="absolute bottom-6 left-6 text-[#F4EFE6] lg:bottom-8 lg:left-8">
-          <span className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[#A8A69D] lg:text-[0.65rem]">
-            {mainTag}
-          </span>
-          <h4 className="mt-1 font-display text-xl lg:mt-2 lg:text-2xl">
-            {mainTitle}
-          </h4>
+    <>
+      {/* —— Mobile / tablet: reference-style card —— */}
+      <div className="w-full overflow-hidden rounded-[1.75rem] border border-[#D8D2C8]/80 bg-white p-3.5 shadow-[0_18px_40px_-20px_rgba(51,51,47,0.28)] sm:p-4 lg:hidden">
+        {/* Main scene */}
+        <div className="relative h-44 w-full overflow-hidden rounded-[1.25rem] sm:h-52">
+          <Image
+            src={mainImg}
+            alt={mainTitle}
+            fill
+            quality={85}
+            sizes="(max-width: 1024px) 92vw, 55vw"
+            className="object-cover"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+          <div className="absolute bottom-3.5 left-3.5 text-[#F4EFE6]">
+            <span className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-white/70">
+              {mainTag}
+            </span>
+            <h4 className="mt-0.5 font-display text-lg leading-tight sm:text-xl">
+              {mainTitle}
+            </h4>
+          </div>
+        </div>
+
+        {/* Thumbnail + meta row */}
+        <div className="mt-3.5 flex items-center gap-3.5">
+          <div className="relative h-[4.75rem] w-[4.75rem] shrink-0 overflow-hidden rounded-2xl sm:h-24 sm:w-24">
+            <Image
+              src={subImg}
+              alt={subTitle}
+              fill
+              quality={85}
+              sizes="96px"
+              className="object-cover"
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <span className="text-[0.6rem] font-bold uppercase tracking-[0.18em] text-[#74876B]">
+              {subTag}
+            </span>
+            <h4 className="mt-1 font-display text-base leading-snug text-[#33332F] sm:text-lg">
+              {subTitle}
+            </h4>
+            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#504F4A]">
+              {detail}
+            </p>
+          </div>
+        </div>
+
+        {/* Nested quote */}
+        <div className="relative mt-3.5 rounded-[1.25rem] bg-[#F4EFE6] p-4 sm:p-5">
+          <blockquote className="font-display text-[0.95rem] italic leading-relaxed text-[#33332F] sm:text-base">
+            “{quote}”
+          </blockquote>
+          <div className="mt-3.5 flex items-center gap-2.5">
+            <span className="h-px w-6 bg-[#74876B]" />
+            <p className="text-[0.6rem] font-bold uppercase tracking-widest text-[#74876B]">
+              — {author}
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Overlapping secondary image */}
-      <div className="absolute left-0 top-[220px] z-10 h-[280px] w-[55%] overflow-hidden rounded-3xl shadow-[0_20px_40px_-10px_rgba(51,51,47,0.2)] lg:top-[300px] lg:h-[360px] lg:w-[50%] transform-gpu will-change-transform">
-        <Image
-          src={subImg}
-          alt={subTitle}
-          fill
-          quality={85}
-          sizes="(max-width: 1024px) 50vw, 30vw"
-          className="object-cover transition-transform duration-[2s] hover:scale-105 will-change-transform"
-        />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-        <div className="absolute bottom-5 left-5 text-[#F4EFE6] lg:bottom-6 lg:left-6">
-          <span className="text-[0.5rem] font-bold uppercase tracking-[0.16em] text-[#A8A69D] lg:text-[0.55rem]">
-            {subTag}
-          </span>
-          <p className="mt-1 text-xs font-medium lg:text-sm">{subTitle}</p>
+      {/* —— Desktop: original overlapping collage —— */}
+      <div className="relative hidden h-[680px] w-full lg:block">
+        <div className="absolute right-0 top-0 h-[460px] w-[85%] overflow-hidden rounded-[2.5rem] shadow-[0_30px_60px_-15px_rgba(51,51,47,0.3)] transform-gpu will-change-transform">
+          <Image
+            src={mainImg}
+            alt={mainTitle}
+            fill
+            quality={85}
+            sizes="55vw"
+            className="object-cover transition-transform duration-[2s] hover:scale-105 will-change-transform"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+          <div className="absolute bottom-8 left-8 text-[#F4EFE6]">
+            <span className="text-[0.65rem] font-bold uppercase tracking-[0.2em] text-[#A8A69D]">
+              {mainTag}
+            </span>
+            <h4 className="mt-2 font-display text-2xl">{mainTitle}</h4>
+          </div>
         </div>
-      </div>
 
-      {/* Floating Quote Box */}
-      <div className="absolute bottom-0 right-0 z-20 w-[85%] rounded-3xl border border-[#D8D2C8] bg-white/95 p-6 shadow-2xl backdrop-blur-xl lg:bottom-8 lg:right-6 lg:w-[48%] lg:bg-white/90 lg:p-8 transform-gpu backface-hidden will-change-transform">
-        <blockquote className="font-display text-base italic leading-relaxed text-[#33332F] lg:text-lg">
-          “{quote}”
-        </blockquote>
-        <div className="mt-4 flex items-center gap-3 lg:mt-6 lg:gap-4">
-          <span className="h-px w-6 bg-[#74876B] lg:w-8" />
-          <p className="text-[0.6rem] font-bold uppercase tracking-widest text-[#74876B] lg:text-[0.65rem]">
-            {author}
-          </p>
+        <div className="absolute left-0 top-[300px] z-10 h-[360px] w-[50%] overflow-hidden rounded-3xl shadow-[0_20px_40px_-10px_rgba(51,51,47,0.2)] transform-gpu will-change-transform">
+          <Image
+            src={subImg}
+            alt={subTitle}
+            fill
+            quality={85}
+            sizes="30vw"
+            className="object-cover transition-transform duration-[2s] hover:scale-105 will-change-transform"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+          <div className="absolute bottom-6 left-6 text-[#F4EFE6]">
+            <span className="text-[0.55rem] font-bold uppercase tracking-[0.16em] text-[#A8A69D]">
+              {subTag}
+            </span>
+            <p className="mt-1 text-sm font-medium">{subTitle}</p>
+          </div>
         </div>
-        <p className="mt-4 text-xs leading-relaxed text-[#504F4A] lg:mt-5">
-          {detail}
-        </p>
+
+        <div className="absolute bottom-8 right-6 z-20 w-[48%] rounded-3xl border border-[#D8D2C8] bg-white/90 p-8 shadow-2xl backdrop-blur-xl transform-gpu backface-hidden will-change-transform">
+          <blockquote className="font-display text-lg italic leading-relaxed text-[#33332F]">
+            “{quote}”
+          </blockquote>
+          <div className="mt-6 flex items-center gap-4">
+            <span className="h-px w-8 bg-[#74876B]" />
+            <p className="text-[0.65rem] font-bold uppercase tracking-widest text-[#74876B]">
+              {author}
+            </p>
+          </div>
+          <p className="mt-5 text-xs leading-relaxed text-[#504F4A]">{detail}</p>
+        </div>
       </div>
-    </div>
+    </>
   );
 });
 
@@ -266,7 +324,9 @@ const Stage = memo(function Stage({
       </div>
 
       {/* Mobile Visual Flow (Interspersed) */}
-      {visual && <div className="block w-full pb-16 lg:hidden">{visual}</div>}
+      {visual && (
+        <div className="block w-full pb-20 pt-2 lg:hidden">{visual}</div>
+      )}
     </motion.li>
   );
 });

@@ -2,7 +2,7 @@ import type { ComponentType } from "react";
 
 /**
  * Single source of truth for dashboard navigation labels and routes.
- * Sidebar and MobileHeader must both consume this — never duplicate labels.
+ * Sidebar and DashboardMobileNav must both consume this — never duplicate labels.
  */
 export type DashboardNavItem = {
   label: string;
@@ -24,11 +24,9 @@ function NavIconDashboard() {
 function NavIconJourneys() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M3 15.5c3-4 5-8 6-13" />
-      <path d="M9 2.5c1 5 3 9 6 13" />
-      <circle cx="3" cy="15.5" r="1" />
-      <circle cx="15" cy="15.5" r="1" />
-      <circle cx="9" cy="2.5" r="1" />
+      <path d="M2.5 4.2 6.5 2.5v13L2.5 13.8V4.2Z" />
+      <path d="M6.5 2.5 11.5 4.2v13L6.5 15.5V2.5Z" />
+      <path d="M11.5 4.2 15.5 2.5v13l-4 1.7V4.2Z" />
     </svg>
   );
 }

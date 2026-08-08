@@ -5,7 +5,6 @@ import { Section } from "@/components/ui";
 import {
   containerVariants,
   riseVariants,
-  EASE_EXPO,
   kicker,
   sectionTitle,
 } from "@/lib/design";
@@ -40,6 +39,25 @@ const pathVariants: Variants = {
   },
 };
 
+/** Mobile-only straight rail that fills the remaining row height. */
+function MobileConnector({ toBottom = false }: { toBottom?: boolean }) {
+  return (
+    <motion.div
+      aria-hidden
+      variants={{
+        hidden: { scaleY: 0, opacity: 0 },
+        show: {
+          scaleY: 1,
+          opacity: 1,
+          transition: { duration: 1.1, ease: "easeInOut" },
+        },
+      }}
+      style={{ originY: 0 }}
+      className={`w-px flex-1 bg-[#74876B] md:hidden ${toBottom ? "min-h-16" : ""}`}
+    />
+  );
+}
+
 export function ProcessSection() {
   return (
     <Section id="process" className="bg-[#F4EFE6] overflow-hidden">
@@ -68,19 +86,20 @@ export function ProcessSection() {
         className="grid grid-cols-[3rem_1fr] md:grid-cols-[1fr_4rem_1fr] gap-x-6 md:gap-x-12 max-w-5xl mx-auto"
       >
         {/* ROW 1: Step 01 */}
-        {/* Node 1 & Path to Node 2 */}
-        <div className="col-start-1 md:col-start-2 row-start-1 flex flex-col items-center relative z-10">
+        <div className="relative z-10 col-start-1 row-start-1 flex h-full flex-col items-center md:col-start-2">
           <motion.div
             variants={riseVariants}
-            className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-[#74876B] bg-[#F4EFE6] flex items-center justify-center text-[#74876B] font-display text-sm md:text-lg z-10 shrink-0 hover:scale-110 hover:shadow-[0_0_15px_rgba(116,135,107,0.4)] transition-all duration-300"
+            className="z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#74876B] bg-[#F4EFE6] font-display text-sm text-[#74876B] transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_rgba(116,135,107,0.4)] md:h-12 md:w-12 md:text-lg"
           >
             {PROCESS_STEPS[0].step}
           </motion.div>
 
-          <div className="w-full absolute top-10 md:top-12 bottom-0 left-0 -z-10">
-            {/* Desktop Path (Bulges Right) */}
+          <MobileConnector />
+
+          {/* Desktop Path (Bulges Right) */}
+          <div className="pointer-events-none absolute top-12 bottom-0 left-0 hidden w-full md:block">
             <svg
-              className="hidden md:block w-full h-full overflow-visible"
+              className="h-full w-full overflow-visible"
               preserveAspectRatio="none"
               viewBox="0 0 100 100"
             >
@@ -93,30 +112,15 @@ export function ProcessSection() {
                 vectorEffect="non-scaling-stroke"
               />
             </svg>
-            {/* Mobile Path (Bulges Left) */}
-            <svg
-              className="block md:hidden w-full h-full overflow-visible"
-              preserveAspectRatio="none"
-              viewBox="0 0 100 100"
-            >
-              <motion.path
-                variants={pathVariants}
-                d="M 50 0 C -100 50, -100 50, 50 100"
-                fill="none"
-                stroke="#74876B"
-                strokeWidth="1.5"
-                vectorEffect="non-scaling-stroke"
-              />
-            </svg>
           </div>
         </div>
 
         {/* Text 1 */}
         <motion.div
           variants={riseVariants}
-          className="col-start-2 md:col-start-1 row-start-1 text-left md:text-right pb-16 md:pb-32 pt-1 md:pt-2"
+          className="col-start-2 row-start-1 pb-16 pt-1 text-left md:col-start-1 md:pb-32 md:pt-2 md:text-right"
         >
-          <h3 className="font-display text-xl text-[#33332F] sm:text-2xl mb-4">
+          <h3 className="mb-4 font-display text-xl text-[#33332F] sm:text-2xl">
             {PROCESS_STEPS[0].title}
           </h3>
           <p className="text-sm leading-relaxed text-[#504F4A] md:ml-auto md:max-w-md">
@@ -124,24 +128,25 @@ export function ProcessSection() {
           </p>
         </motion.div>
 
-        <div className="hidden md:block col-start-3 row-start-1" />
+        <div className="col-start-3 row-start-1 hidden md:block" />
 
         {/* ROW 2: Step 02 */}
-        <div className="hidden md:block col-start-1 row-start-2" />
+        <div className="col-start-1 row-start-2 hidden md:block" />
 
-        {/* Node 2 & Path to Node 3 */}
-        <div className="col-start-1 md:col-start-2 row-start-2 flex flex-col items-center relative z-10">
+        <div className="relative z-10 col-start-1 row-start-2 flex h-full flex-col items-center md:col-start-2">
           <motion.div
             variants={riseVariants}
-            className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-[#74876B] bg-[#F4EFE6] flex items-center justify-center text-[#74876B] font-display text-sm md:text-lg z-10 shrink-0 hover:scale-110 hover:shadow-[0_0_15px_rgba(116,135,107,0.4)] transition-all duration-300"
+            className="z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#74876B] bg-[#F4EFE6] font-display text-sm text-[#74876B] transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_rgba(116,135,107,0.4)] md:h-12 md:w-12 md:text-lg"
           >
             {PROCESS_STEPS[1].step}
           </motion.div>
 
-          <div className="w-full absolute top-10 md:top-12 bottom-0 left-0 -z-10">
-            {/* Desktop Path (Bulges Left) */}
+          <MobileConnector />
+
+          {/* Desktop Path (Bulges Left) */}
+          <div className="pointer-events-none absolute top-12 bottom-0 left-0 hidden w-full md:block">
             <svg
-              className="hidden md:block w-full h-full overflow-visible"
+              className="h-full w-full overflow-visible"
               preserveAspectRatio="none"
               viewBox="0 0 100 100"
             >
@@ -154,30 +159,15 @@ export function ProcessSection() {
                 vectorEffect="non-scaling-stroke"
               />
             </svg>
-            {/* Mobile Path (Bulges Left slightly different) */}
-            <svg
-              className="block md:hidden w-full h-full overflow-visible"
-              preserveAspectRatio="none"
-              viewBox="0 0 100 100"
-            >
-              <motion.path
-                variants={pathVariants}
-                d="M 50 0 C -80 30, -80 70, 50 100"
-                fill="none"
-                stroke="#74876B"
-                strokeWidth="1.5"
-                vectorEffect="non-scaling-stroke"
-              />
-            </svg>
           </div>
         </div>
 
         {/* Text 2 */}
         <motion.div
           variants={riseVariants}
-          className="col-start-2 md:col-start-3 row-start-2 text-left pb-16 md:pb-32 pt-1 md:pt-2"
+          className="col-start-2 row-start-2 pb-16 pt-1 text-left md:col-start-3 md:pb-32 md:pt-2"
         >
-          <h3 className="font-display text-xl text-[#33332F] sm:text-2xl mb-4">
+          <h3 className="mb-4 font-display text-xl text-[#33332F] sm:text-2xl">
             {PROCESS_STEPS[1].title}
           </h3>
           <p className="text-sm leading-relaxed text-[#504F4A] md:max-w-md">
@@ -186,22 +176,23 @@ export function ProcessSection() {
         </motion.div>
 
         {/* ROW 3: Step 03 */}
-        {/* Node 3 (No Path) */}
-        <div className="col-start-1 md:col-start-2 row-start-3 flex flex-col items-center relative z-10">
+        <div className="relative z-10 col-start-1 row-start-3 flex h-full flex-col items-center md:col-start-2">
           <motion.div
             variants={riseVariants}
-            className="w-10 h-10 md:w-12 md:h-12 rounded-full border border-[#74876B] bg-[#74876B] flex items-center justify-center text-[#F4EFE6] font-display text-sm md:text-lg z-10 shrink-0 hover:scale-110 hover:shadow-[0_0_15px_rgba(116,135,107,0.4)] transition-all duration-300"
+            className="z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#74876B] bg-[#74876B] font-display text-sm text-[#F4EFE6] transition-all duration-300 hover:scale-110 hover:shadow-[0_0_15px_rgba(116,135,107,0.4)] md:h-12 md:w-12 md:text-lg"
           >
             {PROCESS_STEPS[2].step}
           </motion.div>
+
+          <MobileConnector toBottom />
         </div>
 
         {/* Text 3 */}
         <motion.div
           variants={riseVariants}
-          className="col-start-2 md:col-start-1 row-start-3 text-left md:text-right pb-8 pt-1 md:pt-2"
+          className="col-start-2 row-start-3 pb-8 pt-1 text-left md:col-start-1 md:pt-2 md:text-right"
         >
-          <h3 className="font-display text-xl text-[#33332F] sm:text-2xl mb-4">
+          <h3 className="mb-4 font-display text-xl text-[#33332F] sm:text-2xl">
             {PROCESS_STEPS[2].title}
           </h3>
           <p className="text-sm leading-relaxed text-[#504F4A] md:ml-auto md:max-w-md">
@@ -209,7 +200,7 @@ export function ProcessSection() {
           </p>
         </motion.div>
 
-        <div className="hidden md:block col-start-3 row-start-3" />
+        <div className="col-start-3 row-start-3 hidden md:block" />
       </motion.div>
     </Section>
   );
